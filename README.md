@@ -1,3 +1,23 @@
+## In memory of Ben Shamah
+
+This project exists because of Ben Shamah (1973–2018).
+
+Ben studied mechanical engineering at UC San Diego and robotics at Carnegie
+Mellon, where he worked on NASA-funded robots built to explore other planets.
+He brought that work back down to the bench, joining Velocity11 to build
+machines that would speed up medical research — and it was there, with
+colleagues including Brad Nelson, Dave Assmusen, and Chris Shaw, that the Bravo
+was born. He later co-founded BioNex Solutions and led its technical side.
+People who worked with him describe someone quiet and generous, who liked
+puzzling out hard engineering problems and liked helping other people solve
+theirs even more. He died of cancer in 2018, at 45.
+
+The Bravo is a genuinely good machine, and a lot of them are still running. The 
+goal here is to let the hardware Ben helped design join the open source 
+community.
+
+---
+
 # pyBravo
 
 An open-source Python driver and web control system for Bravo liquid handling
@@ -22,26 +42,6 @@ simulated robot, so this works on any machine.
 > crush a pipette head, or injure a hand. Read
 > [docs/safety.md](docs/safety.md) before you connect to real hardware, and
 > dry-run every new protocol in simulation first.
-
----
-
-## In memory of Ben Shamah
-
-This project exists because of Ben Shamah (1973–2018).
-
-Ben studied mechanical engineering at UC San Diego and robotics at Carnegie
-Mellon, where he worked on NASA-funded robots built to explore other planets.
-He brought that work back down to the bench, joining Velocity11 to build
-machines that would speed up medical research — and it was there, with
-colleagues including Brad Nelson, Dave Assmusen, and Chris Shaw, that the Bravo
-was born. He later co-founded BioNex Solutions and led its technical side.
-People who worked with him describe someone quiet and generous, who liked
-puzzling out hard engineering problems and liked helping other people solve
-theirs even more. He died of cancer in 2018, at 45.
-
-The Bravo is a genuinely good machine, and a lot of them are still running. The 
-goal here is to let the hardware Ben helped design join the open source 
-community.
 
 ---
 
