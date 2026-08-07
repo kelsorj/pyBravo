@@ -1,0 +1,455 @@
+name: '384'
+connection:
+  use_ethernet: true
+  address: 192.168.0.51
+  serial_port: ''
+  controller_type: darwin_native
+  machine_id: 04-91-62-CF-7B-B0
+head:
+  head_type: HT_384_D_70
+  check_on_init: true
+  default_tip_capacity: 30.0
+  teach_tip_capacity: 30.0
+  default_tip_id: st_30ul
+  teach_tip_id: st_30ul
+  teach_tip_length_mm: 26.1
+gripper:
+  grip_current: 0.15
+  lid_grip_current: 0.1
+  y_offset: -0.42
+  gripper_position: 5.0
+  pad_zg_reference_mm: 7.0
+  pad_reference_tip_length_mm: 26.1
+safety:
+  ignore_plate_sensor: false
+  ignore_w_axis: false
+  simulation_mode: false
+  z_safe_position: 0.0
+  approach_height: 10.0
+  always_move_to_safe_z: true
+  prompt_home_w: true
+  run_medium_speed: false
+  enable_tips_off_tip_touch: false
+  is_srt: false
+  tips_off_w_position: -9.3
+  tips_off_z_offset: 10.0
+  tips_off_tip_touch_distance: 314.96
+  head_tolerance: 25
+  safe_location: 5
+  prevent_bravo_during_robotic_access: true
+  tip_press_dwell_time: 0
+  plate_sensor_transient_ms: 300
+  allow_tos_fluid_handling: false
+  enable_tips_on_tip_touch: false
+  pin_tool_tip_type: 33 mm
+vision:
+  enabled: true
+  service_url: http://127.0.0.1:8101
+  sdk_root: external/pyorbbecsdk
+accessories:
+  devices: []
+  barcode_reader:
+    enabled: false
+    device_type: ms3
+    port: COM5
+    side: east
+    location: 0
+axes:
+  X:
+    ticks_per_eng_unit: 314.96
+    min_range: 0.0
+    max_range: 390.0
+    homing_offset: 193.04
+    home_flag_register: 2320
+    home_flag_bitmask: 1
+    home_in_positive_direction: 1
+    home_complete_register: 350
+    homing_soft_stop_decel: 300.0
+    min_move_full_accel: 40.0
+    check_for_alignment: 1
+    fast_velocity: 524.0
+    fast_acceleration: 1588.0
+    med_velocity: 238.0
+    med_acceleration: 1270.0
+    slow_velocity: 51.0
+    slow_acceleration: 200.0
+    homing_velocity: 50.0
+    homing_acceleration: 100.0
+    safe_velocity: 125.0
+    safe_acceleration: 200.0
+  Y:
+    ticks_per_eng_unit: 314.96
+    min_range: 0.5
+    max_range: 231.0
+    homing_offset: 115.443
+    home_flag_register: 2320
+    home_flag_bitmask: 2
+    home_in_positive_direction: 1
+    home_complete_register: 351
+    homing_soft_stop_decel: 300.0
+    min_move_full_accel: 40.0
+    check_for_alignment: 1
+    fast_velocity: 524.0
+    fast_acceleration: 1588.0
+    med_velocity: 238.0
+    med_acceleration: 1270.0
+    slow_velocity: 51.0
+    slow_acceleration: 200.0
+    homing_velocity: 50.0
+    homing_acceleration: 100.0
+    safe_velocity: 125.0
+    safe_acceleration: 200.0
+  Z:
+    ticks_per_eng_unit: 1600.0
+    min_range: 0.0
+    max_range: 150.0
+    homing_offset: 0.0
+    home_flag_register: 2320
+    home_flag_bitmask: 4
+    home_in_positive_direction: 0
+    home_complete_register: 352
+    homing_soft_stop_decel: 300.0
+    min_move_full_accel: 0.0
+    check_for_alignment: 1
+    fast_velocity: 125.0
+    fast_acceleration: 375.0
+    med_velocity: 63.0
+    med_acceleration: 156.0
+    slow_velocity: 10.0
+    slow_acceleration: 100.0
+    homing_velocity: 10.0
+    homing_acceleration: 100.0
+    safe_velocity: 125.0
+    safe_acceleration: 100.0
+  W:
+    ticks_per_eng_unit: 1692.0
+    min_range: -11.01
+    max_range: 72.01
+    homing_offset: 0.0
+    home_flag_register: 2320
+    home_flag_bitmask: 8
+    home_in_positive_direction: 0
+    home_complete_register: 353
+    homing_soft_stop_decel: 300.0
+    min_move_full_accel: 0.0
+    check_for_alignment: 1
+    fast_velocity: 600.0
+    fast_acceleration: 600.0
+    med_velocity: 100.0
+    med_acceleration: 200.0
+    slow_velocity: 10.0
+    slow_acceleration: 200.0
+    homing_velocity: 10.0
+    homing_acceleration: 100.0
+    safe_velocity: 100.0
+    safe_acceleration: 200.0
+  G:
+    ticks_per_eng_unit: 944.882
+    min_range: -4.0
+    max_range: 10.0
+    homing_offset: 0.0
+    home_flag_register: 2320
+    home_flag_bitmask: 1
+    home_in_positive_direction: 0
+    home_complete_register: 350
+    homing_soft_stop_decel: 300.0
+    min_move_full_accel: 0.0
+    check_for_alignment: 0
+    fast_velocity: 1000.0
+    fast_acceleration: 1500.0
+    med_velocity: 500.0
+    med_acceleration: 500.0
+    slow_velocity: 1.0
+    slow_acceleration: 10.0
+    homing_velocity: 1.0
+    homing_acceleration: 10.0
+    safe_velocity: 250.0
+    safe_acceleration: 10.0
+  Zg:
+    ticks_per_eng_unit: 787.402
+    min_range: -20.0
+    max_range: 105.0
+    homing_offset: 0.0
+    home_flag_register: 2320
+    home_flag_bitmask: 2
+    home_in_positive_direction: 0
+    home_complete_register: 351
+    homing_soft_stop_decel: 300.0
+    min_move_full_accel: 0.0
+    check_for_alignment: 0
+    fast_velocity: 1500.0
+    fast_acceleration: 1000.0
+    med_velocity: 750.0
+    med_acceleration: 200.0
+    slow_velocity: 100.0
+    slow_acceleration: 50.0
+    homing_velocity: 10.0
+    homing_acceleration: 500.0
+    safe_velocity: 125.0
+    safe_acceleration: 50.0
+teachpoints:
+  '1':
+    x: 9.29177737236023
+    y: 9.98124990463257
+    z: 139.00002539157867
+  '2':
+    x: 195.98172044754028
+    y: 10.184498763084413
+    z: 139.00002539157867
+  '3':
+    x: 382.6685599088669
+    y: 9.68284878730774
+    z: 138.80002200603485
+  '4':
+    x: 9.28859806060791
+    y: 118.87426707744598
+    z: 138.80002200603485
+  '5':
+    x: 195.8801338672638
+    y: 118.76950118541717
+    z: 138.70002031326294
+  '6':
+    x: 382.6654562950134
+    y: 119.07426092624664
+    z: 138.5000318288803
+  '7':
+    x: 9.29177737236023
+    y: 227.97045741081237
+    z: 138.70002031326294
+  '8':
+    x: 196.2833765745163
+    y: 227.96727809906005
+    z: 138.60001862049103
+  '9':
+    x: 382.4653867483139
+    y: 228.1672719478607
+    z: 138.70002031326294
+current_limits:
+  LT:
+    96 tips: 0.6
+    12 tips: 0.1
+    8 tips: 0.07
+    1 tip: 0.04
+  ST:
+    384 tips: 0.2
+    24 tips: 0.1
+    16 tips: 0.1
+    1 tip: 0.04
+    96 tips: 0.3
+    8 tips: 0.1
+    12 tips: 0.1
+locations:
+- location: 1
+  location_type: 0
+- location: 2
+  location_type: 0
+- location: 3
+  location_type: 0
+- location: 4
+  location_type: 0
+- location: 5
+  location_type: 0
+- location: 6
+  location_type: 0
+- location: 7
+  location_type: 0
+- location: 8
+  location_type: 0
+- location: 9
+  location_type: 0
+external_robot_access:
+  usage: 0
+  locations:
+    1:
+      robot_accesses_this_location: 0
+      bravo_blocked:
+      - 1
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      era_list:
+      - 0
+      - 0
+      - 0
+      - 0
+    2:
+      robot_accesses_this_location: 0
+      bravo_blocked:
+      - 0
+      - 1
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      era_list:
+      - 0
+      - 0
+      - 0
+      - 0
+    3:
+      robot_accesses_this_location: 0
+      bravo_blocked:
+      - 0
+      - 0
+      - 1
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      era_list:
+      - 0
+      - 0
+      - 0
+      - 0
+    4:
+      robot_accesses_this_location: 0
+      bravo_blocked:
+      - 0
+      - 0
+      - 0
+      - 1
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      era_list:
+      - 0
+      - 0
+      - 0
+      - 0
+    5:
+      robot_accesses_this_location: 0
+      bravo_blocked:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 1
+      - 0
+      - 0
+      - 0
+      - 0
+      era_list:
+      - 0
+      - 0
+      - 0
+      - 0
+    6:
+      robot_accesses_this_location: 0
+      bravo_blocked:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 1
+      - 0
+      - 0
+      - 0
+      era_list:
+      - 0
+      - 0
+      - 0
+      - 0
+    7:
+      robot_accesses_this_location: 0
+      bravo_blocked:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 1
+      - 0
+      - 0
+      era_list:
+      - 0
+      - 0
+      - 0
+      - 0
+    8:
+      robot_accesses_this_location: 0
+      bravo_blocked:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 1
+      - 0
+      era_list:
+      - 0
+      - 0
+      - 0
+      - 0
+    9:
+      robot_accesses_this_location: 0
+      bravo_blocked:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 1
+      era_list:
+      - 0
+      - 0
+      - 0
+      - 0
+w_axis_motor_control:
+  is_96am_head: 0
+  position_loop_kp: 75.0
+  position_loop_ki: 0.5
+  position_loop_bp: 50.0
+  position_loop_kvff: 0.0
+  position_loop_anti_hunt_zone: 0.0
+  position_error_threshold: 400.0
+  time_limit_for_average_current: 50.0
+  average_current_limit: 0.2
+  peak_current_limit: 0.466667
+extra:
+  head_type_registry_value: 1
+  head_type_ad_register: 2304
+  default_tip_registry_value: 30
+  default_tip_additional: 0
+  z_offset_single_tip_st_head: 0.0
+  simulate_bravo_hardware: false
+  accessories:
+    pump_modules: 0
+    weigh_pads: 0
+  axes_extra:
+    G:
+      darwin_calibration_offset: 0.0
+      darwin_homing_always_homes: false
+    W:
+      darwin_calibration_offset: 0.0
+      darwin_homing_always_homes: false
+    X:
+      darwin_calibration_offset: 0.0
+      darwin_homing_always_homes: false
+    Y:
+      darwin_calibration_offset: 0.0
+      darwin_homing_always_homes: false
+    Z:
+      darwin_calibration_offset: 0.0
+      darwin_homing_always_homes: false
+    Zg:
+      darwin_calibration_offset: 0.0
+      darwin_homing_always_homes: false

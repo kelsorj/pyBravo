@@ -1,0 +1,223 @@
+name: Opportunity
+connection:
+  use_ethernet: true
+  address: 192.168.0.82
+  serial_port: ''
+  controller_type: agile_7612
+  machine_id: SIM_OPPORTUNITY
+head:
+  head_type: HT_96_D_200
+  check_on_init: false
+  default_tip_capacity: 200.0
+  teach_tip_capacity: 250.0
+  default_tip_id: lt_200ul
+  teach_tip_id: lt_250ul
+  teach_tip_length_mm: 55.2
+gripper:
+  grip_current: 0.15
+  lid_grip_current: 0.055
+  y_offset: 0.0
+  gripper_position: 5.0
+safety:
+  ignore_plate_sensor: false
+  ignore_w_axis: false
+  simulation_mode: false
+  z_safe_position: 0.0
+  approach_height: 10.0
+  always_move_to_safe_z: true
+  prompt_home_w: true
+  run_medium_speed: false
+  enable_tips_off_tip_touch: false
+  is_srt: false
+  tips_off_w_position: -35.0
+  tips_off_z_offset: 15.0
+  tips_off_tip_touch_distance: 314.96
+  head_tolerance: 25
+  safe_location: 5
+  prevent_bravo_during_robotic_access: true
+  tip_press_dwell_time: 0
+  plate_sensor_transient_ms: 300
+  allow_tos_fluid_handling: false
+  enable_tips_on_tip_touch: false
+  pin_tool_tip_type: 33 mm
+vision:
+  enabled: false
+  service_url: http://127.0.0.1:8101
+  sdk_root: external/pyorbbecsdk
+accessories:
+  barcode_reader:
+    enabled: false
+    device_type: ms3
+    port: COM5
+    side: east
+    location: 0
+axes:
+  X:
+    ticks_per_eng_unit: 314.96
+    min_range: 0.0
+    max_range: 390.0
+    homing_offset: 193.04
+    home_flag_register: 2320
+    home_flag_bitmask: 1
+    home_in_positive_direction: 1
+    home_complete_register: 350
+    homing_soft_stop_decel: 300.0
+    min_move_full_accel: 40.0
+    check_for_alignment: 1
+    fast_velocity: 524.0
+    fast_acceleration: 1588.0
+    med_velocity: 238.0
+    med_acceleration: 1270.0
+    slow_velocity: 51.0
+    slow_acceleration: 200.0
+    homing_velocity: 50.0
+    homing_acceleration: 100.0
+    safe_velocity: 125.0
+    safe_acceleration: 200.0
+  Y:
+    ticks_per_eng_unit: 314.96
+    min_range: 0.5
+    max_range: 231.0
+    homing_offset: 115.443
+    home_flag_register: 2320
+    home_flag_bitmask: 2
+    home_in_positive_direction: 1
+    home_complete_register: 351
+    homing_soft_stop_decel: 300.0
+    min_move_full_accel: 40.0
+    check_for_alignment: 1
+    fast_velocity: 524.0
+    fast_acceleration: 1588.0
+    med_velocity: 238.0
+    med_acceleration: 1270.0
+    slow_velocity: 51.0
+    slow_acceleration: 200.0
+    homing_velocity: 50.0
+    homing_acceleration: 100.0
+    safe_velocity: 125.0
+    safe_acceleration: 200.0
+  Z:
+    ticks_per_eng_unit: 1600.0
+    min_range: 0.0
+    max_range: 150.0
+    homing_offset: 0.0
+    home_flag_register: 2320
+    home_flag_bitmask: 4
+    home_in_positive_direction: 0
+    home_complete_register: 352
+    homing_soft_stop_decel: 300.0
+    min_move_full_accel: 0.0
+    check_for_alignment: 1
+    fast_velocity: 125.0
+    fast_acceleration: 375.0
+    med_velocity: 63.0
+    med_acceleration: 156.0
+    slow_velocity: 10.0
+    slow_acceleration: 100.0
+    homing_velocity: 10.0
+    homing_acceleration: 100.0
+    safe_velocity: 125.0
+    safe_acceleration: 100.0
+  W:
+    ticks_per_eng_unit: 448.0
+    min_range: -41.01
+    max_range: 251.01
+    homing_offset: 0.0
+    home_flag_register: 2320
+    home_flag_bitmask: 8
+    home_in_positive_direction: 0
+    home_complete_register: 353
+    homing_soft_stop_decel: 300.0
+    min_move_full_accel: 0.0
+    check_for_alignment: 1
+    fast_velocity: 600.0
+    fast_acceleration: 600.0
+    med_velocity: 100.0
+    med_acceleration: 200.0
+    slow_velocity: 10.0
+    slow_acceleration: 200.0
+    homing_velocity: 10.0
+    homing_acceleration: 100.0
+    safe_velocity: 100.0
+    safe_acceleration: 200.0
+  G:
+    ticks_per_eng_unit: 944.882
+    min_range: -4.0
+    max_range: 10.0
+    homing_offset: 0.0
+    home_flag_register: 2320
+    home_flag_bitmask: 1
+    home_in_positive_direction: 0
+    home_complete_register: 350
+    homing_soft_stop_decel: 300.0
+    min_move_full_accel: 0.0
+    check_for_alignment: 0
+    fast_velocity: 1000.0
+    fast_acceleration: 1500.0
+    med_velocity: 500.0
+    med_acceleration: 500.0
+    slow_velocity: 1.0
+    slow_acceleration: 10.0
+    homing_velocity: 1.0
+    homing_acceleration: 10.0
+    safe_velocity: 250.0
+    safe_acceleration: 10.0
+  Zg:
+    ticks_per_eng_unit: 787.402
+    min_range: -25.0
+    max_range: 105.0
+    homing_offset: -20.0
+    home_flag_register: 2320
+    home_flag_bitmask: 2
+    home_in_positive_direction: 0
+    home_complete_register: 351
+    homing_soft_stop_decel: 300.0
+    min_move_full_accel: 0.0
+    check_for_alignment: 0
+    fast_velocity: 1500.0
+    fast_acceleration: 1000.0
+    med_velocity: 750.0
+    med_acceleration: 200.0
+    slow_velocity: 100.0
+    slow_acceleration: 50.0
+    homing_velocity: 10.0
+    homing_acceleration: 500.0
+    safe_velocity: 125.0
+    safe_acceleration: 50.0
+teachpoints:
+  '1':
+    x: 6.29
+    y: 7.88
+    z: 110.1
+  '2':
+    x: 193.18
+    y: 7.779999999999999
+    z: 110.39999999999998
+  '3':
+    x: 379.36999999999983
+    y: 7.679999999999998
+    z: 110.49999999999997
+  '4':
+    x: 6.289999999999999
+    y: 117.26999999999998
+    z: 110.49999999999997
+  '5':
+    x: 192.98000000000005
+    y: 117.06999999999996
+    z: 110.39999999999996
+  '6':
+    x: 380.67
+    y: 116.67
+    z: 110.0
+  '7':
+    x: 6.390000000000002
+    y: 226.26999999999998
+    z: 110.59999999999995
+  '8':
+    x: 192.98000000000005
+    y: 226.07
+    z: 110.6999999999999
+  '9':
+    x: 379.3699999999998
+    y: 226.16999999999996
+    z: 110.6999999999999
