@@ -76,8 +76,27 @@ goto run_direct
 :run_uv
 set "EXTRAS="
 for %%e in (%PYBRAVO_EXTRAS%) do set "EXTRAS=!EXTRAS! --extra %%e"
-echo Starting %MODULE% with: uv run --frozen!EXTRAS! python -B -m %MODULE%
-uv run --frozen!EXTRAS! python -B -m %MODULE%!ARGS!
+rem Sync, then invoke the environment's interpreter by path rather than using
+rem `uv run python`. `uv run` relies on prepending .venv\Scripts to PATH for the
+rem child process, and under cmd.exe that does not take effect - the child
+rem resolves the first `python` on the inherited PATH instead, which on a GitHub
+rem runner (and on any machine with a system Python) is the wrong interpreter
+rem and fails with ModuleNotFoundError: No module named 'pybravo'.
+echo Syncing dependencies with uv...
+uv sync --frozen!EXTRAS!
+if errorlevel 1 (
+    echo. 1>&2
+    echo uv sync failed. If the lockfile is out of date, run: uv lock 1>&2
+    exit /b 1
+)
+if not exist ".venv\Scripts\python.exe" (
+    echo. 1>&2
+    echo uv sync did not produce .venv\Scripts\python.exe 1>&2
+    echo Set UV_PROJECT_ENVIRONMENT if your environment lives elsewhere. 1>&2
+    exit /b 1
+)
+echo Starting %MODULE% with: .venv\Scripts\python.exe -B -m %MODULE%
+".venv\Scripts\python.exe" -B -m %MODULE%!ARGS!
 exit /b !errorlevel!
 
 :run_pylauncher
