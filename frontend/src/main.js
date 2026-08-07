@@ -1081,6 +1081,75 @@ function describeDeckLocationLabware(location) {
     return detail?.name || 'Empty';
 }
 
+// The three functions below are deliberately self-contained (no helpers, no
+// DOM): tests/test_frontend_lid_preflight.py lifts their source out of this
+// file and runs them under Node.
+
+// Lid-aware label for the delid/relid panels. The plain name is not enough
+// there — a lidded and a bare plate produce the same string, which is how a
+// delid could be aimed at a plate with no lid and look perfectly reasonable
+// right up until the robot refused it.
+function describeLidState(detail) {
+    if (!detail) return 'Empty';
+    const name = detail.name || 'Unknown labware';
+    const baseClass = String(detail.base_class || '').toLowerCase();
+    const kind = String(detail.labware_type || detail.kind || '').toLowerCase();
+    if (baseClass === 'lid' || kind === 'lid') return `${name} (a lid)`;
+    if (detail.can_have_lid === false) return `${name} — takes no lid`;
+    return detail.is_lidded ? `${name} — lidded` : `${name} — NO LID`;
+}
+
+// Returns a human-readable reason the delid cannot happen, or null when it
+// can. This duplicates checks the backend already enforces, on purpose: the
+// backend is the real guard, and this exists so the operator is told before
+// the command is dispatched rather than by a log line afterwards.
+function delidPreflightBlocker(plateLocation, lidDestination, plateDetail, destDetail) {
+    if (!plateLocation || !lidDestination) {
+        return 'Delid needs both a plate location and a lid destination.';
+    }
+    if (plateLocation === lidDestination) {
+        return `The lid destination must differ from the plate location (both are ${plateLocation}).`;
+    }
+    if (!plateDetail) {
+        return `Location ${plateLocation} is empty — there is no plate to delid.`;
+    }
+    if (plateDetail.can_have_lid === false) {
+        return `${plateDetail.name || 'The labware'} at location ${plateLocation} does not take a lid.`;
+    }
+    if (!plateDetail.is_lidded) {
+        return `The plate at location ${plateLocation} has no lid to remove.`;
+    }
+    if (destDetail) {
+        return `Lid destination ${lidDestination} is occupied by ${destDetail.name || 'labware'} — pick an empty location.`;
+    }
+    return null;
+}
+
+// Mirror of delidPreflightBlocker for the inverse operation.
+function relidPreflightBlocker(lidLocation, plateLocation, lidDetail, plateDetail) {
+    if (!lidLocation || !plateLocation) {
+        return 'Relid needs both a lid location and a plate location.';
+    }
+    if (lidLocation === plateLocation) {
+        return `The lid and plate locations must differ (both are ${lidLocation}).`;
+    }
+    if (!lidDetail) {
+        return `Location ${lidLocation} is empty — there is no lid to place.`;
+    }
+    const baseClass = String(lidDetail.base_class || '').toLowerCase();
+    const kind = String(lidDetail.labware_type || lidDetail.kind || '').toLowerCase();
+    if (baseClass !== 'lid' && kind !== 'lid') {
+        return `Location ${lidLocation} holds ${lidDetail.name || 'labware'}, not a lid.`;
+    }
+    if (!plateDetail) {
+        return `Location ${plateLocation} is empty — there is no plate to cover.`;
+    }
+    if (plateDetail.is_lidded) {
+        return `The plate at location ${plateLocation} already has a lid.`;
+    }
+    return null;
+}
+
 function updateProcessPlateHandlingLabels() {
     const baseLocation = parseInt(document.getElementById('stack-base-location')?.value || '0', 10);
     const sourceLocation = parseInt(document.getElementById('stack-source-location')?.value || '0', 10);
@@ -1107,10 +1176,12 @@ function updateProcessPlateHandlingLabels() {
     setText('mount-source-plate', describeDeckLocationLabware(mountSourceLocation));
     setText('unmount-source-plate', describeDeckLocationLabware(unmountSourceLocation));
     setText('unmount-destination-name', describeDeckLocationLabware(unmountDestinationLocation));
-    setText('delid-plate-name', describeDeckLocationLabware(plateLocation));
+    // Lid-aware on purpose: for these four fields the labware name alone
+    // cannot distinguish a plate that can be delidded from one that cannot.
+    setText('delid-plate-name', describeLidState(getDeckDetail(plateLocation)));
     setText('delid-destination-name', describeDeckLocationLabware(lidDestination));
-    setText('relid-lid-name', describeDeckLocationLabware(relidLidLocation));
-    setText('relid-plate-name', describeDeckLocationLabware(relidPlateLocation));
+    setText('relid-lid-name', describeLidState(getDeckDetail(relidLidLocation)));
+    setText('relid-plate-name', describeLidState(getDeckDetail(relidPlateLocation)));
     const procDetail = procLocation ? getDeckDetail(procLocation) : null;
     const stackThickness = Number(procDetail?.stack_height_mm || procDetail?.stack_height || procDetail?.height_mm || procDetail?.height || 0);
     setText('scan-stack-plate-name', describeDeckLocationLabware(procLocation));
@@ -4207,11 +4278,36 @@ document.getElementById('btn-exec-command')?.addEventListener('click', async () 
     } else {
         log(`Executing ${command} at location ${location}...`, 'info');
     }
+
+    // Refuse impossible lid moves here rather than letting the operator find
+    // out from a log line after dispatch. The backend enforces this too — this
+    // is about telling the user, not about trusting the browser.
+    const lidBlocker = command === 'Delid Plate'
+        ? delidPreflightBlocker(
+            params.plate_location, params.lid_destination,
+            getDeckDetail(params.plate_location), getDeckDetail(params.lid_destination))
+        : command === 'Relid Plate'
+            ? relidPreflightBlocker(
+                params.lid_location, params.plate_location,
+                getDeckDetail(params.lid_location), getDeckDetail(params.plate_location))
+            : null;
+    if (lidBlocker) {
+        log(`${command} cannot run: ${lidBlocker}`, 'error');
+        window.alert(`${command} cannot run.\n\n${lidBlocker}`);
+        return;
+    }
+
     const res = await apiCall('/api/execute_command', 'POST', params);
     if (!res) {
         const collision = parseProcessCollisionError(state.lastApiError);
         if (collision) {
             renderProcessCollisionModal(collision);
+        } else if (state.lastApiError) {
+            // Every command routed through here moves the instrument, so a
+            // refusal is not routine log traffic. apiCall has already logged
+            // it; surface it too, because a rejection the operator misses
+            // reads as "nothing happened" and invites a second attempt.
+            window.alert(`${command} was refused.\n\n${state.lastApiError}`);
         }
         return;
     }
