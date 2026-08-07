@@ -1,14 +1,14 @@
-# OpenBravo
+# pyBravo
 
 An open-source Python driver and web control system for Bravo liquid handling
 robots. It connects to the instrument over Ethernet or serial, exposes every
 motion and liquid-handling operation through a REST API and a browser UI, and
-runs complete pipetting workflows — with a full simulation mode so you can
+runs complete pipetting workflows. It has a full simulation mode so you can
 build and test protocols without touching hardware.
 
 ```bash
-git clone https://github.com/kelsorj/OpenBravo.git
-cd OpenBravo
+git clone https://github.com/kelsorj/pyBravo.git
+cd pyBravo
 ./scripts/start_pybravo.sh      # Windows: scripts\start_pybravo.bat
 ```
 
@@ -109,9 +109,7 @@ issue, follow [SECURITY.md](SECURITY.md).
 
 ## License
 
-Apache License 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
-
-OpenBravo is an independent project. It is not affiliated with, endorsed by, or
+pyBravo is an independent project. It is not affiliated with, endorsed by, or
 supported by Agilent Technologies, Inc. Product names are trademarks of their
 respective owners and are used only to identify the hardware this software
-works with. See [NOTICE](NOTICE) for the full trademark statement.
+runs. See [NOTICE](NOTICE) for the full trademark statement.
