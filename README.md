@@ -15,7 +15,7 @@ cd pyBravo
 Then open <http://localhost:8000>. Out of the box the server runs against a
 simulated robot, so this works on any machine.
 
-https://github.com/kelsorj/pyBravo/raw/main/pyBravo.mov
+<video src="https://github.com/kelsorj/pyBravo/raw/main/pyBravo.mov" controls muted title="pyBravo demo"></video>
 
 > [!WARNING]
 > This software drives a physical robot with enough force to break labware,
