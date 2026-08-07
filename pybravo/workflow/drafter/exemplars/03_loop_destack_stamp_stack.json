@@ -1,0 +1,48 @@
+{
+  "name": "Destack, Stamp, Restack (4 source plates, 2 destinations)",
+  "description": "Loop 4 times: destack source plate from stack at 9 to loc 6, tips-on, aspirate loc 6, dispense to loc 5 and loc 8, tips-off, restack at 9.",
+  "deck": {
+    "1": [{"labware_id": "lw-4914769d0af7", "name": "384 V11 ST10 Tip Box 10734.102", "kind": "sbs_plate", "base_class": "tip_box", "wells": 384, "is_lidded": false, "is_sealed": false}],
+    "2": [{"labware_id": "lw-4914769d0af7", "name": "384 V11 ST10 Tip Box 10734.102", "kind": "sbs_plate", "base_class": "tip_box", "wells": 384, "is_lidded": false, "is_sealed": false}],
+    "3": [{"labware_id": "lw-4914769d0af7", "name": "384 V11 ST10 Tip Box 10734.102", "kind": "sbs_plate", "base_class": "tip_box", "wells": 384, "is_lidded": false, "is_sealed": false}],
+    "4": [{"labware_id": "lw-4914769d0af7", "name": "384 V11 ST10 Tip Box 10734.102", "kind": "sbs_plate", "base_class": "tip_box", "wells": 384, "is_lidded": false, "is_sealed": false}],
+    "5": [{"labware_id": "lw-3918306f45b8", "name": "1536 Labcyte LP-0400 LDV", "kind": "sbs_plate", "base_class": "microplate", "wells": 1536, "is_lidded": false, "is_sealed": false}],
+    "8": [{"labware_id": "lw-3918306f45b8", "name": "1536 Labcyte LP-0400 LDV", "kind": "sbs_plate", "base_class": "microplate", "wells": 1536, "is_lidded": false, "is_sealed": false}],
+    "9": [
+      {"labware_id": "01KD4PYY7N4EG0E22P3QP1RHB9", "name": "384 Labcyte PP0200 PP sq flt", "kind": "sbs_plate", "base_class": "microplate", "wells": 384, "is_lidded": false, "is_sealed": false},
+      {"labware_id": "01KD4PYY7N4EG0E22P3QP1RHB9", "name": "384 Labcyte PP0200 PP sq flt", "kind": "sbs_plate", "base_class": "microplate", "wells": 384, "is_lidded": false, "is_sealed": false},
+      {"labware_id": "01KD4PYY7N4EG0E22P3QP1RHB9", "name": "384 Labcyte PP0200 PP sq flt", "kind": "sbs_plate", "base_class": "microplate", "wells": 384, "is_lidded": false, "is_sealed": false},
+      {"labware_id": "01KD4PYY7N4EG0E22P3QP1RHB9", "name": "384 Labcyte PP0200 PP sq flt", "kind": "sbs_plate", "base_class": "microplate", "wells": 384, "is_lidded": false, "is_sealed": false}
+    ]
+  },
+  "graph": {
+    "last_node_id": 11,
+    "last_link_id": 11,
+    "nodes": [
+      {"id": 1,  "type": "flow/Start",         "title": "Start",     "pos": [40, 40],   "properties": {}},
+      {"id": 2,  "type": "sensor/ScanStackHeight", "title": "Scan Stack Height", "pos": [40, 120], "properties": {"location": 9, "expected_count": 4, "store_as": ""}},
+      {"id": 3,  "type": "flow/Loop",          "title": "Loop x4",   "pos": [40, 220],  "properties": {"count": 4}},
+      {"id": 4,  "type": "plate/Destack",      "title": "9 to 6",    "pos": [260, 220], "properties": {"source_location": 9, "destination_location": 6, "target_location": 6}},
+      {"id": 5,  "type": "tips/TipsOn",        "title": "Tips On",   "pos": [260, 300], "properties": {"location": "iter:1,2,3,4", "head_mode": {"subset_type": "all_barrels", "subset_config": "back_left"}, "tip_anchor_row": 0, "tip_anchor_col": 0}},
+      {"id": 6,  "type": "liquid/Aspirate",    "title": "Aspirate 6","pos": [260, 380], "properties": {"location": 6, "volume": 10, "liquid_class": "D10 384 Head 1-10", "anchor": "A1"}},
+      {"id": 7,  "type": "liquid/Dispense",    "title": "Dispense 5","pos": [260, 460], "properties": {"location": 5, "volume": 5, "liquid_class": "D10 384 Head 1-10", "anchor": "iter:A1,A2,B1,B2"}},
+      {"id": 8,  "type": "liquid/Dispense",    "title": "Dispense 8","pos": [260, 540], "properties": {"location": 8, "volume": 5, "liquid_class": "D10 384 Head 1-10", "anchor": "iter:A1,A2,B1,B2"}},
+      {"id": 9,  "type": "tips/TipsOff",       "title": "Tips Off",  "pos": [260, 620], "properties": {"location": "iter:1,2,3,4"}},
+      {"id": 10, "type": "plate/Stack",        "title": "6 to 7",    "pos": [260, 700], "properties": {"source_location": 6, "base_location": 7, "target_location": 7}},
+      {"id": 11, "type": "flow/End",           "title": "End",       "pos": [40, 780],  "properties": {}}
+    ],
+    "links": [
+      {"id": 1,  "origin_id": 1,  "origin_slot": 0, "target_id": 2,  "target_slot": 0, "link_type": -1},
+      {"id": 2,  "origin_id": 2,  "origin_slot": 0, "target_id": 3,  "target_slot": 0, "link_type": -1},
+      {"id": 3,  "origin_id": 3,  "origin_slot": 0, "target_id": 4,  "target_slot": 0, "link_type": -1},
+      {"id": 4,  "origin_id": 4,  "origin_slot": 0, "target_id": 5,  "target_slot": 0, "link_type": -1},
+      {"id": 5,  "origin_id": 5,  "origin_slot": 0, "target_id": 6,  "target_slot": 0, "link_type": -1},
+      {"id": 6,  "origin_id": 6,  "origin_slot": 0, "target_id": 7,  "target_slot": 0, "link_type": -1},
+      {"id": 7,  "origin_id": 7,  "origin_slot": 0, "target_id": 8,  "target_slot": 0, "link_type": -1},
+      {"id": 8,  "origin_id": 8,  "origin_slot": 0, "target_id": 9,  "target_slot": 0, "link_type": -1},
+      {"id": 9,  "origin_id": 9,  "origin_slot": 0, "target_id": 10, "target_slot": 0, "link_type": -1},
+      {"id": 10, "origin_id": 3,  "origin_slot": 1, "target_id": 11, "target_slot": 0, "link_type": -1}
+    ]
+  },
+  "library": ""
+}

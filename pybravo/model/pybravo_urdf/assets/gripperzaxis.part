@@ -1,0 +1,13 @@
+{
+    "configuration": "default",
+    "documentId": "02acf2647518895d2d24800c",
+    "documentMicroversion": "8376ca455095558c26fd15d5",
+    "elementId": "dff5616116d0474f018a0000",
+    "fullConfiguration": "default",
+    "id": "MVoP4TeDUy2zTOayl",
+    "isStandardContent": false,
+    "name": "GripperZAxis <1>",
+    "partId": "JHD",
+    "suppressed": false,
+    "type": "Part"
+}

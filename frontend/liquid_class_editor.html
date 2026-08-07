@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liquid Class Editor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg:#efefef; --panel:#f8f8f8; --border:#c7c7c7; --text:#1f1f1f; --muted:#666; --accent:#2e73d8; --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif; }
+        * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+        .app { display:grid; grid-template-columns:260px 1fr 280px; gap:12px; padding:10px; min-height:100vh; align-items:start; }
+        .panel { border:1px solid var(--border); background:var(--panel); padding:10px; border-radius:4px; align-self:start; }
+        .listbox,.techbox { border:1px solid var(--border); background:#fff; min-height:420px; overflow:auto; }
+        .row,.tech-row { padding:7px 8px; border-bottom:1px solid #ececec; cursor:pointer; font-size:13px; }
+        .row.active,.tech-row.active { background:var(--accent); color:#fff; }
+        .row small { display:block; opacity:.75; font-size:11px; }
+        .context,.grid2 { display:grid; gap:8px; } .context { grid-template-columns:1fr 1fr 1fr; margin-bottom:10px; } .grid2 { grid-template-columns:1fr 1fr; }
+        label { display:block; font-size:12px; color:var(--muted); margin-bottom:4px; }
+        input,textarea,select,button { font:inherit; }
+        input,textarea,select { width:100%; padding:6px 8px; border:1px solid var(--border); background:#fff; border-radius:2px; }
+        textarea { min-height:120px; resize:vertical; }
+        button { padding:6px 12px; border:1px solid #aeb4bd; background:#ececec; border-radius:2px; cursor:pointer; }
+        button.primary { background:#e2ecff; border-color:#8faee7; } button.danger { color:#9d1e1e; }
+        .btns { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+        .tabs { display:flex; gap:4px; margin:10px 0; } .tabs button.active { background:#d7e6ff; border-color:#8faee7; }
+        .tab { display:none; } .tab.active { display:block; }
+        .group { border:1px solid var(--border); background:#fff; padding:10px; min-height:170px; }
+        .group h3 { margin:0 0 10px; font-size:13px; }
+        .params { display:grid; grid-template-columns:90px 1fr; gap:8px; align-items:center; }
+        .hint,.status { font-size:12px; color:var(--muted); } .mono { font-family:var(--mono); }
+        .eq-wrap { display:grid; grid-template-columns: 1fr 220px; gap:10px; }
+        .eq-graph { border:1px solid var(--border); background:#fff; position:relative; height:280px; user-select:none; }
+        .eq-side { border:1px solid var(--border); background:#fff; padding:10px; }
+        .eq-points { font-size:12px; max-height:180px; overflow:auto; margin-top:8px; }
+        .eq-point { display:flex; justify-content:space-between; gap:8px; padding:4px 0; border-bottom:1px solid #ececec; }
+        .eq-point button { padding:2px 6px; font-size:11px; }
+        .context-bar { display:flex; justify-content:flex-end; margin-bottom:8px; min-height:16px; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="panel">
+            <div class="hint">Liquid Entries</div>
+            <div class="listbox" id="class-list"></div>
+            <div class="btns">
+                <button id="new-class">New liquid entry…</button>
+                <button id="rename-class">Rename liquid entry…</button>
+                <button id="duplicate-class">Duplicate liquid class</button>
+                <button class="danger" id="delete-class">Delete liquid entry</button>
+            </div>
+        </div>
+        <div class="panel">
+            <div class="context-bar"><div class="hint" id="active-context">Loading context…</div></div>
+            <div class="context" style="grid-template-columns:1fr 1fr 1fr 1fr">
+                <div><label>Machine ID</label><input id="ctx-machine-id" type="text"></div>
+                <div><label>Head Type</label><input id="ctx-head-type" type="text"></div>
+                <div><label>Tip</label><select id="ctx-tip-id"></select></div>
+                <div><label>Tip Volume</label><input id="ctx-tip-capacity" type="number" min="0" step="0.1" readonly></div>
+            </div>
+            <div class="context" style="grid-template-columns:1fr 1fr">
+                <div><label>Name</label><input id="lc-name" type="text"></div>
+                <div><label>Notes</label><input id="lc-description" type="text"></div>
+            </div>
+            <div class="tabs">
+                <button class="active" data-tab="asp">Aspirate</button>
+                <button data-tab="disp">Dispense</button>
+                <button data-tab="eq">Equation</button>
+            </div>
+            <div class="tab active" id="tab-asp">
+                <div class="grid2">
+                    <div class="group"><h3>Aspirate Parameters</h3><div class="params">
+                        <label>Velocity</label><input id="asp-w-velocity" type="number" step="0.1">
+                        <div></div><div class="hint">(0.1 - 500 µL/s)</div>
+                        <label>Accel</label><input id="asp-w-accel" type="number" step="0.1">
+                        <div></div><div class="hint">(1 - 1000 µL/s²)</div>
+                        <label>Post delay</label><input id="asp-post-delay" type="number" step="1">
+                        <div></div><div class="hint">(0 - 300000 ms)</div>
+                    </div><div class="btns"><button id="copy-to-dispense">Copy values to dispense</button></div></div>
+                    <div class="group"><h3>Z-axis Aspirate</h3><div class="params">
+                        <label>Vel in</label><input id="asp-z-in-velocity" type="number" step="0.1">
+                        <div></div><div class="hint">(1 - 250 mm/s)</div>
+                        <label>Accel in</label><input id="asp-z-in-accel" type="number" step="0.1">
+                        <div></div><div class="hint">(1 - 2000 mm/s²)</div>
+                        <label>Vel out</label><input id="asp-z-out-velocity" type="number" step="0.1">
+                        <div></div><div class="hint">(1 - 250 mm/s)</div>
+                        <label>Accel out</label><input id="asp-z-out-accel" type="number" step="0.1">
+                        <div></div><div class="hint">(1 - 2000 mm/s²)</div>
+                    </div></div>
+                </div>
+            </div>
+            <div class="tab" id="tab-disp">
+                <div class="grid2">
+                    <div class="group"><h3>Dispense Parameters</h3><div class="params">
+                        <label>Velocity</label><input id="disp-w-velocity" type="number" step="0.1">
+                        <div></div><div class="hint">(0.1 - 500 µL/s)</div>
+                        <label>Accel</label><input id="disp-w-accel" type="number" step="0.1">
+                        <div></div><div class="hint">(1 - 1000 µL/s²)</div>
+                        <label>Post delay</label><input id="disp-post-delay" type="number" step="1">
+                        <div></div><div class="hint">(0 - 300000 ms)</div>
+                    </div><div class="btns"><button id="copy-to-aspirate">Copy values to aspirate</button></div></div>
+                    <div class="group"><h3>Z-axis Dispense</h3><div class="params">
+                        <label>Vel in</label><input id="disp-z-in-velocity" type="number" step="0.1">
+                        <div></div><div class="hint">(1 - 250 mm/s)</div>
+                        <label>Accel in</label><input id="disp-z-in-accel" type="number" step="0.1">
+                        <div></div><div class="hint">(1 - 2000 mm/s²)</div>
+                        <label>Vel out</label><input id="disp-z-out-velocity" type="number" step="0.1">
+                        <div></div><div class="hint">(1 - 250 mm/s)</div>
+                        <label>Accel out</label><input id="disp-z-out-accel" type="number" step="0.1">
+                        <div></div><div class="hint">(1 - 2000 mm/s²)</div>
+                    </div></div>
+                </div>
+            </div>
+            <div class="tab" id="tab-eq">
+                <div class="eq-wrap">
+                    <div class="eq-graph" id="eq-graph"></div>
+                    <div class="eq-side">
+                        <div class="hint">X axis is desired volume. Y axis is commanded volume. Right click to add a point on the curve. Drag points vertically to tune commanded volume.</div>
+                        <div class="eq-points" id="eq-points"></div>
+                        <div class="btns">
+                            <button id="eq-reset">Reset to identity</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="btns">
+                <button class="primary" id="save-class">Save changes</button>
+                <button id="save-as-class">Save changes as…</button>
+                <button id="reload-classes">Reload</button>
+            </div>
+            <div class="status" id="class-status"></div>
+        </div>
+        <div class="panel">
+            <div class="hint">Pipette Techniques</div>
+            <div class="techbox" id="tech-list"></div>
+            <div class="btns">
+                <button id="new-tech">New technique…</button>
+                <button class="danger" id="delete-tech">Delete technique</button>
+            </div>
+            <div style="margin-top:10px"><label>Name</label><input id="tech-name" type="text"></div>
+            <div style="margin-top:8px"><label>Description</label><input id="tech-description" type="text"></div>
+            <div style="margin-top:8px"><label>Radius (mm)</label><input id="tech-radius" type="number" step="0.1" min="0"></div>
+            <div style="margin-top:8px"><label>Segments</label><input id="tech-segments" type="number" step="1" min="4"></div>
+            <div style="margin-top:8px"><label>Z phase</label><select id="tech-z-phase"><option value="enter">Enter only</option><option value="exit">Exit only</option><option value="both">Both</option></select></div>
+            <div style="margin-top:10px"><label><input id="tech-clockwise" type="checkbox" checked> Clockwise</label></div>
+            <div><label><input id="tech-aspirate" type="checkbox" checked> Apply on aspirate</label></div>
+            <div><label><input id="tech-dispense" type="checkbox"> Apply on dispense</label></div>
+            <div class="btns"><button class="primary" id="save-tech">Save technique</button><button id="reload-techs">Reload</button></div>
+            <div class="status" id="tech-status"></div>
+        </div>
+    </div>
+    <script>
+        const apiBase = `${location.protocol}//${location.host}`;
+        const state = { context:{ machine_id:'SIM_BRAVO', head_type:'HT_96_D_70', tip_id:'', tip_capacity_ul:0 }, tips:[], classes:[], techniques:[], selectedClassId:null, selectedTechniqueId:null, controlPoints:[], draggingPointIndex:null };
+        async function apiCall(path, method='GET', body=null) {
+            const options = { method, headers:{} };
+            let url = `${apiBase}${path}`;
+            if (method === 'GET' && body) {
+                const params = new URLSearchParams();
+                Object.entries(body).forEach(([k,v]) => { if (v !== '' && v != null) params.set(k, String(v)); });
+                url += `?${params.toString()}`;
+            } else if (body) {
+                options.headers['Content-Type'] = 'application/json';
+                options.body = JSON.stringify(body);
+            }
+            const res = await fetch(url, options);
+            if (!res.ok) throw new Error(await res.text() || `${res.status}`);
+            return res.status === 204 ? null : res.json();
+        }
+        function setStatus(id, message, bad=false) { const el = document.getElementById(id); el.textContent = message || ''; el.style.color = bad ? '#9d1e1e' : '#666'; }
+        function selectedTip() {
+            const tipId = document.getElementById('ctx-tip-id')?.value || '';
+            return state.tips.find(item => String(item.tip_id || '') === String(tipId)) || null;
+        }
+        function syncTipCapacityFromSelection() {
+            const tip = selectedTip();
+            document.getElementById('ctx-tip-capacity').value = Number(tip?.capacity_ul || 0);
+        }
+        function context() {
+            const tip = selectedTip();
+            return {
+                machine_id: document.getElementById('ctx-machine-id').value.trim() || 'SIM_BRAVO',
+                head_type: document.getElementById('ctx-head-type').value.trim() || 'HT_96_D_70',
+                tip_id: tip?.tip_id || '',
+                tip_capacity_ul: Number(tip?.capacity_ul || document.getElementById('ctx-tip-capacity').value || 0),
+            };
+        }
+        function defaultControlPoints(maxVolume = null) {
+            const capSource = maxVolume ?? document.getElementById('ctx-tip-capacity').value ?? state.context.tip_capacity_ul ?? 1;
+            const cap = Math.max(1, Number(capSource || 1));
+            state.controlPoints = [{ desired_ul:0, commanded_ul:0 }, { desired_ul:cap, commanded_ul:cap }];
+        }
+        function defaultClassFields() {
+            document.getElementById('lc-name').value = '';
+            document.getElementById('lc-description').value = '';
+            [['asp-w-velocity',100],['asp-w-accel',500],['asp-post-delay',0],['asp-z-in-velocity',100],['asp-z-in-accel',500],['asp-z-out-velocity',100],['asp-z-out-accel',500],['disp-w-velocity',40],['disp-w-accel',8],['disp-post-delay',500],['disp-z-in-velocity',40],['disp-z-in-accel',250],['disp-z-out-velocity',5],['disp-z-out-accel',5]].forEach(([id,v]) => document.getElementById(id).value = v);
+            defaultControlPoints();
+            renderEquationEditor();
+        }
+        function defaultTechniqueFields() {
+            document.getElementById('tech-name').value = '';
+            document.getElementById('tech-description').value = '';
+            document.getElementById('tech-radius').value = 0.5;
+            document.getElementById('tech-segments').value = 12;
+            document.getElementById('tech-z-phase').value = 'both';
+            document.getElementById('tech-clockwise').checked = true;
+            document.getElementById('tech-aspirate').checked = true;
+            document.getElementById('tech-dispense').checked = false;
+        }
+        function copyAspirateToDispense() {
+            [['asp-w-velocity','disp-w-velocity'],['asp-w-accel','disp-w-accel'],['asp-post-delay','disp-post-delay'],['asp-z-in-velocity','disp-z-in-velocity'],['asp-z-in-accel','disp-z-in-accel'],['asp-z-out-velocity','disp-z-out-velocity'],['asp-z-out-accel','disp-z-out-accel']]
+                .forEach(([fromId, toId]) => { document.getElementById(toId).value = document.getElementById(fromId).value; });
+        }
+        function copyDispenseToAspirate() {
+            [['disp-w-velocity','asp-w-velocity'],['disp-w-accel','asp-w-accel'],['disp-post-delay','asp-post-delay'],['disp-z-in-velocity','asp-z-in-velocity'],['disp-z-in-accel','asp-z-in-accel'],['disp-z-out-velocity','asp-z-out-velocity'],['disp-z-out-accel','asp-z-out-accel']]
+                .forEach(([fromId, toId]) => { document.getElementById(toId).value = document.getElementById(fromId).value; });
+        }
+        function renderClasses() {
+            const root = document.getElementById('class-list'); root.innerHTML = '';
+            state.classes.forEach(item => {
+                const row = document.createElement('div');
+                row.className = `row${item.liquid_class_id === state.selectedClassId ? ' active' : ''}`;
+                row.innerHTML = `${item.name}<small>${item.machine_id} · ${item.head_type} · ${item.tip_id || `${item.tip_capacity_ul} uL`}</small>`;
+                row.onclick = () => { state.selectedClassId = item.liquid_class_id; fillClass(item); renderClasses(); };
+                root.appendChild(row);
+            });
+        }
+        function renderTechniques() {
+            const root = document.getElementById('tech-list'); root.innerHTML = '';
+            state.techniques.forEach(item => {
+                const row = document.createElement('div');
+                row.className = `tech-row${item.technique_id === state.selectedTechniqueId ? ' active' : ''}`;
+                row.textContent = item.name;
+                row.onclick = () => { state.selectedTechniqueId = item.technique_id; fillTechnique(item); renderTechniques(); };
+                root.appendChild(row);
+            });
+        }
+        function fillClass(item) {
+            if (!item) { defaultClassFields(); return; }
+            document.getElementById('ctx-machine-id').value = item.machine_id || '';
+            document.getElementById('ctx-head-type').value = item.head_type || '';
+            document.getElementById('ctx-tip-id').value = item.tip_id || '';
+            document.getElementById('ctx-tip-capacity').value = item.tip_capacity_ul ?? 0;
+            document.getElementById('lc-name').value = item.name || '';
+            document.getElementById('lc-description').value = item.description || '';
+            [['asp-w-velocity',item.aspirate?.w_velocity_ul_s],['asp-w-accel',item.aspirate?.w_acceleration_ul_s2],['asp-post-delay',item.aspirate?.post_delay_ms],['asp-z-in-velocity',item.aspirate?.z_in_velocity_mm_s],['asp-z-in-accel',item.aspirate?.z_in_acceleration_mm_s2],['asp-z-out-velocity',item.aspirate?.z_out_velocity_mm_s],['asp-z-out-accel',item.aspirate?.z_out_acceleration_mm_s2],['disp-w-velocity',item.dispense?.w_velocity_ul_s],['disp-w-accel',item.dispense?.w_acceleration_ul_s2],['disp-post-delay',item.dispense?.post_delay_ms],['disp-z-in-velocity',item.dispense?.z_in_velocity_mm_s],['disp-z-in-accel',item.dispense?.z_in_acceleration_mm_s2],['disp-z-out-velocity',item.dispense?.z_out_velocity_mm_s],['disp-z-out-accel',item.dispense?.z_out_acceleration_mm_s2]].forEach(([id,v]) => document.getElementById(id).value = v ?? '');
+            state.controlPoints = Array.isArray(item.equation?.control_points) && item.equation.control_points.length
+                ? item.equation.control_points.map(p => ({ desired_ul:Number(p.desired_ul||0), commanded_ul:Number(p.commanded_ul||0) }))
+                : [{ desired_ul:0, commanded_ul:0 }, { desired_ul:Number(item.tip_capacity_ul||0), commanded_ul:Number(item.tip_capacity_ul||0) }];
+            renderEquationEditor();
+        }
+        function classMatchesContext(item, ctx) {
+            if (!item) return false;
+            if (String(item.machine_id || '') !== String(ctx.machine_id || '')) return false;
+            if (String(item.head_type || '') !== String(ctx.head_type || '')) return false;
+            const itemTipId = String(item.tip_id || '');
+            const ctxTipId = String(ctx.tip_id || '');
+            if (itemTipId && ctxTipId) return itemTipId === ctxTipId;
+            const itemCap = Number(item.tip_capacity_ul || 0);
+            const ctxCap = Number(ctx.tip_capacity_ul || 0);
+            return itemCap > 0 && ctxCap > 0 && Math.abs(itemCap - ctxCap) < 1e-6;
+        }
+        function fillTechnique(item) {
+            if (!item) { defaultTechniqueFields(); return; }
+            document.getElementById('tech-name').value = item.name || '';
+            document.getElementById('tech-description').value = item.description || '';
+            document.getElementById('tech-radius').value = item.radius_mm ?? 0.5;
+            document.getElementById('tech-segments').value = item.segments ?? 12;
+            document.getElementById('tech-z-phase').value = item.z_phase || 'both';
+            document.getElementById('tech-clockwise').checked = !!item.clockwise;
+            document.getElementById('tech-aspirate').checked = !!item.apply_on_aspirate;
+            document.getElementById('tech-dispense').checked = !!item.apply_on_dispense;
+        }
+        function sortControlPoints() {
+            state.controlPoints.sort((a, b) => Number(a.desired_ul) - Number(b.desired_ul));
+        }
+        function currentMaxVolume() {
+            return Math.max(1, Number(document.getElementById('ctx-tip-capacity').value || state.context.tip_capacity_ul || 1));
+        }
+        function currentCommandMaxVolume() {
+            const tipMax = currentMaxVolume();
+            const highestCommand = Math.max(...state.controlPoints.map(point => Number(point.commanded_ul) || 0), tipMax);
+            return Math.max(tipMax + 1, tipMax * 1.1, highestCommand * 1.05);
+        }
+        function pointToSvg(point, width, height, pad, maxVolume, commandMaxVolume) {
+            const x = pad + (Number(point.desired_ul) / maxVolume) * (width - pad * 2);
+            const y = height - pad - (Number(point.commanded_ul) / commandMaxVolume) * (height - pad * 2);
+            return { x, y };
+        }
+        function svgToDesired(x, width, pad, maxVolume) {
+            const usable = width - pad * 2;
+            const clamped = Math.max(pad, Math.min(width - pad, x));
+            return ((clamped - pad) / usable) * maxVolume;
+        }
+        function svgToCommanded(y, height, pad, commandMaxVolume) {
+            const usable = height - pad * 2;
+            const clamped = Math.max(pad, Math.min(height - pad, y));
+            return ((height - pad - clamped) / usable) * commandMaxVolume;
+        }
+        function renderEquationEditor() {
+            sortControlPoints();
+            const graph = document.getElementById('eq-graph');
+            const list = document.getElementById('eq-points');
+            const width = graph.clientWidth || 420;
+            const height = graph.clientHeight || 280;
+            const pad = 28;
+            const maxVolume = currentMaxVolume();
+            const commandMaxVolume = currentCommandMaxVolume();
+            const pathPoints = state.controlPoints.map(point => pointToSvg(point, width, height, pad, maxVolume, commandMaxVolume));
+            const identityA = pointToSvg({ desired_ul: 0, commanded_ul: 0 }, width, height, pad, maxVolume, commandMaxVolume);
+            const identityB = pointToSvg({ desired_ul: maxVolume, commanded_ul: maxVolume }, width, height, pad, maxVolume, commandMaxVolume);
+            const pathData = pathPoints.map((pt, index) => `${index === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`).join(' ');
+            const circles = pathPoints.map((pt, index) => `<circle data-index="${index}" cx="${pt.x}" cy="${pt.y}" r="5" fill="#2e73d8" stroke="#ffffff" stroke-width="2" style="cursor:move" />`).join('');
+            graph.innerHTML = `
+                <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+                    <rect x="0" y="0" width="${width}" height="${height}" fill="#fff"/>
+                    <line x1="${pad}" y1="${height - pad}" x2="${width - pad}" y2="${height - pad}" stroke="#888"/>
+                    <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${height - pad}" stroke="#888"/>
+                    <line x1="${identityA.x}" y1="${identityA.y}" x2="${identityB.x}" y2="${identityB.y}" stroke="#c6ccd6" stroke-dasharray="4 4"/>
+                    <path d="${pathData}" fill="none" stroke="#2e73d8" stroke-width="3"/>
+                    ${circles}
+                    <text x="${width / 2}" y="${height - 6}" text-anchor="middle" font-size="11" fill="#666">Desired Volume (uL)</text>
+                    <text x="12" y="${height / 2}" text-anchor="middle" font-size="11" fill="#666" transform="rotate(-90 12 ${height / 2})">Commanded Volume (uL)</text>
+                    <text x="${width - pad}" y="${height - pad + 16}" text-anchor="end" font-size="10" fill="#666">${maxVolume.toFixed(1)}</text>
+                    <text x="${pad - 6}" y="${pad + 4}" text-anchor="end" font-size="10" fill="#666">${commandMaxVolume.toFixed(1)}</text>
+                </svg>`;
+            list.innerHTML = state.controlPoints.map((point, index) => `
+                <div class="eq-point">
+                    <span>${Number(point.commanded_ul).toFixed(1)} → ${Number(point.desired_ul).toFixed(1)} uL</span>
+                    <button data-delete-index="${index}" ${index === 0 || index === state.controlPoints.length - 1 ? 'disabled' : ''}>Delete</button>
+                </div>`).join('');
+            graph.querySelectorAll('circle[data-index]').forEach(node => {
+                node.addEventListener('mousedown', (event) => {
+                    state.draggingPointIndex = Number(node.dataset.index);
+                    event.preventDefault();
+                });
+            });
+            graph.oncontextmenu = (event) => {
+                event.preventDefault();
+                const rect = graph.getBoundingClientRect();
+                const desired = svgToDesired(event.clientX - rect.left, width, pad, maxVolume);
+                const commanded = svgToCommanded(event.clientY - rect.top, height, pad, commandMaxVolume);
+                state.controlPoints.push({
+                    desired_ul: Math.max(0, Math.min(maxVolume, desired)),
+                    commanded_ul: Math.max(0, Math.min(commandMaxVolume, commanded)),
+                });
+                renderEquationEditor();
+            };
+            list.querySelectorAll('button[data-delete-index]').forEach(node => {
+                node.addEventListener('click', () => {
+                    state.controlPoints.splice(Number(node.dataset.deleteIndex), 1);
+                    renderEquationEditor();
+                });
+            });
+        }
+        function classPayload() {
+            return {
+                ...context(),
+                name: document.getElementById('lc-name').value.trim(),
+                description: document.getElementById('lc-description').value.trim(),
+                aspirate: { w_velocity_ul_s:Number(document.getElementById('asp-w-velocity').value||0), w_acceleration_ul_s2:Number(document.getElementById('asp-w-accel').value||0), post_delay_ms:Number(document.getElementById('asp-post-delay').value||0), z_in_velocity_mm_s:Number(document.getElementById('asp-z-in-velocity').value||0), z_in_acceleration_mm_s2:Number(document.getElementById('asp-z-in-accel').value||0), z_out_velocity_mm_s:Number(document.getElementById('asp-z-out-velocity').value||0), z_out_acceleration_mm_s2:Number(document.getElementById('asp-z-out-accel').value||0) },
+                dispense: { w_velocity_ul_s:Number(document.getElementById('disp-w-velocity').value||0), w_acceleration_ul_s2:Number(document.getElementById('disp-w-accel').value||0), post_delay_ms:Number(document.getElementById('disp-post-delay').value||0), z_in_velocity_mm_s:Number(document.getElementById('disp-z-in-velocity').value||0), z_in_acceleration_mm_s2:Number(document.getElementById('disp-z-in-accel').value||0), z_out_velocity_mm_s:Number(document.getElementById('disp-z-out-velocity').value||0), z_out_acceleration_mm_s2:Number(document.getElementById('disp-z-out-accel').value||0) },
+                equation: { control_points: state.controlPoints.map(point => ({ desired_ul:Number(point.desired_ul), commanded_ul:Number(point.commanded_ul) })) }
+            };
+        }
+        function techniquePayload() {
+            return { name:document.getElementById('tech-name').value.trim(), description:document.getElementById('tech-description').value.trim(), motion_type:'circular_orbit', radius_mm:Number(document.getElementById('tech-radius').value||0), segments:Number(document.getElementById('tech-segments').value||12), clockwise:document.getElementById('tech-clockwise').checked, apply_on_aspirate:document.getElementById('tech-aspirate').checked, apply_on_dispense:document.getElementById('tech-dispense').checked, z_phase:document.getElementById('tech-z-phase').value };
+        }
+        async function loadTipOptions(headType, selectedTipId='') {
+            const res = await apiCall('/api/tips', 'GET', { head_type: headType || 'HT_96_D_70' });
+            state.tips = res.tips || [];
+            const select = document.getElementById('ctx-tip-id');
+            if (!select) return;
+            select.innerHTML = state.tips.map(item => `<option value="${item.tip_id}">${item.label}</option>`).join('');
+            const effective = selectedTipId || state.context.tip_id || state.tips[0]?.tip_id || '';
+            if (effective) select.value = effective;
+            syncTipCapacityFromSelection();
+        }
+        async function loadContext() {
+            const res = await apiCall('/api/liquid_context');
+            state.context = { machine_id:res.machine_id||'SIM_BRAVO', head_type:res.head_type||'HT_96_D_70', tip_id:res.tip_id||'', tip_capacity_ul:Number(res.tip_capacity_ul||0) };
+            document.getElementById('ctx-machine-id').value = state.context.machine_id;
+            document.getElementById('ctx-head-type').value = state.context.head_type;
+            await loadTipOptions(state.context.head_type, state.context.tip_id);
+            document.getElementById('ctx-tip-capacity').value = state.context.tip_capacity_ul;
+            document.getElementById('active-context').textContent = `Active: ${state.context.machine_id} · ${state.context.head_type} · ${state.context.tip_id || `${state.context.tip_capacity_ul} uL`}`;
+        }
+        async function loadClasses() {
+            const ctx = context();
+            const res = await apiCall('/api/liquid_classes', 'GET', { all: true });
+            state.classes = res.liquid_classes || [];
+            if (res.context) {
+                document.getElementById('active-context').textContent = `Active: ${res.context.machine_id} · ${res.context.head_type} · ${res.context.tip_id || `${Number(res.context.tip_capacity_ul || 0)} uL`}`;
+            }
+            if (!state.classes.some(v => v.liquid_class_id === state.selectedClassId)) {
+                const exactMatches = state.classes.filter(item => classMatchesContext(item, ctx));
+                state.selectedClassId = exactMatches[0]?.liquid_class_id || state.classes[0]?.liquid_class_id || null;
+            }
+            renderClasses();
+            const selected = state.classes.find(v => v.liquid_class_id === state.selectedClassId);
+            if (selected) {
+                fillClass(selected);
+                setStatus('class-status', '');
+            } else {
+                defaultClassFields();
+                syncTipCapacityFromSelection();
+                renderEquationEditor();
+                setStatus('class-status', state.classes.length ? 'No liquid class is currently selected.' : 'No liquid classes found.');
+            }
+        }
+        async function loadTechniques() {
+            const res = await apiCall('/api/pipette_techniques', 'GET');
+            state.techniques = res.pipette_techniques || [];
+            if (!state.techniques.some(v => v.technique_id === state.selectedTechniqueId)) state.selectedTechniqueId = state.techniques[0]?.technique_id || null;
+            renderTechniques(); fillTechnique(state.techniques.find(v => v.technique_id === state.selectedTechniqueId));
+        }
+        async function saveClass(saveAs=false) {
+            try {
+                const payload = classPayload();
+                if (saveAs && payload.name) payload.name = `${payload.name} copy`;
+                if (state.selectedClassId && !saveAs) await apiCall(`/liquid-classes/${state.selectedClassId}`, 'PATCH', payload);
+                else { const res = await apiCall('/liquid-classes', 'POST', payload); state.selectedClassId = res.liquid_class?.liquid_class_id || null; }
+                await loadClasses(); setStatus('class-status', 'Liquid class saved.');
+            } catch (e) { setStatus('class-status', e.message, true); }
+        }
+        async function duplicateSelectedClass() {
+            try {
+                const payload = classPayload();
+                if (!payload.name) {
+                    setStatus('class-status', 'Select or enter a liquid class first.', true);
+                    return;
+                }
+                payload.name = `${payload.name} copy`;
+                const res = await apiCall('/liquid-classes', 'POST', payload);
+                state.selectedClassId = res.liquid_class?.liquid_class_id || null;
+                await loadClasses();
+                setStatus('class-status', 'Liquid class duplicated.');
+            } catch (e) { setStatus('class-status', e.message, true); }
+        }
+        async function saveTechnique() {
+            try {
+                const payload = techniquePayload();
+                if (state.selectedTechniqueId) await apiCall(`/pipette-techniques/${state.selectedTechniqueId}`, 'PATCH', payload);
+                else { const res = await apiCall('/pipette-techniques', 'POST', payload); state.selectedTechniqueId = res.pipette_technique?.technique_id || null; }
+                await loadTechniques(); setStatus('tech-status', 'Technique saved.');
+            } catch (e) { setStatus('tech-status', e.message, true); }
+        }
+        document.querySelectorAll('.tabs button').forEach(btn => btn.onclick = () => { document.querySelectorAll('.tabs button').forEach(n => n.classList.remove('active')); document.querySelectorAll('.tab').forEach(n => n.classList.remove('active')); btn.classList.add('active'); document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active'); });
+        document.getElementById('new-class').onclick = () => { state.selectedClassId = null; defaultClassFields(); renderClasses(); };
+        document.getElementById('rename-class').onclick = () => document.getElementById('lc-name').focus();
+        document.getElementById('duplicate-class').onclick = duplicateSelectedClass;
+        document.getElementById('delete-class').onclick = async () => { if (!state.selectedClassId) return; try { await apiCall(`/liquid-classes/${state.selectedClassId}`, 'DELETE'); state.selectedClassId = null; await loadClasses(); defaultClassFields(); setStatus('class-status', 'Liquid class deleted.'); } catch (e) { setStatus('class-status', e.message, true); } };
+        document.getElementById('save-class').onclick = () => saveClass(false);
+        document.getElementById('save-as-class').onclick = () => saveClass(true);
+        document.getElementById('reload-classes').onclick = loadClasses;
+        document.getElementById('copy-to-dispense').onclick = copyAspirateToDispense;
+        document.getElementById('copy-to-aspirate').onclick = copyDispenseToAspirate;
+        document.getElementById('new-tech').onclick = () => { state.selectedTechniqueId = null; defaultTechniqueFields(); renderTechniques(); };
+        document.getElementById('delete-tech').onclick = async () => { if (!state.selectedTechniqueId) return; try { await apiCall(`/pipette-techniques/${state.selectedTechniqueId}`, 'DELETE'); state.selectedTechniqueId = null; await loadTechniques(); defaultTechniqueFields(); setStatus('tech-status', 'Technique deleted.'); } catch (e) { setStatus('tech-status', e.message, true); } };
+        document.getElementById('save-tech').onclick = saveTechnique;
+        document.getElementById('reload-techs').onclick = loadTechniques;
+        document.getElementById('ctx-machine-id').addEventListener('change', () => {
+            setStatus('class-status', 'Editing liquid class context. Click Reload to refresh the list for this context.');
+        });
+        document.getElementById('ctx-head-type').addEventListener('change', async () => {
+            await loadTipOptions(document.getElementById('ctx-head-type').value || 'HT_96_D_70', '');
+            syncTipCapacityFromSelection();
+            defaultControlPoints();
+            renderEquationEditor();
+            setStatus('class-status', 'Editing liquid class context. Click Reload to refresh the list for this context.');
+        });
+        document.getElementById('ctx-tip-id').addEventListener('change', () => {
+            syncTipCapacityFromSelection();
+            defaultControlPoints();
+            renderEquationEditor();
+            setStatus('class-status', 'Editing liquid class context. Click Reload to refresh the list for this context.');
+        });
+        document.getElementById('eq-reset').onclick = () => { defaultControlPoints(); renderEquationEditor(); };
+        document.addEventListener('mousemove', (event) => {
+            if (state.draggingPointIndex == null) return;
+            const graph = document.getElementById('eq-graph');
+            const rect = graph.getBoundingClientRect();
+            const width = graph.clientWidth || 420;
+            const height = graph.clientHeight || 280;
+            const pad = 28;
+            const maxVolume = currentMaxVolume();
+            const commandMaxVolume = currentCommandMaxVolume();
+            const index = state.draggingPointIndex;
+            const point = state.controlPoints[index];
+            point.commanded_ul = Math.max(0, Math.min(commandMaxVolume, svgToCommanded(event.clientY - rect.top, height, pad, commandMaxVolume)));
+            if (index !== 0 && index !== state.controlPoints.length - 1) {
+                const leftBound = Number(state.controlPoints[index - 1].desired_ul) + 0.05;
+                const rightBound = Number(state.controlPoints[index + 1].desired_ul) - 0.05;
+                point.desired_ul = Math.max(leftBound, Math.min(rightBound, svgToDesired(event.clientX - rect.left, width, pad, maxVolume)));
+            }
+            renderEquationEditor();
+        });
+        document.addEventListener('mouseup', () => { state.draggingPointIndex = null; });
+        (async () => { defaultClassFields(); defaultTechniqueFields(); await loadContext(); await loadClasses(); await loadTechniques(); })().catch(e => { setStatus('class-status', e.message, true); setStatus('tech-status', e.message, true); });
+    </script>
+</body>
+</html>

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tip Editor</title>
+    <style>
+        :root { --bg:#11131a; --panel:#191c25; --panel2:#202430; --border:#2f3544; --text:#eef2ff; --muted:#98a2b3; --accent:#6ea8ff; --danger:#ff7070; }
+        * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,sans-serif; }
+        .app { display:grid; grid-template-columns:300px minmax(0, 1fr); gap:16px; min-height:100vh; padding:16px; }
+        .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:14px; }
+        h1 { margin:0 0 8px; font-size:22px; }
+        .hint,.status { color:var(--muted); font-size:12px; }
+        .list { margin-top:10px; border:1px solid var(--border); border-radius:8px; overflow:auto; max-height:70vh; background:#0f1218; }
+        .item { padding:10px 12px; border-bottom:1px solid #252b37; cursor:pointer; }
+        .item.active { background:var(--panel2); outline:1px solid var(--accent); }
+        .item small { display:block; color:var(--muted); margin-top:3px; }
+        .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .editor-layout { display:grid; grid-template-columns:minmax(420px, 1fr) minmax(320px, 420px); gap:16px; align-items:start; }
+        label { display:block; font-size:12px; color:var(--muted); margin:0 0 4px; }
+        input, textarea, select { width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:#0f1218; color:var(--text); }
+        textarea { min-height:88px; resize:vertical; }
+        .full { grid-column:1 / -1; }
+        .btns { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+        button { padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--panel2); color:var(--text); cursor:pointer; }
+        button.primary { background:#223b66; border-color:#335999; }
+        button.danger { color:var(--danger); }
+        .chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+        .chip { display:flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid var(--border); border-radius:999px; background:#0f1218; font-size:12px; }
+        .viewer-card { display:flex; flex-direction:column; gap:10px; }
+        .viewer-stage { position:relative; min-height:460px; border:1px solid var(--border); border-radius:12px; overflow:hidden; background:
+            radial-gradient(circle at top, rgba(110,168,255,0.14), transparent 40%),
+            linear-gradient(180deg, #151925, #0f1218); }
+        #tip-viewer { width:100%; height:100%; min-height:460px; }
+        #tip-viewer canvas { width:100% !important; height:100% !important; display:block; }
+        .viewer-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:24px; color:var(--muted); font-size:13px; text-align:center; pointer-events:none; }
+        .viewer-meta { display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px; color:var(--muted); }
+        .viewer-meta strong { display:block; color:var(--text); font-size:13px; margin-top:2px; }
+        @media (max-width: 1100px) {
+            .editor-layout { grid-template-columns:1fr; }
+            .viewer-stage, #tip-viewer { min-height:360px; }
+        }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://esm.sh/three@0.162.0",
+            "three/addons/": "https://esm.sh/three@0.162.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div class="app">
+        <div class="panel">
+            <h1>Tip Editor</h1>
+            <div class="hint">Create and edit disposable tip definitions used by teaching, liquid classes, and tipboxes.</div>
+            <div class="btns">
+                <button id="new-tip">New tip</button>
+                <button id="duplicate-tip">Duplicate</button>
+                <button class="danger" id="delete-tip">Delete</button>
+            </div>
+            <div class="list" id="tip-list"></div>
+        </div>
+        <div class="panel">
+            <div class="editor-layout">
+                <div>
+                    <div class="grid">
+                        <div><label>Tip ID</label><input id="tip-id" type="text"></div>
+                        <div><label>Label</label><input id="tip-label" type="text"></div>
+                        <div><label>Nominal Volume (uL)</label><input id="tip-capacity" type="number" step="0.1"></div>
+                        <div><label>Tip Length (mm)</label><input id="tip-length" type="number" step="0.1"></div>
+                        <div><label>Model Path / URL</label><input id="tip-model" type="text" placeholder="/labware-assets/tips/d10.gltf"></div>
+                        <div><label>Source</label><input id="tip-source" type="text" placeholder="user"></div>
+                        <div class="full">
+                            <label>Compatible Heads</label>
+                            <select id="tip-head-select"></select>
+                            <div class="chips" id="tip-head-chips"></div>
+                        </div>
+                    </div>
+                    <div class="btns">
+                        <button class="primary" id="save-tip">Save</button>
+                        <button id="reload-tips">Reload</button>
+                    </div>
+                    <div class="status" id="tip-status"></div>
+                </div>
+                <div class="viewer-card">
+                    <div class="hint">3D Preview</div>
+                    <div class="viewer-stage">
+                        <div id="tip-viewer"></div>
+                        <div class="viewer-overlay" id="tip-viewer-overlay">Select a tip with a GLTF model to preview it here.</div>
+                    </div>
+                    <div class="viewer-meta">
+                        <div>
+                            Model
+                            <strong id="tip-viewer-model">-</strong>
+                        </div>
+                        <div>
+                            Length
+                            <strong id="tip-viewer-length">-</strong>
+                        </div>
+                        <div>
+                            Capacity
+                            <strong id="tip-viewer-capacity">-</strong>
+                        </div>
+                        <div>
+                            Source
+                            <strong id="tip-viewer-source">-</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+        const apiBase = `${location.protocol}//${location.host}`;
+        const state = { tips: [], selectedTipId: null, selectedHeads: [] };
+        const HEADS = ['HT_8_D_LT','HT_16_D_ST','HT_96_D_70','HT_96_D_70_S2','HT_96_D_200','HT_96_D_200_S2','HT_384_D_70','HT_384_D_70_S2'];
+        const viewerState = { currentObject: null, currentUrl: null, resizeObserver: null };
+        const viewerRoot = document.getElementById('tip-viewer');
+        const viewerOverlay = document.getElementById('tip-viewer-overlay');
+        const viewerScene = new THREE.Scene();
+        viewerScene.background = new THREE.Color(0x0f1218);
+        const viewerCamera = new THREE.PerspectiveCamera(32, 1, 0.1, 2000);
+        viewerCamera.position.set(55, 45, 85);
+        const viewerRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        viewerRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        viewerRenderer.outputColorSpace = THREE.SRGBColorSpace;
+        viewerRoot.appendChild(viewerRenderer.domElement);
+        const controls = new OrbitControls(viewerCamera, viewerRenderer.domElement);
+        controls.enableDamping = true;
+        controls.target.set(0, 18, 0);
+        const gltfLoader = new GLTFLoader();
+
+        viewerScene.add(new THREE.AmbientLight(0xffffff, 1.8));
+        const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
+        keyLight.position.set(60, 90, 50);
+        viewerScene.add(keyLight);
+        const fillLight = new THREE.DirectionalLight(0x9fc4ff, 0.9);
+        fillLight.position.set(-40, 35, -30);
+        viewerScene.add(fillLight);
+        const floor = new THREE.Mesh(
+            new THREE.CircleGeometry(70, 48),
+            new THREE.MeshStandardMaterial({ color: 0x1b2230, roughness: 0.92, metalness: 0.0 })
+        );
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -0.5;
+        viewerScene.add(floor);
+        const grid = new THREE.GridHelper(120, 24, 0x35517e, 0x243046);
+        grid.position.y = -0.49;
+        viewerScene.add(grid);
+
+        function resizeViewer() {
+            const rect = viewerRoot.getBoundingClientRect();
+            const width = Math.max(1, Math.floor(rect.width));
+            const height = Math.max(1, Math.floor(rect.height));
+            viewerRenderer.setSize(width, height, false);
+            viewerCamera.aspect = width / height;
+            viewerCamera.updateProjectionMatrix();
+        }
+
+        function animateViewer() {
+            requestAnimationFrame(animateViewer);
+            controls.update();
+            viewerRenderer.render(viewerScene, viewerCamera);
+        }
+        animateViewer();
+        resizeViewer();
+        viewerState.resizeObserver = new ResizeObserver(() => resizeViewer());
+        viewerState.resizeObserver.observe(viewerRoot);
+
+        function setViewerText(id, value) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        }
+
+        function normalizeModelUrl(raw) {
+            const text = String(raw || '').trim();
+            if (!text) return null;
+            if (/^https?:\/\//i.test(text)) return text;
+            if (text.startsWith('/')) return text;
+            return `/${text.replace(/^\/+/, '')}`;
+        }
+
+        function clearViewerObject() {
+            if (!viewerState.currentObject) return;
+            viewerScene.remove(viewerState.currentObject);
+            viewerState.currentObject.traverse?.((child) => {
+                if (child.geometry) child.geometry.dispose?.();
+                if (child.material) {
+                    if (Array.isArray(child.material)) child.material.forEach(mat => mat.dispose?.());
+                    else child.material.dispose?.();
+                }
+            });
+            viewerState.currentObject = null;
+        }
+
+        function frameViewerObject(object) {
+            const box = new THREE.Box3().setFromObject(object);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            object.position.sub(center);
+            object.position.y += size.y * 0.5;
+            const maxDim = Math.max(size.x, size.y, size.z, 1);
+            viewerCamera.position.set(maxDim * 0.05, maxDim * 0.045, maxDim * 0.08);
+            controls.target.set(0, size.y * 0.45, 0);
+            viewerCamera.near = Math.max(0.001, maxDim * 0.002);
+            viewerCamera.far = Math.max(2000, maxDim * 40);
+            viewerCamera.updateProjectionMatrix();
+            controls.update();
+        }
+
+        async function loadTipModelPreview(item) {
+            const modelUrl = normalizeModelUrl(item?.model_3d);
+            setViewerText('tip-viewer-model', modelUrl || '-');
+            setViewerText('tip-viewer-length', item?.length_mm != null ? `${Number(item.length_mm).toFixed(1)} mm` : '-');
+            setViewerText('tip-viewer-capacity', item?.capacity_ul != null ? `${Number(item.capacity_ul).toFixed(1)} uL` : '-');
+            setViewerText('tip-viewer-source', item?.source || '-');
+            clearViewerObject();
+            viewerState.currentUrl = modelUrl;
+            if (!modelUrl) {
+                viewerOverlay.textContent = 'This tip does not have a GLTF model path yet.';
+                viewerOverlay.style.display = 'flex';
+                return;
+            }
+            viewerOverlay.textContent = 'Loading model preview...';
+            viewerOverlay.style.display = 'flex';
+            try {
+                const gltf = await gltfLoader.loadAsync(modelUrl);
+                if (viewerState.currentUrl !== modelUrl) return;
+                const root = gltf.scene || gltf.scenes?.[0];
+                if (!root) throw new Error('GLTF did not contain a scene');
+                root.traverse((child) => {
+                    if (!child.isMesh) return;
+                    child.castShadow = false;
+                    child.receiveShadow = false;
+                    if (child.material) {
+                        if (Array.isArray(child.material)) {
+                            child.material = child.material.map((mat) => mat.clone());
+                        } else {
+                            child.material = child.material.clone();
+                        }
+                    }
+                });
+                viewerState.currentObject = root;
+                viewerScene.add(root);
+                frameViewerObject(root);
+                viewerOverlay.style.display = 'none';
+            } catch (err) {
+                clearViewerObject();
+                viewerOverlay.textContent = `Unable to load model preview: ${err.message || err}`;
+                viewerOverlay.style.display = 'flex';
+            }
+        }
+
+        async function apiCall(path, method='GET', body=null) {
+            const options = { method, headers:{} };
+            let url = `${apiBase}${path}`;
+            if (method === 'GET' && body) {
+                const params = new URLSearchParams();
+                Object.entries(body).forEach(([k,v]) => { if (v !== '' && v != null) params.set(k, String(v)); });
+                url += `?${params.toString()}`;
+            } else if (body) {
+                options.headers['Content-Type'] = 'application/json';
+                options.body = JSON.stringify(body);
+            }
+            const res = await fetch(url, options);
+            if (!res.ok) throw new Error(await res.text() || `${res.status}`);
+            return res.status === 204 ? null : res.json();
+        }
+        function setStatus(msg='', bad=false) {
+            const el = document.getElementById('tip-status');
+            el.textContent = msg;
+            el.style.color = bad ? '#ff7070' : '#98a2b3';
+        }
+        function renderHeadOptions() {
+            const select = document.getElementById('tip-head-select');
+            select.innerHTML = `<option value="">Add compatible head…</option>` + HEADS.map(head => `<option value="${head}">${head}</option>`).join('');
+            const chips = document.getElementById('tip-head-chips');
+            chips.innerHTML = state.selectedHeads.map(head => `<div class="chip">${head}<button data-head="${head}" type="button">x</button></div>`).join('');
+            chips.querySelectorAll('button[data-head]').forEach(btn => {
+                btn.onclick = () => {
+                    state.selectedHeads = state.selectedHeads.filter(item => item !== btn.dataset.head);
+                    renderHeadOptions();
+                };
+            });
+        }
+        function clearForm() {
+            state.selectedTipId = null;
+            state.selectedHeads = [];
+            document.getElementById('tip-id').value = '';
+            document.getElementById('tip-label').value = '';
+            document.getElementById('tip-capacity').value = '';
+            document.getElementById('tip-length').value = '';
+            document.getElementById('tip-model').value = '';
+            document.getElementById('tip-source').value = 'user';
+            renderHeadOptions();
+            loadTipModelPreview(null);
+        }
+        function fillForm(item) {
+            if (!item) { clearForm(); return; }
+            state.selectedTipId = item.tip_id || null;
+            state.selectedHeads = Array.isArray(item.compatible_heads) ? [...item.compatible_heads] : [];
+            document.getElementById('tip-id').value = item.tip_id || '';
+            document.getElementById('tip-label').value = item.label || '';
+            document.getElementById('tip-capacity').value = item.capacity_ul ?? '';
+            document.getElementById('tip-length').value = item.length_mm ?? '';
+            document.getElementById('tip-model').value = item.model_3d || '';
+            document.getElementById('tip-source').value = item.source || 'user';
+            renderHeadOptions();
+            loadTipModelPreview(item);
+        }
+        function renderList() {
+            const root = document.getElementById('tip-list');
+            root.innerHTML = '';
+            state.tips.forEach(item => {
+                const row = document.createElement('div');
+                row.className = `item${item.tip_id === state.selectedTipId ? ' active' : ''}`;
+                row.innerHTML = `${item.label || item.tip_id}<small>${item.tip_id} · ${Number(item.capacity_ul || 0).toFixed(1)} uL</small>`;
+                row.onclick = () => { state.selectedTipId = item.tip_id; fillForm(item); renderList(); };
+                root.appendChild(row);
+            });
+        }
+        function payload() {
+            return {
+                tip_id: document.getElementById('tip-id').value.trim(),
+                label: document.getElementById('tip-label').value.trim(),
+                capacity_ul: Number(document.getElementById('tip-capacity').value || 0),
+                length_mm: document.getElementById('tip-length').value === '' ? null : Number(document.getElementById('tip-length').value),
+                model_3d: document.getElementById('tip-model').value.trim() || null,
+                source: document.getElementById('tip-source').value.trim() || 'user',
+                compatible_heads: [...state.selectedHeads],
+            };
+        }
+        async function loadTips() {
+            const res = await apiCall('/api/tips', 'GET');
+            state.tips = res.tips || [];
+            if (!state.tips.some(item => item.tip_id === state.selectedTipId)) state.selectedTipId = state.tips[0]?.tip_id || null;
+            renderList();
+            fillForm(state.tips.find(item => item.tip_id === state.selectedTipId));
+        }
+        async function saveTip() {
+            try {
+                const body = payload();
+                if (state.selectedTipId) await apiCall(`/tips/${state.selectedTipId}`, 'PATCH', body);
+                else {
+                    const res = await apiCall('/tips', 'POST', body);
+                    state.selectedTipId = res.tip?.tip_id || null;
+                }
+                await loadTips();
+                setStatus('Tip saved.');
+            } catch (err) {
+                setStatus(err.message, true);
+            }
+        }
+        document.getElementById('new-tip').onclick = clearForm;
+        document.getElementById('duplicate-tip').onclick = () => {
+            const current = state.tips.find(item => item.tip_id === state.selectedTipId);
+            if (!current) return;
+            fillForm({ ...current, tip_id: `${current.tip_id}_copy`, label: `${current.label} copy` });
+            state.selectedTipId = null;
+            renderList();
+        };
+        document.getElementById('delete-tip').onclick = async () => {
+            if (!state.selectedTipId) return;
+            try {
+                await apiCall(`/tips/${state.selectedTipId}`, 'DELETE');
+                state.selectedTipId = null;
+                await loadTips();
+                setStatus('Tip deleted.');
+            } catch (err) {
+                setStatus(err.message, true);
+            }
+        };
+        document.getElementById('save-tip').onclick = saveTip;
+        document.getElementById('reload-tips').onclick = loadTips;
+        document.getElementById('tip-head-select').onchange = (e) => {
+            const value = e.target.value;
+            if (value && !state.selectedHeads.includes(value)) state.selectedHeads.push(value);
+            e.target.value = '';
+            renderHeadOptions();
+        };
+        document.getElementById('tip-model').addEventListener('input', () => {
+            loadTipModelPreview({
+                model_3d: document.getElementById('tip-model').value,
+                length_mm: document.getElementById('tip-length').value,
+                capacity_ul: document.getElementById('tip-capacity').value,
+                source: document.getElementById('tip-source').value,
+            });
+        });
+        document.getElementById('tip-length').addEventListener('input', () => {
+            setViewerText('tip-viewer-length', document.getElementById('tip-length').value ? `${Number(document.getElementById('tip-length').value).toFixed(1)} mm` : '-');
+        });
+        document.getElementById('tip-capacity').addEventListener('input', () => {
+            setViewerText('tip-viewer-capacity', document.getElementById('tip-capacity').value ? `${Number(document.getElementById('tip-capacity').value).toFixed(1)} uL` : '-');
+        });
+        document.getElementById('tip-source').addEventListener('input', () => {
+            setViewerText('tip-viewer-source', document.getElementById('tip-source').value.trim() || '-');
+        });
+        renderHeadOptions();
+        loadTips().catch(err => setStatus(err.message, true));
+    </script>
+</body>
+</html>

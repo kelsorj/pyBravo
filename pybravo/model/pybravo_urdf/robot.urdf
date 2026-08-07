@@ -1,0 +1,1022 @@
+<?xml version="1.0" ?>
+<!-- Generated using onshape-to-robot -->
+<!-- Onshape https://cad.onshape.com/documents/02acf2647518895d2d24800c/w/44e8d5f31b69be4213998d4a/e/93d6030cbd8f7505abd32039 -->
+<robot name="robot">
+  <!-- Link base_link -->
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link hw1_300_001 -->
+  <link name="hw1_300_001">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link hw1_300_001_hw1_300_001 -->
+  <link name="hw1_300_001_hw1_300_001">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part hw1_300_001 -->
+    <visual>
+      <origin xyz="0 0 -1.84436e-19" rpy="0 -6.25317e-49 0"/>
+      <geometry>
+        <mesh filename="package://assets/hw1_300_001.stl"/>
+      </geometry>
+      <material name="hw1_300_001_material">
+        <color rgba="0.866667 0.866667 0.890196 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -1.84436e-19" rpy="0 -6.25317e-49 0"/>
+      <geometry>
+        <mesh filename="package://assets/hw1_300_001.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Joint from hw1_300_001 to hw1_300_001_hw1_300_001 -->
+  <joint name="hw1_300_001_hw1_300_001_fixed" type="fixed">
+    <origin xyz="-0.18669 0.109093 0.023015" rpy="-1.5708 1.60971e-15 3.14159"/>
+    <parent link="hw1_300_001"/>
+    <child link="hw1_300_001_hw1_300_001"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Joint from base_link to hw1_300_001 -->
+  <joint name="base_link_to_hw1_300_001" type="fixed">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <parent link="base_link"/>
+    <child link="hw1_300_001"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Link part_4 -->
+  <link name="part_4">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link xgantry -->
+  <link name="xgantry">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link ygantry -->
+  <link name="ygantry">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link 384_head -->
+  <link name="384_head">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link 384_head_384_head -->
+  <link name="384_head_384_head">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part 384_head -->
+    <visual>
+      <origin xyz="0 5.64188e-31 0" rpy="0 3.65358e-43 0"/>
+      <geometry>
+        <mesh filename="package://assets/384_head.stl"/>
+      </geometry>
+      <material name="384_head_material">
+        <color rgba="0.615686 0.811765 0.929412 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 5.64188e-31 0" rpy="0 3.65358e-43 0"/>
+      <geometry>
+        <mesh filename="package://assets/384_head.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Joint from 384_head to 384_head_384_head -->
+  <joint name="384_head_384_head_fixed" type="fixed">
+    <origin xyz="-1.01371e-05 -0.00832231 -0.08" rpy="0 3.65358e-43 0"/>
+    <parent link="384_head"/>
+    <child link="384_head_384_head"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Joint from ygantry to 384_head -->
+  <joint name="zaxis" type="prismatic">
+    <origin xyz="-0.00442215 0.0427703 -0.0615" rpy="-1.5708 5.08796e-29 -1.42074e-14"/>
+    <parent link="ygantry"/>
+    <child link="384_head"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10" lower="-0.105" upper="0"/>
+  </joint>
+  <!-- Link gripperzaxis -->
+  <link name="gripperzaxis">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link fingerleft -->
+  <link name="fingerleft">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link fingerleft_fingerleft -->
+  <link name="fingerleft_fingerleft">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part fingerleft -->
+    <visual>
+      <origin xyz="0 -4.70103e-33 0" rpy="0 2.07332e-76 0"/>
+      <geometry>
+        <mesh filename="package://assets/fingerleft.stl"/>
+      </geometry>
+      <material name="fingerleft_material">
+        <color rgba="0.615686 0.811765 0.929412 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 -4.70103e-33 0" rpy="0 2.07332e-76 0"/>
+      <geometry>
+        <mesh filename="package://assets/fingerleft.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Joint from fingerleft to fingerleft_fingerleft -->
+  <joint name="fingerleft_fingerleft_fixed" type="fixed">
+    <origin xyz="0.0640098 0.000645594 -4.70103e-33" rpy="1.5708 -0 2.07332e-76"/>
+    <parent link="fingerleft"/>
+    <child link="fingerleft_fingerleft"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Joint from gripperzaxis to fingerleft -->
+  <joint name="ygripper-left" type="prismatic">
+    <origin xyz="-0.0619736 0.051 0.012" rpy="1.5708 2.94796e-38 4.45369e-45"/>
+    <parent link="gripperzaxis"/>
+    <child link="fingerleft"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10" lower="-1.73472e-18" upper="0.021"/>
+  </joint>
+  <!-- Link fingerright -->
+  <link name="fingerright">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link fingerright_fingerright -->
+  <link name="fingerright_fingerright">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part fingerright -->
+    <visual>
+      <origin xyz="0 -4.70103e-33 0" rpy="0 -1.66327e-77 0"/>
+      <geometry>
+        <mesh filename="package://assets/fingerright.stl"/>
+      </geometry>
+      <material name="fingerright_material">
+        <color rgba="0.615686 0.811765 0.929412 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 -4.70103e-33 0" rpy="0 -1.66327e-77 0"/>
+      <geometry>
+        <mesh filename="package://assets/fingerright.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Joint from fingerright to fingerright_fingerright -->
+  <joint name="fingerright_fingerright_fixed" type="fixed">
+    <origin xyz="0.0640098 -0.000645578 -0.004" rpy="-1.5708 -0 1.66327e-77"/>
+    <parent link="fingerright"/>
+    <child link="fingerright_fingerright"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Joint from gripperzaxis to fingerright -->
+  <joint name="ygripper-right" type="prismatic">
+    <origin xyz="-0.0619736 -0.051 0.012" rpy="-1.5708 -2.58023e-38 -4.6314e-45"/>
+    <parent link="gripperzaxis"/>
+    <child link="fingerright"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10" lower="-0.009" upper="0.012"/>
+    <mimic joint="ygripper-left" multiplier="1.0"/>
+  </joint>
+  <!-- Link gripperzaxis_gripperzaxis -->
+  <link name="gripperzaxis_gripperzaxis">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part gripperzaxis -->
+    <visual>
+      <origin xyz="0 6.44975e-18 0" rpy="0 -6.65579e-61 0"/>
+      <geometry>
+        <mesh filename="package://assets/gripperzaxis.stl"/>
+      </geometry>
+      <material name="gripperzaxis_material">
+        <color rgba="0.917647 0.917647 0.917647 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 6.44975e-18 0" rpy="0 -6.65579e-61 0"/>
+      <geometry>
+        <mesh filename="package://assets/gripperzaxis.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Joint from gripperzaxis to gripperzaxis_gripperzaxis -->
+  <joint name="gripperzaxis_gripperzaxis_fixed" type="fixed">
+    <origin xyz="-0.00847357 -6.10859e-09 -0.165" rpy="3.14159 6.65579e-61 0"/>
+    <parent link="gripperzaxis"/>
+    <child link="gripperzaxis_gripperzaxis"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Joint from ygantry to gripperzaxis -->
+  <joint name="zaxis-gripper" type="prismatic">
+    <origin xyz="0.100478 -0.224926 -0.0530846" rpy="1.5708 8.63559e-42 -5.71589e-35"/>
+    <parent link="ygantry"/>
+    <child link="gripperzaxis"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10" lower="0" upper="0.17"/>
+  </joint>
+  <!-- Link ygantry_ygantry -->
+  <link name="ygantry_ygantry">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part ygantry -->
+    <visual>
+      <origin xyz="0 7.24371e-43 0" rpy="0 -2.13433e-117 0"/>
+      <geometry>
+        <mesh filename="package://assets/ygantry.stl"/>
+      </geometry>
+      <material name="ygantry_material">
+        <color rgba="0.917647 0.917647 0.917647 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 7.24371e-43 0" rpy="0 -2.13433e-117 0"/>
+      <geometry>
+        <mesh filename="package://assets/ygantry.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Joint from ygantry to ygantry_ygantry -->
+  <joint name="ygantry_ygantry_fixed" type="fixed">
+    <origin xyz="0.0905 0.0500739 -0.0530846" rpy="-1.5708 -0 2.13433e-117"/>
+    <parent link="ygantry"/>
+    <child link="ygantry_ygantry"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Joint from xgantry to ygantry -->
+  <joint name="yaxis" type="prismatic">
+    <origin xyz="0.211024 0.451844 -0.294946" rpy="-2.47011e-76 -1.5708 0"/>
+    <parent link="xgantry"/>
+    <child link="ygantry"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10" lower="-0.01" upper="0.21"/>
+  </joint>
+  <!-- Link xgantry_xgantry -->
+  <link name="xgantry_xgantry">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part xgantry -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/xgantry.stl"/>
+      </geometry>
+      <material name="xgantry_material">
+        <color rgba="0.615686 0.811765 0.929412 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/xgantry.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Joint from xgantry to xgantry_xgantry -->
+  <joint name="xgantry_xgantry_fixed" type="fixed">
+    <origin xyz="-0.0139762 0.255699 -0.276621" rpy="-1.5708 -1.5708 0"/>
+    <parent link="xgantry"/>
+    <child link="xgantry_xgantry"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Joint from part_4 to xgantry -->
+  <joint name="xaxis" type="prismatic">
+    <origin xyz="0.28829 -0.157773 -0.0235762" rpy="1.5708 -0 1.5708"/>
+    <parent link="part_4"/>
+    <child link="xgantry"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10" lower="-0.176058" upper="0.218942"/>
+  </joint>
+  <!-- Link part_4_part_4 -->
+  <link name="part_4_part_4">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part part_4 -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/part_4.stl"/>
+      </geometry>
+      <material name="part_4_material">
+        <color rgba="0.972549 0.529412 0.00392157 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/part_4.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Joint from part_4 to part_4_part_4 -->
+  <joint name="part_4_part_4_fixed" type="fixed">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <parent link="part_4"/>
+    <child link="part_4_part_4"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Joint from base_link to part_4 -->
+  <joint name="base_link_to_part_4" type="fixed">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <parent link="base_link"/>
+    <child link="part_4"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Link hw1_300_001_2 -->
+  <link name="hw1_300_001_2">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link hw1_300_001_2_hw1_300_001_2 -->
+  <link name="hw1_300_001_2_hw1_300_001_2">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part hw1_300_001_2 -->
+    <visual>
+      <origin xyz="0 0 3.12964e-33" rpy="0 -6.25317e-49 0"/>
+      <geometry>
+        <mesh filename="package://assets/hw1_300_001.stl"/>
+      </geometry>
+      <material name="hw1_300_001_2_material">
+        <color rgba="0.866667 0.866667 0.890196 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 3.12964e-33" rpy="0 -6.25317e-49 0"/>
+      <geometry>
+        <mesh filename="package://assets/hw1_300_001.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Joint from hw1_300_001_2 to hw1_300_001_2_hw1_300_001_2 -->
+  <joint name="hw1_300_001_2_hw1_300_001_2_fixed" type="fixed">
+    <origin xyz="0 0.109093 0.023015" rpy="-1.5708 1.60971e-15 3.14159"/>
+    <parent link="hw1_300_001_2"/>
+    <child link="hw1_300_001_2_hw1_300_001_2"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Joint from base_link to hw1_300_001_2 -->
+  <joint name="base_link_to_hw1_300_001_2" type="fixed">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <parent link="base_link"/>
+    <child link="hw1_300_001_2"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Link hw1_300_001_3 -->
+  <link name="hw1_300_001_3">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link hw1_300_001_3_hw1_300_001_3 -->
+  <link name="hw1_300_001_3_hw1_300_001_3">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part hw1_300_001_3 -->
+    <visual>
+      <origin xyz="0 0 -4.38149e-33" rpy="0 -6.25317e-49 0"/>
+      <geometry>
+        <mesh filename="package://assets/hw1_300_001.stl"/>
+      </geometry>
+      <material name="hw1_300_001_3_material">
+        <color rgba="0.866667 0.866667 0.890196 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -4.38149e-33" rpy="0 -6.25317e-49 0"/>
+      <geometry>
+        <mesh filename="package://assets/hw1_300_001.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Joint from hw1_300_001_3 to hw1_300_001_3_hw1_300_001_3 -->
+  <joint name="hw1_300_001_3_hw1_300_001_3_fixed" type="fixed">
+    <origin xyz="0.18669 0.109093 0.023015" rpy="-1.5708 1.60971e-15 3.14159"/>
+    <parent link="hw1_300_001_3"/>
+    <child link="hw1_300_001_3_hw1_300_001_3"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Joint from base_link to hw1_300_001_3 -->
+  <joint name="base_link_to_hw1_300_001_3" type="fixed">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <parent link="base_link"/>
+    <child link="hw1_300_001_3"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Link hw1_300_001_4 -->
+  <link name="hw1_300_001_4">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link hw1_300_001_4_hw1_300_001_4 -->
+  <link name="hw1_300_001_4_hw1_300_001_4">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part hw1_300_001_4 -->
+    <visual>
+      <origin xyz="0 0 -1.84436e-19" rpy="0 -6.25317e-49 0"/>
+      <geometry>
+        <mesh filename="package://assets/hw1_300_001.stl"/>
+      </geometry>
+      <material name="hw1_300_001_4_material">
+        <color rgba="0.866667 0.866667 0.890196 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -1.84436e-19" rpy="0 -6.25317e-49 0"/>
+      <geometry>
+        <mesh filename="package://assets/hw1_300_001.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Joint from hw1_300_001_4 to hw1_300_001_4_hw1_300_001_4 -->
+  <joint name="hw1_300_001_4_hw1_300_001_4_fixed" type="fixed">
+    <origin xyz="-0.18669 0 0.023015" rpy="-1.5708 1.60971e-15 3.14159"/>
+    <parent link="hw1_300_001_4"/>
+    <child link="hw1_300_001_4_hw1_300_001_4"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Joint from base_link to hw1_300_001_4 -->
+  <joint name="base_link_to_hw1_300_001_4" type="fixed">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <parent link="base_link"/>
+    <child link="hw1_300_001_4"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Link hw1_300_001_5 -->
+  <link name="hw1_300_001_5">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link hw1_300_001_5_hw1_300_001_5 -->
+  <link name="hw1_300_001_5_hw1_300_001_5">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part hw1_300_001_5 -->
+    <visual>
+      <origin xyz="0 0 -1.84436e-19" rpy="0 -6.25317e-49 0"/>
+      <geometry>
+        <mesh filename="package://assets/hw1_300_001.stl"/>
+      </geometry>
+      <material name="hw1_300_001_5_material">
+        <color rgba="0.866667 0.866667 0.890196 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -1.84436e-19" rpy="0 -6.25317e-49 0"/>
+      <geometry>
+        <mesh filename="package://assets/hw1_300_001.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Joint from hw1_300_001_5 to hw1_300_001_5_hw1_300_001_5 -->
+  <joint name="hw1_300_001_5_hw1_300_001_5_fixed" type="fixed">
+    <origin xyz="0 0 0.023015" rpy="-1.5708 1.60971e-15 3.14159"/>
+    <parent link="hw1_300_001_5"/>
+    <child link="hw1_300_001_5_hw1_300_001_5"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Joint from base_link to hw1_300_001_5 -->
+  <joint name="base_link_to_hw1_300_001_5" type="fixed">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <parent link="base_link"/>
+    <child link="hw1_300_001_5"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Link hw1_300_001_6 -->
+  <link name="hw1_300_001_6">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link hw1_300_001_6_hw1_300_001_6 -->
+  <link name="hw1_300_001_6_hw1_300_001_6">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part hw1_300_001_6 -->
+    <visual>
+      <origin xyz="0 0 -1.84436e-19" rpy="0 -6.25317e-49 0"/>
+      <geometry>
+        <mesh filename="package://assets/hw1_300_001.stl"/>
+      </geometry>
+      <material name="hw1_300_001_6_material">
+        <color rgba="0.866667 0.866667 0.890196 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -1.84436e-19" rpy="0 -6.25317e-49 0"/>
+      <geometry>
+        <mesh filename="package://assets/hw1_300_001.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Joint from hw1_300_001_6 to hw1_300_001_6_hw1_300_001_6 -->
+  <joint name="hw1_300_001_6_hw1_300_001_6_fixed" type="fixed">
+    <origin xyz="0.18669 0 0.023015" rpy="-1.5708 1.60971e-15 3.14159"/>
+    <parent link="hw1_300_001_6"/>
+    <child link="hw1_300_001_6_hw1_300_001_6"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Joint from base_link to hw1_300_001_6 -->
+  <joint name="base_link_to_hw1_300_001_6" type="fixed">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <parent link="base_link"/>
+    <child link="hw1_300_001_6"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Link hw1_300_001_7 -->
+  <link name="hw1_300_001_7">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link hw1_300_001_7_hw1_300_001_7 -->
+  <link name="hw1_300_001_7_hw1_300_001_7">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part hw1_300_001_7 -->
+    <visual>
+      <origin xyz="0 0 5.53705e-33" rpy="0 -6.25317e-49 0"/>
+      <geometry>
+        <mesh filename="package://assets/hw1_300_001.stl"/>
+      </geometry>
+      <material name="hw1_300_001_7_material">
+        <color rgba="0.866667 0.866667 0.890196 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 5.53705e-33" rpy="0 -6.25317e-49 0"/>
+      <geometry>
+        <mesh filename="package://assets/hw1_300_001.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Joint from hw1_300_001_7 to hw1_300_001_7_hw1_300_001_7 -->
+  <joint name="hw1_300_001_7_hw1_300_001_7_fixed" type="fixed">
+    <origin xyz="-0.18669 -0.109093 0.023015" rpy="-1.5708 1.60971e-15 3.14159"/>
+    <parent link="hw1_300_001_7"/>
+    <child link="hw1_300_001_7_hw1_300_001_7"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Joint from base_link to hw1_300_001_7 -->
+  <joint name="base_link_to_hw1_300_001_7" type="fixed">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <parent link="base_link"/>
+    <child link="hw1_300_001_7"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Link hw1_300_001_8 -->
+  <link name="hw1_300_001_8">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link hw1_300_001_8_hw1_300_001_8 -->
+  <link name="hw1_300_001_8_hw1_300_001_8">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part hw1_300_001_8 -->
+    <visual>
+      <origin xyz="0 0 -1.84436e-19" rpy="0 -6.25317e-49 0"/>
+      <geometry>
+        <mesh filename="package://assets/hw1_300_001.stl"/>
+      </geometry>
+      <material name="hw1_300_001_8_material">
+        <color rgba="0.866667 0.866667 0.890196 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -1.84436e-19" rpy="0 -6.25317e-49 0"/>
+      <geometry>
+        <mesh filename="package://assets/hw1_300_001.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Joint from hw1_300_001_8 to hw1_300_001_8_hw1_300_001_8 -->
+  <joint name="hw1_300_001_8_hw1_300_001_8_fixed" type="fixed">
+    <origin xyz="0 -0.109093 0.023015" rpy="-1.5708 1.60971e-15 3.14159"/>
+    <parent link="hw1_300_001_8"/>
+    <child link="hw1_300_001_8_hw1_300_001_8"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Joint from base_link to hw1_300_001_8 -->
+  <joint name="base_link_to_hw1_300_001_8" type="fixed">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <parent link="base_link"/>
+    <child link="hw1_300_001_8"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Link hw1_300_001_9 -->
+  <link name="hw1_300_001_9">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link hw1_300_001_9_hw1_300_001_9 -->
+  <link name="hw1_300_001_9_hw1_300_001_9">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part hw1_300_001_9 -->
+    <visual>
+      <origin xyz="0 0 -1.84436e-19" rpy="0 -6.25317e-49 0"/>
+      <geometry>
+        <mesh filename="package://assets/hw1_300_001.stl"/>
+      </geometry>
+      <material name="hw1_300_001_9_material">
+        <color rgba="0.866667 0.866667 0.890196 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -1.84436e-19" rpy="0 -6.25317e-49 0"/>
+      <geometry>
+        <mesh filename="package://assets/hw1_300_001.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Joint from hw1_300_001_9 to hw1_300_001_9_hw1_300_001_9 -->
+  <joint name="hw1_300_001_9_hw1_300_001_9_fixed" type="fixed">
+    <origin xyz="0.18669 -0.109093 0.023015" rpy="-1.5708 1.60971e-15 3.14159"/>
+    <parent link="hw1_300_001_9"/>
+    <child link="hw1_300_001_9_hw1_300_001_9"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Joint from base_link to hw1_300_001_9 -->
+  <joint name="base_link_to_hw1_300_001_9" type="fixed">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <parent link="base_link"/>
+    <child link="hw1_300_001_9"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Link part_1 -->
+  <link name="part_1">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link part_1_part_1 -->
+  <link name="part_1_part_1">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part part_1 -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/part_1.stl"/>
+      </geometry>
+      <material name="part_1_material">
+        <color rgba="0.231373 0.380392 0.705882 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/part_1.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Joint from part_1 to part_1_part_1 -->
+  <joint name="part_1_part_1_fixed" type="fixed">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <parent link="part_1"/>
+    <child link="part_1_part_1"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Joint from base_link to part_1 -->
+  <joint name="base_link_to_part_1" type="fixed">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <parent link="base_link"/>
+    <child link="part_1"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Link part_2 -->
+  <link name="part_2">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link part_2_part_2 -->
+  <link name="part_2_part_2">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part part_2 -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/part_2.stl"/>
+      </geometry>
+      <material name="part_2_material">
+        <color rgba="0.917647 0.917647 0.917647 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/part_2.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Joint from part_2 to part_2_part_2 -->
+  <joint name="part_2_part_2_fixed" type="fixed">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <parent link="part_2"/>
+    <child link="part_2_part_2"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Joint from base_link to part_2 -->
+  <joint name="base_link_to_part_2" type="fixed">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <parent link="base_link"/>
+    <child link="part_2"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Link part_3 -->
+  <link name="part_3">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link part_3_part_3 -->
+  <link name="part_3_part_3">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part part_3 -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/part_3.stl"/>
+      </geometry>
+      <material name="part_3_material">
+        <color rgba="0.768627 0.886275 0.952941 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/part_3.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Joint from part_3 to part_3_part_3 -->
+  <joint name="part_3_part_3_fixed" type="fixed">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <parent link="part_3"/>
+    <child link="part_3_part_3"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Joint from base_link to part_3 -->
+  <joint name="base_link_to_part_3" type="fixed">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <parent link="base_link"/>
+    <child link="part_3"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Link part_5 -->
+  <link name="part_5">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link part_5_part_5 -->
+  <link name="part_5_part_5">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part part_5 -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/part_5.stl"/>
+      </geometry>
+      <material name="part_5_material">
+        <color rgba="0.498039 0.498039 0.498039 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/part_5.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Joint from part_5 to part_5_part_5 -->
+  <joint name="part_5_part_5_fixed" type="fixed">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <parent link="part_5"/>
+    <child link="part_5_part_5"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Joint from base_link to part_5 -->
+  <joint name="base_link_to_part_5" type="fixed">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <parent link="base_link"/>
+    <child link="part_5"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Link part_6 -->
+  <link name="part_6">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+  </link>
+  <!-- Link part_6_part_6 -->
+  <link name="part_6_part_6">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part part_6 -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/part_6.stl"/>
+      </geometry>
+      <material name="part_6_material">
+        <color rgba="0.980392 0.713725 0.00392157 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 -0 0"/>
+      <geometry>
+        <mesh filename="package://assets/part_6.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Joint from part_6 to part_6_part_6 -->
+  <joint name="part_6_part_6_fixed" type="fixed">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <parent link="part_6"/>
+    <child link="part_6_part_6"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+  <!-- Joint from base_link to part_6 -->
+  <joint name="base_link_to_part_6" type="fixed">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <parent link="base_link"/>
+    <child link="part_6"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10"/>
+  </joint>
+</robot>

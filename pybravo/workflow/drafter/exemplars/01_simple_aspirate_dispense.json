@@ -1,0 +1,59 @@
+{
+  "name": "Simple Aspirate/Dispense",
+  "description": "Pick up tips, aspirate 10 uL from loc 5, dispense to loc 6, drop tips.",
+  "deck": {
+    "1": [
+      {
+        "labware_id": "lw-4914769d0af7",
+        "name": "384 V11 ST10 Tip Box 10734.102",
+        "kind": "sbs_plate",
+        "base_class": "tip_box",
+        "wells": 384,
+        "is_lidded": false,
+        "is_sealed": false
+      }
+    ],
+    "5": [
+      {
+        "labware_id": "lw-3918306f45b8",
+        "name": "1536 Labcyte LP-0400 LDV",
+        "kind": "sbs_plate",
+        "base_class": "microplate",
+        "wells": 1536,
+        "is_lidded": false,
+        "is_sealed": false
+      }
+    ],
+    "6": [
+      {
+        "labware_id": "lw-3918306f45b8",
+        "name": "1536 Labcyte LP-0400 LDV",
+        "kind": "sbs_plate",
+        "base_class": "microplate",
+        "wells": 1536,
+        "is_lidded": false,
+        "is_sealed": false
+      }
+    ]
+  },
+  "graph": {
+    "last_node_id": 6,
+    "last_link_id": 5,
+    "nodes": [
+      {"id": 1, "type": "flow/Start",       "title": "Start",       "pos": [40, 60],   "properties": {}},
+      {"id": 2, "type": "tips/TipsOn",      "title": "Tips On",     "pos": [40, 140],  "properties": {"location": 1, "head_mode": {"subset_type": "all_barrels", "subset_config": "back_left"}, "tip_anchor_row": 0, "tip_anchor_col": 0}},
+      {"id": 3, "type": "liquid/Aspirate",  "title": "Aspirate",    "pos": [40, 240],  "properties": {"location": 5, "volume": 10, "liquid_class": "D10 384 Head 1-10", "anchor": "A1"}},
+      {"id": 4, "type": "liquid/Dispense",  "title": "Dispense",    "pos": [40, 340],  "properties": {"location": 6, "volume": 10, "liquid_class": "D10 384 Head 1-10", "anchor": "A1"}},
+      {"id": 5, "type": "tips/TipsOff",     "title": "Tips Off",    "pos": [40, 440],  "properties": {"location": 1}},
+      {"id": 6, "type": "flow/End",         "title": "End",         "pos": [40, 540],  "properties": {}}
+    ],
+    "links": [
+      {"id": 1, "origin_id": 1, "origin_slot": 0, "target_id": 2, "target_slot": 0, "link_type": -1},
+      {"id": 2, "origin_id": 2, "origin_slot": 0, "target_id": 3, "target_slot": 0, "link_type": -1},
+      {"id": 3, "origin_id": 3, "origin_slot": 0, "target_id": 4, "target_slot": 0, "link_type": -1},
+      {"id": 4, "origin_id": 4, "origin_slot": 0, "target_id": 5, "target_slot": 0, "link_type": -1},
+      {"id": 5, "origin_id": 5, "origin_slot": 0, "target_id": 6, "target_slot": 0, "link_type": -1}
+    ]
+  },
+  "library": ""
+}

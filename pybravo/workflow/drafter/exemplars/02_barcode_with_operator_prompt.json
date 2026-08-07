@@ -1,0 +1,37 @@
+{
+  "name": "Scan and Verify Barcode",
+  "description": "Move plate from 5 to 6 (barcode station), read barcode, prompt operator if scan fails, move plate back.",
+  "deck": {
+    "5": [
+      {
+        "labware_id": "lw-3918306f45b8",
+        "name": "1536 Labcyte LP-0400 LDV",
+        "kind": "sbs_plate",
+        "base_class": "microplate",
+        "wells": 1536,
+        "is_lidded": false,
+        "is_sealed": false
+      }
+    ]
+  },
+  "graph": {
+    "last_node_id": 6,
+    "last_link_id": 5,
+    "nodes": [
+      {"id": 1, "type": "flow/Start",          "title": "Start",         "pos": [40, 40],  "properties": {}},
+      {"id": 2, "type": "plate/PickPlace",     "title": "5 to 6",        "pos": [40, 140], "properties": {"pick_location": 5, "place_location": 6}},
+      {"id": 3, "type": "sensor/ReadBarcode",  "title": "Read Barcode",  "pos": [40, 240], "properties": {"location": 6, "store_as": "plateFivebc"}},
+      {"id": 4, "type": "logic/Script",        "title": "Ask Operator",  "pos": [40, 340], "properties": {"script": "scanned = vars.get(\"plateFivebc\", \"\") or \"\"\nif not scanned:\n    scanned = prompt_user(\n        \"Barcode read failed at loc 6.\\nPlease type the plate's barcode:\",\n    )\n    vars[\"plateFivebc\"] = scanned\n    if scanned:\n        plates[6].barcode = scanned\nresult = scanned\n", "timeout": 0, "store_as": ""}},
+      {"id": 5, "type": "plate/PickPlace",     "title": "6 to 5",        "pos": [40, 440], "properties": {"pick_location": 6, "place_location": 5}},
+      {"id": 6, "type": "flow/End",            "title": "End",           "pos": [40, 540], "properties": {}}
+    ],
+    "links": [
+      {"id": 1, "origin_id": 1, "origin_slot": 0, "target_id": 2, "target_slot": 0, "link_type": -1},
+      {"id": 2, "origin_id": 2, "origin_slot": 0, "target_id": 3, "target_slot": 0, "link_type": -1},
+      {"id": 3, "origin_id": 3, "origin_slot": 0, "target_id": 4, "target_slot": 0, "link_type": -1},
+      {"id": 4, "origin_id": 4, "origin_slot": 0, "target_id": 5, "target_slot": 0, "link_type": -1},
+      {"id": 5, "origin_id": 5, "origin_slot": 0, "target_id": 6, "target_slot": 0, "link_type": -1}
+    ]
+  },
+  "library": ""
+}

@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenBravo Vision Calibration</title>
+  <style>
+    :root {
+      --bg: #11111b;
+      --panel: #1a1b2b;
+      --panel-2: #202238;
+      --border: #31354f;
+      --text: #e7e9f4;
+      --dim: #9aa2c8;
+      --accent: #646cff;
+      --good: #52d273;
+      --warn: #f0c35b;
+      --bad: #f27a7a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Segoe UI, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .page {
+      max-width: 1680px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    h1 { margin: 0 0 10px; font-size: 30px; }
+    p { color: var(--dim); }
+    .lead { margin: 0 0 18px; }
+    .grid {
+      display: grid;
+      grid-template-columns: 340px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .stack {
+      display: grid;
+      gap: 16px;
+      min-width: 0;
+    }
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .preview-grid > div {
+      min-width: 0;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      overflow: hidden;
+    }
+    .card h2 {
+      margin: 0 0 6px;
+      font-size: 14px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+    .card p {
+      margin: 0 0 12px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .state-banner {
+      display: grid;
+      gap: 6px;
+      background: linear-gradient(180deg, #242847 0%, #1d2037 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .state-title {
+      font-size: 13px;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+    .state-headline {
+      font-size: 22px;
+      font-weight: 700;
+    }
+    .state-headline.good { color: var(--good); }
+    .state-headline.warn { color: var(--warn); }
+    .state-headline.bad { color: var(--bad); }
+    .state-help {
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .steps {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--text);
+      display: grid;
+      gap: 8px;
+      font-size: 14px;
+    }
+    .checklist {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: #4d5378;
+      flex: 0 0 auto;
+    }
+    .dot.good { background: var(--good); }
+    .dot.warn { background: var(--warn); }
+    .dot.bad { background: var(--bad); }
+    .row { display: grid; gap: 6px; }
+    label { font-size: 12px; color: var(--dim); }
+    textarea, button, select {
+      font: inherit;
+    }
+    textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      min-height: 88px;
+      resize: vertical;
+    }
+    select {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+    }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    button {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: transparent;
+      color: var(--text);
+      border-color: var(--border);
+    }
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+    .mono {
+      font-family: Consolas, monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      overflow: auto;
+      background: #0d0e17;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 12px;
+      min-height: 100px;
+      max-height: 220px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+    }
+    .status-good { color: var(--good); }
+    .status-warn { color: var(--warn); }
+    .status-bad { color: var(--bad); }
+    .preview-frame {
+      width: 100%;
+      min-height: 320px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #0d0e17;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .preview-frame img {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 520px;
+      object-fit: contain;
+    }
+    .preview-placeholder {
+      color: var(--dim);
+      font-size: 13px;
+      padding: 16px;
+      text-align: center;
+    }
+    .preview-label {
+      margin: 0 0 8px;
+      font-size: 12px;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+    .slot-report-card table {
+      table-layout: fixed;
+    }
+    .slot-report-card td,
+    .slot-report-card th {
+      overflow-wrap: anywhere;
+    }
+    .live-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .live-deck {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 28px 32px;
+      background: #141625;
+      margin-top: 12px;
+    }
+    .live-axis-top,
+    .live-axis-bottom,
+    .live-axis-left,
+    .live-axis-right {
+      position: absolute;
+      font-size: 12px;
+      color: var(--dim);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+    .live-axis-top {
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .live-axis-bottom {
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .live-axis-left {
+      left: 6px;
+      top: 50%;
+      transform: translateY(-50%) rotate(-90deg);
+      transform-origin: center;
+    }
+    .live-axis-right {
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%) rotate(90deg);
+      transform-origin: center;
+    }
+    .live-slot {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      background: #141625;
+      display: grid;
+      gap: 6px;
+    }
+    .live-slot.good {
+      border-color: rgba(82, 210, 115, 0.55);
+      box-shadow: inset 0 0 0 1px rgba(82, 210, 115, 0.18);
+    }
+    .live-slot.warn {
+      border-color: rgba(240, 195, 91, 0.55);
+      box-shadow: inset 0 0 0 1px rgba(240, 195, 91, 0.18);
+    }
+    .live-slot.bad {
+      border-color: rgba(242, 122, 122, 0.55);
+      box-shadow: inset 0 0 0 1px rgba(242, 122, 122, 0.18);
+    }
+    .live-slot-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--dim);
+    }
+    .live-slot-state {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .live-slot-meta {
+      font-size: 12px;
+      color: var(--dim);
+      line-height: 1.4;
+    }
+    @media (max-width: 920px) {
+      .grid { grid-template-columns: 1fr; }
+      .preview-grid { grid-template-columns: 1fr; }
+      .live-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>Vision Calibration</h1>
+    <p class="lead">Fixed-side Femto Bolt setup for deck verification. This page should guide the operator from enablement, to calibration, to verification.</p>
+
+    <div class="state-banner">
+      <div class="state-title">Current State</div>
+      <div id="state-headline" class="state-headline warn">Loading…</div>
+      <div id="state-help" class="state-help">Checking feature flag, service reachability, and calibration status.</div>
+    </div>
+
+    <div class="grid">
+      <div class="stack">
+        <div class="card">
+          <h2>Getting Started</h2>
+          <p>Use this order of operations for the camera feature.</p>
+          <ol class="steps">
+            <li>Enable the deck verification camera in the active profile.</li>
+            <li>Start the local vision service and confirm the SDK and camera are reachable.</li>
+            <li>Run guided calibration once for the fixed side mount.</li>
+            <li>Use Verify Deck Setup before running a process.</li>
+          </ol>
+          <div class="checklist" id="state-checklist">
+            <div class="check-item"><span class="dot"></span><span>Feature enabled</span></div>
+            <div class="check-item"><span class="dot"></span><span>Vision service reachable</span></div>
+            <div class="check-item"><span class="dot"></span><span>SDK loaded</span></div>
+            <div class="check-item"><span class="dot"></span><span>Camera found</span></div>
+            <div class="check-item"><span class="dot"></span><span>Calibration loaded</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Status</h2>
+          <p>Use this to confirm the feature flag, service, SDK, and camera are all available.</p>
+          <div class="actions">
+            <button id="btn-start-service">Start Vision Service</button>
+            <button id="btn-refresh-status" class="secondary">Refresh Status</button>
+          </div>
+          <div id="vision-status" class="mono">Loading…</div>
+        </div>
+
+        <div class="card">
+          <h2>Calibration</h2>
+          <p>Run this once after mounting the camera or any time the camera position changes. Then capture empty-deck depth baselines before verification. Good baselines require at least 1000 valid depth pixels per slot.</p>
+          <div class="row">
+            <label>Notes</label>
+            <textarea id="calibration-notes" placeholder="Fixed side mount, fiducial plate attached near deck, etc."></textarea>
+          </div>
+          <div class="actions">
+            <button id="btn-run-calibration">Start Guided Calibration</button>
+            <button id="btn-capture-baselines" class="secondary">Capture Empty Deck Baselines</button>
+            <button id="btn-load-calibration" class="secondary">View Saved Calibration</button>
+          </div>
+          <div class="actions">
+            <select id="roi-location">
+              <option value="1">Edit ROI 1</option>
+              <option value="2">Edit ROI 2</option>
+              <option value="3">Edit ROI 3</option>
+              <option value="4">Edit ROI 4</option>
+              <option value="5">Edit ROI 5</option>
+              <option value="6">Edit ROI 6</option>
+              <option value="7">Edit ROI 7</option>
+              <option value="8">Edit ROI 8</option>
+              <option value="9">Edit ROI 9</option>
+            </select>
+            <button id="btn-edit-one-roi" class="secondary">Adjust One ROI</button>
+          </div>
+          <div id="calibration-status" class="mono"></div>
+        </div>
+
+        <div class="card">
+          <h2>Verification</h2>
+          <p>Run this after calibration to compare the physical deck to OpenBravo’s expected deck setup.</p>
+          <div class="actions">
+            <button id="btn-verify-deck">Verify Deck Setup</button>
+          </div>
+          <div id="verify-summary" class="mono"></div>
+        </div>
+
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <h2>Live Preview</h2>
+          <p>Use this to confirm the camera sees the deck. RGB and colorized depth are shown side by side.</p>
+          <div class="actions">
+            <button id="btn-refresh-preview" class="secondary">Refresh Preview</button>
+          </div>
+          <div class="preview-grid">
+            <div>
+              <div class="preview-label">RGB</div>
+              <div id="preview-frame-rgb" class="preview-frame">
+                <div class="preview-placeholder">No RGB preview loaded yet.</div>
+              </div>
+            </div>
+            <div>
+              <div class="preview-label">Depth</div>
+              <div id="preview-frame-depth" class="preview-frame">
+                <div class="preview-placeholder">No depth preview loaded yet.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Live Occupancy</h2>
+          <p>Track slot presence in real time to see whether the camera notices when labware is added or removed from the deck.</p>
+          <div class="actions">
+            <button id="btn-live-detect-start">Start Live Tracking</button>
+            <button id="btn-live-detect-stop" class="secondary">Stop</button>
+          </div>
+          <div id="live-detect-summary" class="mono">Live occupancy tracking is idle.</div>
+          <div class="live-deck">
+            <div class="live-axis-top">Back</div>
+            <div class="live-axis-bottom">Front</div>
+            <div class="live-axis-left">Left</div>
+            <div class="live-axis-right">Right</div>
+            <div id="live-detect-grid" class="live-grid"></div>
+          </div>
+        </div>
+
+        <div class="card slot-report-card">
+          <h2>Slot Report</h2>
+          <p>Review slot-by-slot mismatches and unknown results before continuing.</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Location</th>
+                <th>Status</th>
+                <th>Expected</th>
+                <th>Observed</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody id="verify-table">
+              <tr><td colspan="5" class="status-warn">No verification run yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const uiState = {
+      featureEnabled: false,
+      serviceReachable: false,
+      sdkLoaded: false,
+      cameraFound: false,
+      calibrationLoaded: false,
+      baselinesLoaded: false,
+    };
+    let latestPreviewUrls = { rgb: null, depth: null };
+    let liveDetectTimer = null;
+
+    async function api(path, method = 'GET', body = null) {
+      const options = { method, headers: { 'Accept': 'application/json' } };
+      if (body !== null) {
+        options.headers['Content-Type'] = 'application/json';
+        options.body = JSON.stringify(body);
+      }
+      const res = await fetch(path, options);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.detail || data.error || data.message || `HTTP ${res.status}`);
+      }
+      return data;
+    }
+
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+
+    function updateChecklist() {
+      const rows = [
+        { label: 'Feature enabled', state: uiState.featureEnabled ? 'good' : 'bad' },
+        { label: 'Vision service reachable', state: uiState.serviceReachable ? 'good' : (uiState.featureEnabled ? 'warn' : 'bad') },
+        { label: 'SDK loaded', state: uiState.sdkLoaded ? 'good' : (uiState.serviceReachable ? 'warn' : 'bad') },
+        { label: 'Camera found', state: uiState.cameraFound ? 'good' : (uiState.serviceReachable ? 'warn' : 'bad') },
+        { label: 'Calibration loaded', state: uiState.calibrationLoaded ? 'good' : (uiState.featureEnabled ? 'warn' : 'bad') },
+        { label: 'Empty-deck baselines loaded', state: uiState.baselinesLoaded ? 'good' : (uiState.calibrationLoaded ? 'warn' : 'bad') },
+      ];
+      document.getElementById('state-checklist').innerHTML = rows.map((row) => `
+        <div class="check-item">
+          <span class="dot ${row.state}"></span>
+          <span>${row.label}</span>
+        </div>
+      `).join('');
+    }
+
+    function updateCurrentState() {
+      const headline = document.getElementById('state-headline');
+      const help = document.getElementById('state-help');
+      const btnStartService = document.getElementById('btn-start-service');
+      const btnCalibration = document.getElementById('btn-run-calibration');
+      const btnBaselines = document.getElementById('btn-capture-baselines');
+      const btnViewCalibration = document.getElementById('btn-load-calibration');
+      const btnVerify = document.getElementById('btn-verify-deck');
+
+      btnStartService.disabled = !uiState.featureEnabled;
+      btnCalibration.disabled = !uiState.featureEnabled || !uiState.serviceReachable;
+      btnBaselines.disabled = !uiState.featureEnabled || !uiState.serviceReachable || !uiState.cameraFound || !uiState.calibrationLoaded;
+      btnViewCalibration.disabled = !uiState.featureEnabled || !uiState.serviceReachable;
+      btnVerify.disabled = !uiState.featureEnabled || !uiState.serviceReachable || !uiState.calibrationLoaded || !uiState.baselinesLoaded;
+
+      if (!uiState.featureEnabled) {
+        headline.textContent = 'Feature Disabled';
+        headline.className = 'state-headline bad';
+        help.textContent = 'Enable the deck verification camera in the active profile first. Then start the service from the repo root with: python -m pybravo.vision_service';
+      } else if (!uiState.serviceReachable) {
+        headline.textContent = 'Vision Service Offline';
+        headline.className = 'state-headline bad';
+        help.textContent = 'Start the local vision service from the repo root with: python -m pybravo.vision_service. Calibration and verification stay disabled until it is reachable.';
+      } else if (!uiState.sdkLoaded) {
+        headline.textContent = 'SDK Not Loaded';
+        headline.className = 'state-headline bad';
+        help.textContent = 'The service is up, but pyorbbecsdk is not loading yet. Confirm the local SDK tree exists and the vision profile settings point to it before continuing.';
+      } else if (!uiState.cameraFound) {
+        headline.textContent = 'Camera Not Detected';
+        headline.className = 'state-headline warn';
+        help.textContent = 'The SDK is available, but the Femto Bolt has not been detected yet.';
+      } else if (!uiState.calibrationLoaded) {
+        headline.textContent = 'Camera Detected, Not Calibrated';
+        headline.className = 'state-headline warn';
+        help.textContent = 'The next valid step is Start Guided Calibration. Verification is disabled until calibration exists.';
+      } else if (!uiState.baselinesLoaded) {
+        headline.textContent = 'Calibration Ready, Capture Empty Deck Baselines';
+        headline.className = 'state-headline warn';
+        help.textContent = 'Remove labware from the deck and click Capture Empty Deck Baselines. Verification stays disabled until depth baselines exist for all 9 slots.';
+      } else {
+        headline.textContent = 'Ready to Verify';
+        headline.className = 'state-headline good';
+        help.textContent = 'The service, SDK, camera, and calibration are all ready. You can run Verify Deck Setup now.';
+      }
+
+      updateChecklist();
+    }
+
+    async function refreshStatus() {
+      try {
+        const data = await api('/api/vision/status');
+        const liveCamera = data.camera || {};
+        const cal = data.calibration || {};
+        const calFile = cal.file || {};
+        const sdkStatus = calFile.sdk_status || {};
+        uiState.featureEnabled = true;
+        uiState.serviceReachable = true;
+        uiState.sdkLoaded = Boolean(sdkStatus.sdk_available);
+        uiState.cameraFound = liveCamera.camera_available === true;
+        uiState.calibrationLoaded = Boolean(cal.rois_complete);
+        uiState.baselinesLoaded = Number(cal.baselines_defined || 0) === 9;
+        setText('vision-status', JSON.stringify(data, null, 2));
+      } catch (err) {
+        const message = String(err.message || err);
+        uiState.featureEnabled = !message.includes('disabled');
+        uiState.serviceReachable = false;
+        uiState.sdkLoaded = false;
+        uiState.cameraFound = false;
+        uiState.calibrationLoaded = false;
+        uiState.baselinesLoaded = false;
+        setText('vision-status', message);
+      }
+      updateCurrentState();
+    }
+
+    async function startService() {
+      try {
+        const data = await api('/api/vision/service/start', 'POST');
+        setText('vision-status', JSON.stringify(data, null, 2));
+        await refreshStatus();
+      } catch (err) {
+        setText('vision-status', String(err.message || err));
+        updateCurrentState();
+      }
+    }
+
+    async function loadCalibration() {
+      try {
+        const data = await api('/api/vision/calibration');
+        uiState.featureEnabled = true;
+        uiState.serviceReachable = true;
+        uiState.calibrationLoaded = Boolean(data.calibrated);
+        uiState.baselinesLoaded = Boolean(data.calibration?.depth_baselines && Object.keys(data.calibration.depth_baselines).length === 9);
+        setText('calibration-status', JSON.stringify(data, null, 2));
+      } catch (err) {
+        const message = String(err.message || err);
+        if (message.includes('disabled')) uiState.featureEnabled = false;
+        setText('calibration-status', message);
+      }
+      updateCurrentState();
+    }
+
+    async function captureBaselines() {
+      try {
+        const data = await api('/api/vision/calibration/capture_baselines', 'POST', {});
+        uiState.baselinesLoaded = true;
+        setText('calibration-status', JSON.stringify(data, null, 2));
+        await refreshStatus();
+      } catch (err) {
+        setText('calibration-status', String(err.message || err));
+        updateCurrentState();
+      }
+    }
+
+    async function loadPreviewFrame(path, elementId, label) {
+      const frame = document.getElementById(elementId);
+      const key = elementId.endsWith('depth') ? 'depth' : 'rgb';
+      try {
+        const res = await fetch(`${path}?t=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.detail || data.error || data.message || `HTTP ${res.status}`);
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        if (latestPreviewUrls[key]) {
+          URL.revokeObjectURL(latestPreviewUrls[key]);
+        }
+        latestPreviewUrls[key] = url;
+        frame.innerHTML = `<img src="${url}" alt="${label} preview">`;
+      } catch (err) {
+        frame.innerHTML = `<div class="preview-placeholder">${String(err.message || err)}</div>`;
+      }
+    }
+
+    function setPreviewStream(path, elementId, label) {
+      const frame = document.getElementById(elementId);
+      frame.innerHTML = `<img src="${path}?t=${Date.now()}" alt="${label} preview">`;
+    }
+
+    async function loadPreview() {
+      setPreviewStream('/api/vision/stream', 'preview-frame-rgb', 'RGB');
+      setPreviewStream('/api/vision/stream/depth', 'preview-frame-depth', 'Depth');
+    }
+
+    async function runCalibration() {
+      const notes = document.getElementById('calibration-notes').value || '';
+      try {
+        const data = await api('/api/vision/calibration/run', 'POST', { notes });
+        const roiLaunch = await api('/api/vision/calibration/roi/start', 'POST');
+        uiState.calibrationLoaded = false;
+        const details = {
+          message: data.message,
+          reference_image_path: data.calibration?.reference_image_path || null,
+          image_width: data.calibration?.image_width || 0,
+          image_height: data.calibration?.image_height || 0,
+          transform_status: data.calibration?.transform_status || null,
+          roi_tool: roiLaunch.status,
+        };
+        setText('calibration-status', JSON.stringify(details, null, 2));
+        await loadPreview();
+        await refreshStatus();
+      } catch (err) {
+        setText('calibration-status', String(err.message || err));
+        updateCurrentState();
+      }
+    }
+
+    async function verifyDeck() {
+      try {
+        await loadPreview();
+        const data = await api('/api/vision/verify', 'POST');
+        const report = data.report || {};
+        setText('verify-summary', JSON.stringify(report.summary || {}, null, 2));
+        const tbody = document.getElementById('verify-table');
+        const slots = report.slots || [];
+        if (!slots.length) {
+          tbody.innerHTML = '<tr><td colspan="5" class="status-warn">No slot report returned.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = slots.map((slot) => {
+          const observed = slot.observed_labware || {};
+          const observedLabel = observed.matched_name || observed.name || observed.matched_family || observed.class || '-';
+          const cls = slot.status === 'present' || slot.status === 'empty_ok'
+            ? 'status-good'
+            : (slot.status === 'mismatch' || slot.status === 'missing' || slot.status === 'unexpected'
+              ? 'status-bad'
+              : 'status-warn');
+          return `
+            <tr>
+              <td>${slot.location}</td>
+              <td class="${cls}">${slot.status}</td>
+              <td>${slot.expected_labware?.name || slot.expected_class || '-'}</td>
+              <td>${observedLabel}</td>
+              <td>${slot.reason || '-'}</td>
+            </tr>
+          `;
+        }).join('');
+        await loadPreview();
+      } catch (err) {
+        setText('verify-summary', String(err.message || err));
+      }
+    }
+
+    function renderLiveDetectGrid(slots) {
+      const container = document.getElementById('live-detect-grid');
+      if (!slots.length) {
+        container.innerHTML = '';
+        return;
+      }
+      const ordered = [...slots].sort((a, b) => a.location - b.location);
+      container.innerHTML = ordered.map((slot) => {
+        const stateClass = slot.occupied ? 'good' : (slot.confidence >= 0.5 ? 'warn' : '');
+        const stateLabel = slot.occupied ? 'Present' : 'Empty';
+        const meta = [];
+        if (typeof slot.confidence === 'number') meta.push(`conf ${slot.confidence.toFixed(2)}`);
+        if (typeof slot.object_height_mm === 'number') meta.push(`height ${slot.object_height_mm.toFixed(1)} mm`);
+        if (slot.display_label && slot.display_label !== 'empty') meta.push(slot.display_label);
+        return `
+          <div class="live-slot ${stateClass}">
+            <div class="live-slot-head">
+              <span>Location ${slot.location}</span>
+              <span>${slot.depth_delta_mm != null ? `${slot.depth_delta_mm.toFixed(1)} mm` : '-'}</span>
+            </div>
+            <div class="live-slot-state">${stateLabel}</div>
+            <div class="live-slot-meta">${meta.join(' · ') || 'No details'}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function loadLiveDetect() {
+      try {
+        const data = await api('/api/vision/detect');
+        const report = data.report || {};
+        const slots = report.slots || [];
+        const occupied = slots.filter((slot) => slot.occupied).map((slot) => slot.location);
+        setText('live-detect-summary', JSON.stringify({
+          calibrated: report.calibrated || false,
+          occupied,
+          empty: report.empty || [],
+          updated_at: new Date().toLocaleTimeString(),
+        }, null, 2));
+        renderLiveDetectGrid(slots);
+      } catch (err) {
+        setText('live-detect-summary', String(err.message || err));
+      }
+    }
+
+    function startLiveDetect() {
+      if (liveDetectTimer !== null) return;
+      loadLiveDetect();
+      liveDetectTimer = window.setInterval(() => {
+        if (!document.hidden) {
+          loadLiveDetect();
+        }
+      }, 1000);
+    }
+
+    function stopLiveDetect() {
+      if (liveDetectTimer !== null) {
+        window.clearInterval(liveDetectTimer);
+        liveDetectTimer = null;
+      }
+      setText('live-detect-summary', 'Live occupancy tracking is idle.');
+    }
+
+    async function editOneRoi() {
+      const location = Number(document.getElementById('roi-location').value || '0');
+      try {
+        const data = await api(`/api/vision/calibration/roi/start?location=${location}`, 'POST');
+        setText('calibration-status', JSON.stringify(data, null, 2));
+      } catch (err) {
+        setText('calibration-status', String(err.message || err));
+      }
+    }
+
+    document.getElementById('btn-refresh-status').addEventListener('click', refreshStatus);
+    document.getElementById('btn-start-service').addEventListener('click', startService);
+    document.getElementById('btn-load-calibration').addEventListener('click', loadCalibration);
+    document.getElementById('btn-run-calibration').addEventListener('click', runCalibration);
+    document.getElementById('btn-capture-baselines').addEventListener('click', captureBaselines);
+    document.getElementById('btn-edit-one-roi').addEventListener('click', editOneRoi);
+    document.getElementById('btn-verify-deck').addEventListener('click', verifyDeck);
+    document.getElementById('btn-refresh-preview').addEventListener('click', loadPreview);
+    document.getElementById('btn-live-detect-start').addEventListener('click', startLiveDetect);
+    document.getElementById('btn-live-detect-stop').addEventListener('click', stopLiveDetect);
+
+    updateCurrentState();
+    refreshStatus();
+    loadCalibration();
+    loadPreview();
+  </script>
+</body>
+</html>

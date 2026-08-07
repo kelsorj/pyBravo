@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="520" viewBox="0 0 960 520" role="img" aria-labelledby="title desc">
+  <title id="title">Robot gripper offset reference</title>
+  <desc id="desc">Side view of a plate showing robot gripper offset as the vertical distance from the bottom of the labware up to the gripper contact plane.</desc>
+
+  <rect width="960" height="520" fill="#f5f5f1"/>
+  <rect x="40" y="36" width="880" height="448" rx="20" fill="#ffffff" stroke="#d6d6cf" stroke-width="3"/>
+
+  <g transform="translate(96 78)">
+    <rect x="0" y="0" width="360" height="320" rx="14" fill="#fafaf7" stroke="#d4d7dc" stroke-width="2"/>
+
+    <rect x="78" y="78" width="170" height="178" fill="#cfd5df" stroke="#49505a" stroke-width="3"/>
+    <rect x="78" y="62" width="170" height="22" fill="#eef1f5" stroke="#49505a" stroke-width="3"/>
+
+    <line x1="78" y1="62" x2="248" y2="62" stroke="#2b3038" stroke-width="4"/>
+    <line x1="78" y1="256" x2="248" y2="256" stroke="#2b3038" stroke-width="4"/>
+    <line x1="248" y1="190" x2="324" y2="190" stroke="#9b2f2f" stroke-width="4" stroke-dasharray="12 10"/>
+
+    <text x="268" y="55" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#202225">Top</text>
+    <text x="258" y="281" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#202225">Bottom</text>
+
+    <rect x="274" y="160" width="126" height="40" rx="8" fill="#fff5f5" stroke="#d27b7b" stroke-width="2"/>
+    <text x="292" y="186" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="bold" fill="#9b2f2f">Grip plane</text>
+    <line x1="274" y1="180" x2="248" y2="190" stroke="#9b2f2f" stroke-width="3"/>
+
+    <line x1="438" y1="190" x2="438" y2="256" stroke="#9b2f2f" stroke-width="4"/>
+    <polygon points="438,190 430,204 446,204" fill="#9b2f2f"/>
+    <polygon points="438,256 430,242 446,242" fill="#9b2f2f"/>
+    <text x="460" y="228" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="bold" fill="#9b2f2f">Gripper offset</text>
+
+    <line x1="548" y1="62" x2="548" y2="256" stroke="#315b9a" stroke-width="4"/>
+    <polygon points="548,62 540,76 556,76" fill="#315b9a"/>
+    <polygon points="548,256 540,242 556,242" fill="#315b9a"/>
+    <text x="570" y="167" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="bold" fill="#315b9a">Thickness</text>
+  </g>
+
+  <g transform="translate(92 422)">
+    <rect x="0" y="0" width="776" height="42" rx="8" fill="#f2f4f8" stroke="#d3d8e2" stroke-width="2"/>
+    <text x="22" y="28" font-family="Arial, Helvetica, sans-serif" font-size="23" fill="#22262c">
+      Distance from top down to grip plane = labware thickness - robot gripper offset
+    </text>
+  </g>
+</svg>
