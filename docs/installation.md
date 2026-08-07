@@ -55,7 +55,7 @@ from Homebrew, `pipx`, and most package managers.
 ### 2. Clone the repository
 
 ```bash
-git clone https://github.com/kelsorj/OpenBravo.git
+git clone https://github.com/kelsorj/pyBravo.git
 ```
 
 ### 3. Start the server
@@ -118,7 +118,7 @@ control. You need a system Python 3.11 or newer.
 ### macOS and Linux
 
 ```bash
-git clone https://github.com/kelsorj/OpenBravo.git
+git clone https://github.com/kelsorj/pyBravo.git
 ```
 
 ```bash
