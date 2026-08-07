@@ -95,6 +95,21 @@ jobs:
           Write-Host "VIRTUAL_ENV:  '$env:VIRTUAL_ENV'"
           Write-Host "UV_PYTHON:    '$env:UV_PYTHON'"
 
+      # Isolates uv from the batch wrapper: if uv alone already picks an
+      # ambient interpreter, the launcher is not at fault.
+      - name: Does uv alone use the project environment?
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          Write-Host "--- uv run --frozen (what the launcher does) ---"
+          uv run --frozen python -c "import sys; print(sys.executable)"
+          Write-Host "--- can it import pybravo? ---"
+          uv run --frozen python -c "import pybravo; print(pybravo.__file__)"
+          Write-Host "--- explicit uv sync --frozen ---"
+          uv sync --frozen
+          Write-Host "--- after sync ---"
+          uv run --frozen python -c "import sys; print(sys.executable)"
+
       - name: start_pybravo.bat brings up the server
         shell: pwsh
         run: |
