@@ -37,7 +37,7 @@ _STATE_BYTE7 = {0x10, 0x31, 0x38, 0x52, 0x30, 0x54, 0x55}
 
 
 def _expected_by_axis() -> dict[int, list[str]]:
-    return {int(k): v for k, v in json.loads(_FIXTURE.read_text()).items()}
+    return {int(k): v for k, v in json.loads(_FIXTURE.read_text(encoding="utf-8")).items()}
 
 
 class _MockTransport:

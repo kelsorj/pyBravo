@@ -4610,7 +4610,7 @@ async def websocket_state(websocket: WebSocket):
 def _write_active_profile(profile_dir: Path, name: str) -> None:
     """Persist the active profile name so it survives server restarts."""
     try:
-        (profile_dir / ".active_profile").write_text(name)
+        (profile_dir / ".active_profile").write_text(name, encoding="utf-8")
     except OSError as e:
         logger.warning("Could not write .active_profile: %s", e)
 
@@ -4619,7 +4619,7 @@ def _read_active_profile(profile_dir: Path) -> str | None:
     """Return the previously saved active profile name, or None."""
     marker = profile_dir / ".active_profile"
     if marker.exists():
-        name = marker.read_text().strip()
+        name = marker.read_text(encoding="utf-8").strip()
         if name and (profile_dir / f"{name}.yaml").exists():
             return name
     return None

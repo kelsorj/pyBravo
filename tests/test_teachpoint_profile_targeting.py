@@ -28,7 +28,7 @@ def profile_dir(tmp_path, monkeypatch):
 
 
 def _locations(path):
-    return yaml.safe_load(path.read_text()).get("teachpoints") or {}
+    return yaml.safe_load(path.read_text(encoding="utf-8")).get("teachpoints") or {}
 
 
 @pytest.mark.asyncio
@@ -66,7 +66,7 @@ def test_startup_warns_when_it_falls_back_to_default(tmp_path, caplog):
     """A silent fallback is what makes a whole session land in the wrong file."""
     assert server._read_active_profile(tmp_path) is None
 
-    (tmp_path / "real.yaml").write_text("name: real\n")
+    (tmp_path / "real.yaml").write_text("name: real\n", encoding="utf-8")
     server._write_active_profile(tmp_path, "real")
     assert server._read_active_profile(tmp_path) == "real"
 
@@ -77,7 +77,7 @@ def test_startup_warns_when_it_falls_back_to_default(tmp_path, caplog):
 
 def test_active_profile_survives_a_load(tmp_path):
     """Loading a profile records it, so the next start resumes the same one."""
-    (tmp_path / "384.yaml").write_text("name: '384'\n")
+    (tmp_path / "384.yaml").write_text("name: '384'\n", encoding="utf-8")
     server._write_active_profile(tmp_path, "384")
-    assert (tmp_path / ".active_profile").read_text().strip() == "384"
+    assert (tmp_path / ".active_profile").read_text(encoding="utf-8").strip() == "384"
     assert server._read_active_profile(tmp_path) == "384"

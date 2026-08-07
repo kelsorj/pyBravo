@@ -13,7 +13,8 @@ accessories:
     port: COM7
     side: west
     location: 6
-""".strip()
+""".strip(),
+        encoding="utf-8",
     )
 
     profile = BravoProfile.load(path)

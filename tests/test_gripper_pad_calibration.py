@@ -133,12 +133,12 @@ def test_profile_without_calibration_keys_falls_back_to_defaults(tmp_path):
     """Profiles written before these keys existed must keep working unchanged."""
     import yaml
 
-    data = yaml.safe_load((PROFILE_DIR / "default.yaml").read_text())
+    data = yaml.safe_load((PROFILE_DIR / "default.yaml").read_text(encoding="utf-8"))
     data.setdefault("gripper", {}).pop("pad_zg_reference_mm", None)
     data["gripper"].pop("pad_reference_tip_length_mm", None)
 
     legacy = tmp_path / "legacy.yaml"
-    legacy.write_text(yaml.dump(data))
+    legacy.write_text(yaml.dump(data), encoding="utf-8")
 
     profile = BravoProfile.load(str(legacy))
     assert profile.gripper.pad_zg_reference_mm == pytest.approx(7.0)

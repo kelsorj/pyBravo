@@ -85,11 +85,26 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
 
+      - name: Environment the launcher will see
+        shell: pwsh
+        run: |
+          Write-Host "cwd:          $PWD"
+          Write-Host "pyproject:    $(Test-Path pyproject.toml)"
+          Write-Host "uv.lock:      $(Test-Path uv.lock)"
+          Write-Host "uv:           $(uv --version)"
+          Write-Host "VIRTUAL_ENV:  '$env:VIRTUAL_ENV'"
+          Write-Host "UV_PYTHON:    '$env:UV_PYTHON'"
+
       - name: start_pybravo.bat brings up the server
         shell: pwsh
         run: |
+          # -WorkingDirectory pinned explicitly: if uv cannot see pyproject.toml
+          # it runs the command against an ambient interpreter instead of the
+          # project environment, and fails with ModuleNotFoundError rather than
+          # saying anything about a missing project.
           $proc = Start-Process -FilePath cmd.exe `
             -ArgumentList '/c', 'scripts\start_pybravo.bat' `
+            -WorkingDirectory $PWD `
             -PassThru -NoNewWindow
           try {
             for ($i = 1; $i -le 90; $i++) {

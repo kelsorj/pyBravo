@@ -68,7 +68,7 @@ console.log(JSON.stringify(out));
 
 
 def _build_module(tmp_path: Path) -> Path:
-    source = MAIN_JS.read_text()
+    source = MAIN_JS.read_text(encoding="utf-8")
     parts = []
     for label, pattern in _EXTRACTS:
         match = re.search(pattern, source)
@@ -84,7 +84,7 @@ def _build_module(tmp_path: Path) -> Path:
     prelude = _PRELUDE.replace("BUTTON_IDS", json.dumps(button_ids))
 
     module = tmp_path / "readiness_harness.js"
-    module.write_text(prelude + "\n" + body + "\n" + _EPILOGUE)
+    module.write_text(prelude + "\n" + body + "\n" + _EPILOGUE, encoding="utf-8")
     return module
 
 
@@ -167,8 +167,8 @@ def test_header_action_buttons_are_wired(button_id, endpoint):
     readiness system, styled as ready once connected, and bound to no handler,
     so ``/api/initialize`` was only reachable from Reinitialize in Profiles.
     """
-    js = MAIN_JS.read_text()
-    html = (MAIN_JS.parents[2] / "frontend" / "index.html").read_text()
+    js = MAIN_JS.read_text(encoding="utf-8")
+    html = (MAIN_JS.parents[2] / "frontend" / "index.html").read_text(encoding="utf-8")
 
     assert f'id="{button_id}"' in html, f"{button_id} is missing from index.html"
 
