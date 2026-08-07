@@ -37,11 +37,9 @@ People who worked with him describe someone quiet and generous, who liked
 puzzling out hard engineering problems and liked helping other people solve
 theirs even more. He died of cancer in 2018, at 45.
 
-The Bravo is a genuinely good machine, and a lot of them are still running in
-labs that can no longer get software for them. The goal here is to keep those
-instruments alive and in the hands of researchers, and to let the hardware Ben
-helped design join the open source community. If this project saves a Bravo
-from a scrapyard, that is the point of it.
+The Bravo is a genuinely good machine, and a lot of them are still running. The 
+goal here is to let the hardware Ben helped design join the open source 
+community.
 
 ---
 
