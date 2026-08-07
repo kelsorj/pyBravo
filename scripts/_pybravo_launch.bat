@@ -20,6 +20,13 @@ rem
 rem -B keeps Python from writing .pyc files, so stale bytecode cannot survive a
 rem code change.
 
+rem Capture the script's own directory BEFORE any shift. `shift` renumbers %0
+rem as well as %1..%9, so after shifting, %~dp0 no longer refers to this file -
+rem it refers to the consumed argument, and "cd /d %~dp0.." silently lands
+rem somewhere else. That put uv outside the project, which surfaced only as
+rem "No module named 'pybravo'" from an unrelated interpreter.
+set "SCRIPT_DIR=%~dp0"
+
 set "MODULE=%~1"
 if not defined MODULE goto usage
 shift
@@ -34,7 +41,10 @@ shift
 goto collect_args
 :args_done
 
-cd /d "%~dp0.."
+cd /d "%SCRIPT_DIR%.." || (
+    echo Could not change to the repository root from "%SCRIPT_DIR%" 1>&2
+    exit /b 1
+)
 
 if defined PYBRAVO_PYTHON goto use_override
 
@@ -76,12 +86,10 @@ goto run_direct
 :run_uv
 set "EXTRAS="
 for %%e in (%PYBRAVO_EXTRAS%) do set "EXTRAS=!EXTRAS! --extra %%e"
-rem Sync, then invoke the environment's interpreter by path rather than using
-rem `uv run python`. `uv run` relies on prepending .venv\Scripts to PATH for the
-rem child process, and under cmd.exe that does not take effect - the child
-rem resolves the first `python` on the inherited PATH instead, which on a GitHub
-rem runner (and on any machine with a system Python) is the wrong interpreter
-rem and fails with ModuleNotFoundError: No module named 'pybravo'.
+rem Sync explicitly, then invoke the environment's interpreter by path. This is
+rem more verbose than `uv run python -m ...` but it fails loudly: if the project
+rem cannot be found, `uv sync` says so, whereas `uv run` falls back to an
+rem ambient interpreter and the only symptom is a puzzling ModuleNotFoundError.
 echo Syncing dependencies with uv...
 uv sync --frozen!EXTRAS!
 if errorlevel 1 (

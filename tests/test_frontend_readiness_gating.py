@@ -95,7 +95,12 @@ def _gate_state(tmp_path: Path, **snapshot: bool) -> dict:
     module = _build_module(tmp_path)
     proc = subprocess.run(
         [node, str(module), json.dumps(snapshot)],
-        capture_output=True, text=True, timeout=30,
+        capture_output=True, text=True,
+        # Generous on purpose. The harness itself runs in milliseconds; the
+        # timeout exists to catch a hang, not to police speed. A cold node
+        # start on a Windows CI runner (with a virus scanner in the path) has
+        # taken well over 30s, which made this flaky rather than meaningful.
+        timeout=180,
     )
     if proc.returncode != 0:
         pytest.fail(f"readiness harness failed:\n{proc.stderr}")
