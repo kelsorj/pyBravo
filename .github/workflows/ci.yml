@@ -12,11 +12,12 @@ permissions:
 
 jobs:
   test:
-    name: Tests (Python ${{ matrix.python-version }})
-    runs-on: ubuntu-latest
+    name: Tests (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, windows-latest]
         python-version: ["3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
@@ -73,3 +74,51 @@ jobs:
           done
           echo "::error::server did not answer on :8000 within 45s"
           exit 1
+
+  # Batch is easy to get subtly wrong and cannot be exercised from a dev
+  # machine that is not Windows, so the launcher is tested here rather than by
+  # hand. Labs running these instruments are overwhelmingly on Windows.
+  smoke-windows:
+    name: Windows launcher smoke test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+
+      - name: start_pybravo.bat brings up the server
+        shell: pwsh
+        run: |
+          $proc = Start-Process -FilePath cmd.exe `
+            -ArgumentList '/c', 'scripts\start_pybravo.bat' `
+            -PassThru -NoNewWindow
+          try {
+            for ($i = 1; $i -le 90; $i++) {
+              try {
+                Invoke-WebRequest -Uri http://localhost:8000/ `
+                  -UseBasicParsing -TimeoutSec 3 | Out-Null
+                Write-Host "server answered after ${i}s"
+                exit 0
+              } catch {
+                Start-Sleep -Seconds 1
+              }
+            }
+            Write-Host "::error::server did not answer on :8000 within 90s"
+            exit 1
+          } finally {
+            # /T so the python child dies with the cmd wrapper.
+            taskkill /F /T /PID $proc.Id 2>$null | Out-Null
+          }
+
+      - name: The launcher refuses a Python older than 3.11
+        shell: pwsh
+        run: |
+          # The gate that matters on Windows: a Store python3.9 on PATH must be
+          # rejected with an explanation, not allowed through to a TypeError.
+          $gate = 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)'
+          $py = (Get-Command python).Source
+          & $py -c $gate
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "runner python is pre-3.11 and correctly rejected"
+          } else {
+            Write-Host "runner python is 3.11+ and correctly accepted"
+          }

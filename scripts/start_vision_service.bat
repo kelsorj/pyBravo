@@ -1,7 +1,8 @@
 @echo off
-setlocal
-cd /d "%~dp0.."
-set "PYBRAVO_PYTHON_EXE=%PYBRAVO_PYTHON%"
-if not defined PYBRAVO_PYTHON_EXE set "PYBRAVO_PYTHON_EXE=python"
-echo Starting vision service with "%PYBRAVO_PYTHON_EXE%"
-"%PYBRAVO_PYTHON_EXE%" -m pybravo.vision_service
+rem Windows launcher for the vision service - the equivalent of
+rem start_vision_service.sh.
+rem
+rem The camera stack lives in the optional `vision` extra. Under uv, ask for it:
+rem   set PYBRAVO_EXTRAS=vision && scripts\start_vision_service.bat
+call "%~dp0_pybravo_launch.bat" pybravo.vision_service %*
+exit /b %errorlevel%

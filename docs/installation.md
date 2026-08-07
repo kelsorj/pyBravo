@@ -64,9 +64,9 @@ git clone https://github.com/kelsorj/pyBravo.git
 cd pyBravo && ./scripts/start_pybravo.sh
 ```
 
-On Windows, run `scripts\start_pybravo.bat` instead — but read
-[Windows specifics](#windows-specifics) first, because the Windows launcher
-does not use uv.
+On Windows, run `scripts\start_pybravo.bat` instead. It performs the same
+interpreter search as the shell launcher; see
+[Windows specifics](#windows-specifics) for the details that differ.
 
 The first run takes a minute or two while uv fetches an interpreter and builds
 the environment. Subsequent runs are fast. The launcher prints the interpreter
@@ -181,15 +181,28 @@ it with `PYBRAVO_PROFILE_DIR` if you need to.
 
 A few things differ on Windows and are worth knowing before you start.
 
-**The Windows launcher does not use uv.** `scripts\start_pybravo.bat` runs
-`%PYBRAVO_PYTHON%` if that variable is set, and otherwise plain `python` from
-`PATH`. It does not perform the multi-step interpreter search that the shell
-launcher does. So on Windows you must either:
+**The launcher searches for an interpreter, same as on macOS and Linux.**
+`scripts\start_pybravo.bat` delegates to `scripts\_pybravo_launch.bat`, which
+tries, in order:
 
-- activate a virtualenv that has the package installed before running the
-  `.bat`, or
-- set `PYBRAVO_PYTHON` to a full interpreter path, or
-- run `uv run --frozen python -B -m pybravo.web.server` yourself.
+1. `%PYBRAVO_PYTHON%`, if set.
+2. `uv`, which resolves Python 3.11+ and installs from `uv.lock`. This is the
+   path you want — it needs nothing else installed.
+3. `.venv\Scripts\python.exe`, a virtualenv in the repo.
+4. `py -3.13`, `py -3.12`, `py -3.11` via the Windows Python launcher.
+5. Plain `python` from `PATH`, **only if it reports 3.11 or newer**.
+
+That last check matters on Windows: the `python` on `PATH` is frequently a 3.9
+from the Microsoft Store, and pyBravo needs 3.11. The launcher refuses it with
+an explanation and install instructions rather than letting you hit a
+`TypeError` raised from inside a class body.
+
+Requesting optional extras under uv uses the same variable as the shell
+launcher:
+
+```bat
+set PYBRAVO_EXTRAS=llm && scripts\start_pybravo.bat
+```
 
 Pointing the launcher at a specific interpreter:
 

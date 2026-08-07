@@ -1,7 +1,5 @@
 @echo off
-setlocal
-cd /d "%~dp0.."
-set "PYBRAVO_PYTHON_EXE=%PYBRAVO_PYTHON%"
-if not defined PYBRAVO_PYTHON_EXE set "PYBRAVO_PYTHON_EXE=python"
-echo Starting PyBravo with "%PYBRAVO_PYTHON_EXE%"
-"%PYBRAVO_PYTHON_EXE%" -m pybravo.web.server
+rem Windows launcher for the pyBravo web server - the equivalent of
+rem start_pybravo.sh. Serves the UI on http://localhost:8000.
+call "%~dp0_pybravo_launch.bat" pybravo.web.server %*
+exit /b %errorlevel%
