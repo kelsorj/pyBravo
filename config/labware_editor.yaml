@@ -1,0 +1,713 @@
+version: 1
+labware_types:
+- labware_type_id: lw-3918306f45b8
+  name: 1536 Labcyte LP-0400 LDV
+  kind: sbs_plate
+  vendor: ''
+  catalog_number: ''
+  description: ''
+  base_class: microplate
+  wells: 1536
+  plate_dimensions_mm:
+    length_mm: 127.76
+    width_mm: 85.48
+    height_mm: 10.5
+  plate_properties:
+    robot_gripper_offset_mm: 1.0
+    empty_check_offset_mm: null
+    thickness_mm: 10.48
+    stacking_thickness_mm: 9.8
+    shim_thickness_mm: null
+    can_be_sealed: true
+    sealed_thickness_mm: 10.5
+    sealed_stacking_thickness_mm: 9.3
+    can_have_lid: false
+    lidded_thickness_mm: null
+    lidded_stacking_thickness_mm: null
+    lid_resting_height_mm: null
+    lid_departure_height_mm: null
+    lower_plate_at_labeler: false
+    can_mount: false
+    can_be_mounted: false
+    max_robot_handling_speed: fast
+    filter_tip_pin_tool_length_mm: null
+    filter_channel_resting_depth_mm: null
+    requires_insert: None
+  well_dimensions_mm:
+    volume_ul: 5.5
+    depth_mm: 5.2
+    diameter_mm: 1.7
+    offset_x_mm: 3.375
+    offset_y_mm: 3.375
+    spacing_x_mm: 2.25
+    spacing_y_mm: 2.25
+    well_geometry: 2
+    well_bottom_shape: 2
+    tip_source: agilent
+    disposable_tip_capacity_ul: 10
+    disposable_tip_length_mm: null
+  pf400: {}
+  planar_motor: {}
+  labware_class_ids:
+  - 01KD4PKQ8DFP12QWDM29CQWZ8A
+  model_3d:
+    url: /labware-assets/lw-3918306f45b8/1536_Labcyte_LP-0400_LDV.gltf
+    filename: 1536_Labcyte_LP-0400_LDV.gltf
+    format: gltf
+  tip_definition_id: ''
+  supported_tip_ids: []
+- labware_type_id: lw-34358f93e2a0
+  name: 384 CellVis 1.5H
+  kind: sbs_plate
+  vendor: ''
+  catalog_number: ''
+  description: ''
+  base_class: microplate
+  wells: 384
+  plate_dimensions_mm:
+    length_mm: 127.76
+    width_mm: 85.48
+    height_mm: 14.3
+  plate_properties:
+    robot_gripper_offset_mm: 8
+    empty_check_offset_mm: null
+    thickness_mm: 14.3
+    stacking_thickness_mm: null
+    shim_thickness_mm: null
+    can_be_sealed: false
+    sealed_thickness_mm: null
+    sealed_stacking_thickness_mm: null
+    can_have_lid: true
+    lidded_thickness_mm: 16.4
+    lidded_stacking_thickness_mm: 17.7
+    lid_resting_height_mm: 9.7
+    lid_departure_height_mm: 11
+    lower_plate_at_labeler: false
+    can_mount: false
+    can_be_mounted: false
+    max_robot_handling_speed: fast
+    filter_tip_pin_tool_length_mm: null
+    filter_channel_resting_depth_mm: null
+    requires_insert: None
+    robot_lid_gripper_offset_mm: 0.5
+  well_dimensions_mm: {}
+  pf400: {}
+  planar_motor: {}
+  labware_class_ids:
+  - 01KD4PKQ8DFP12QWDM29CQWZ8A
+  tip_definition_id: ''
+  supported_tip_ids: []
+  model_3d: null
+- kind: sbs_plate
+  name: 384 Labcyte PP0200 PP sq flt
+  vendor: Beckman
+  catalog_number: 001-14622
+  description: Echo(R) Qualified 384-Well Polypropylene Microplate, Clear, Sterile,
+    Surface-treated with Amine Coating
+  base_class: microplate
+  labware_class_ids:
+  - 01KD4PKQ8DFP12QWDM29CQWZ8A
+  wells: 384
+  well_type: ''
+  plate_dimensions_mm:
+    length_mm: 127.76
+    width_mm: 85.48
+    height_mm: 14.4
+  plate_properties:
+    robot_gripper_offset_mm: 7
+    empty_check_offset_mm: null
+    thickness_mm: 14.4
+    stacking_thickness_mm: 13.6
+    shim_thickness_mm: 4
+    can_be_sealed: true
+    sealed_thickness_mm: 0
+    sealed_stacking_thickness_mm: 0
+    can_have_lid: true
+    lidded_thickness_mm: 16.5
+    lidded_stacking_thickness_mm: 14.5
+    lid_resting_height_mm: 9.5
+    lid_departure_height_mm: 8.5
+    lower_plate_at_labeler: true
+    can_mount: true
+    can_be_mounted: true
+    max_robot_handling_speed: fast
+    filter_tip_pin_tool_length_mm: 0
+    filter_channel_resting_depth_mm: 0
+    requires_insert: None
+    robot_lid_gripper_offset_mm: null
+  well_dimensions_mm:
+    diameter_mm: 3.5
+    depth_mm: 11.4
+    volume_ul: 130
+    spacing_x_mm: 4.5
+    spacing_y_mm: 4.5
+    offset_x_mm: 2.25
+    offset_y_mm: 2.25
+    rows: 16
+    cols: 24
+    well_geometry: 2
+    well_bottom_shape: 2
+    tip_source: agilent
+    disposable_tip_capacity_ul: 10
+    disposable_tip_length_mm: 20
+  model_3d:
+    url: /labware-assets/01KD4PYY7N4EG0E22P3QP1RHB9/384_Greiner_781091_PS_uclear.gltf
+    filename: 384_Greiner_781091_PS_uclear.gltf
+    format: gltf
+  notes: Seeded from vendor .dat; verify dimensions + map geometry/base class enums.
+  source:
+    system: legacy
+    dat_path: models/labware/384 Greiner 781091 PS uclear/384 Greiner 781091 PS uclear.dat
+    folder: 384 Greiner 781091 PS uclear
+    image_filename: ''
+  legacy_raw:
+    3RD_PARTY_TIP_CAPACITY: '60'
+    A12_NOTCH: '0'
+    A1_NOTCH: '1'
+    ACCESS2_IGNORE_PLATE_SENSOR: '0'
+    ACCESS2_ROBOT_GRIPPER_OFFSET: '6.00000'
+    ACCESS2_ROBOT_LID_GRIPPER_OFFSET: '0.00000'
+    BASE_CLASS: '1'
+    BC_ERROR_CORRECTION_OFFSET: '0.00000'
+    BC_GRIPPER_HOLDING_LIDDED_PLATE_POSITION: '4.00000'
+    BC_GRIPPER_HOLDING_LID_POSITION: '3.50000'
+    BC_GRIPPER_HOLDING_PLATE_POSITION: '4.00000'
+    BC_GRIPPER_HOLDING_STACK_POSITION: '4.50000'
+    BC_GRIPPER_OPEN_POSITION: '0.10000'
+    BC_ROBOT_GRIPPER_OFFSET: '8.00000'
+    BC_R_ERROR_CORRECTION_OFFSET: '0.00000'
+    BC_R_GRIPPER_HOLDING_LIDDED_PLATE_POSITION: '9.00000'
+    BC_R_GRIPPER_HOLDING_LID_POSITION: '8.00000'
+    BC_R_GRIPPER_HOLDING_PLATE_POSITION: '9.00000'
+    BC_R_GRIPPER_HOLDING_STACK_POSITION: '10.00000'
+    BC_R_GRIPPER_INSERTION_OFFSET: '11.00000'
+    BC_R_GRIPPER_OPEN_POSITION: '-1.00000'
+    BC_R_LID_GRIPPER_OFFSET: '0.00000'
+    BC_R_PLATE_PRESENCE_GAIN: '1.00000'
+    BC_R_PLATE_PRESENCE_THRESHOLD: '50'
+    BC_R_ROBOT_GRIPPER_OFFSET: '8.00000'
+    BC_R_SENSOR_OFFSET: '8.00000'
+    BC_R_STACKER_GRIPPER_OFFSET: '6.00000'
+    BC_R_STACK_HOLDING_METHOD: Hold with stacker grippers
+    BC_SENSOR_OFFSET: '8.00000'
+    BC_STACKER_GRIPPER_OFFSET: '0.00000'
+    BENCHBOT_GRIP_TORQUE_PERCENTAGE: '100'
+    BENCHBOT_LANDSCAPE_GRIPPER_CLOSED_WIDTH: '124.00000'
+    BENCHBOT_LANDSCAPE_GRIPPER_OFFSET_RANGES: 2-6
+    BENCHBOT_LANDSCAPE_GRIPPER_OPEN_WIDTH: '132.50000'
+    BENCHBOT_LANDSCAPE_GRIPPER_TOLERANCE: '4.00000'
+    BENCHBOT_PORTRAIT_GRIPPER_CLOSED_WIDTH: '80.50000'
+    BENCHBOT_PORTRAIT_GRIPPER_OFFSET_RANGES: 2.5-6
+    BENCHBOT_PORTRAIT_GRIPPER_OPEN_WIDTH: '89.00000'
+    BENCHBOT_PORTRAIT_GRIPPER_TOLERANCE: '4.00000'
+    BRAVO_IGNORE_PLATE_SENSOR: '0'
+    BRAVO_ROBOT_GRIPPER_OFFSET: '8.00000'
+    BRAVO_ROBOT_LID_GRIPPER_OFFSET: '0.00000'
+    CAN_BE_MOUNTED: '0'
+    CAN_BE_SEALED: '0'
+    CAN_HAVE_LID: '1'
+    CAN_MOUNT: '0'
+    CHECK_PLATE_ORIENTATION: '1'
+    DESCRIPTION: 384 Geiner 781091 PS uclear
+    DISPOSABLE_TIP_LENGTH: '20.00000'
+    FILTER_CHANNEL_RESTING_DEPTH: '0.00000'
+    FILTER_TIP_PIN_TOOL_LENGTH: '0.00000'
+    H12_NOTCH: '0'
+    H1_NOTCH: '1'
+    LIDDED_STACKING_THICKNESS: '14.50000'
+    LIDDED_THICKNESS: '16.50000'
+    LID_DEPARTURE_HEIGHT: '8.50000'
+    LID_RESTING_HEIGHT: '9.50000'
+    LOWER_PLATE_AT_VCODE: '1'
+    MANUFACTURER_PART_NUMBER: ''
+    MOUNTED_LID_ROBOT_GRIPPER_OFFSET: '3.00000'
+    NUMBER_OF_WELLS: '384'
+    PRESENTATION_OFFSET: '0.00000'
+    REQUIRES INSERT: None
+    ROBOT_GRIPPER_OFFSET: '0.50000'
+    ROBOT_HANDLING_SPEED: '2'
+    SEALED_STACKING_THICKNESS: '0.00000'
+    SEALED_THICKNESS: '0.00000'
+    SENSOR_INTENSITY: '50'
+    SENSOR_OFFSET: '7.00000'
+    SENSOR_THRESHOLD: '100'
+    SENSOR_THRESHOLD_MIN: '0'
+    SHIM_THICKNESS: '4.00000'
+    STACKER_GRIPPER_OFFSET: '1.00000'
+    STACKING_THICKNESS: '8.60000'
+    THICKNESS: '14.40000'
+    TIPBOX_SOURCE: '1'
+    TIP_CAPACITY: '10'
+    USE_VACUUM_CLAMP: '0'
+    VROBOT_GRIP_TORQUE_PERCENTAGE: '50'
+    VROBOT_IGNORE_PLATE_SENSOR: '0'
+    VROBOT_LANDSCAPE_GRIPPER_OFFSET_MAX: '10.00000'
+    VROBOT_LANDSCAPE_GRIPPER_OFFSET_MIN: '0.00000'
+    VROBOT_LANDSCAPE_GRIPPER_OFFSET_RANGES: 0-10
+    VROBOT_PORTRAIT_GRIPPER_OFFSET_MAX: '10.00000'
+    VROBOT_PORTRAIT_GRIPPER_OFFSET_MIN: '0.00000'
+    VROBOT_PORTRAIT_GRIPPER_OFFSET_RANGES: 0-10
+    VROBOT_ROBOT_LID_GRIPPER_OFFSET_MAX: '0.00000'
+    VROBOT_ROBOT_LID_GRIPPER_OFFSET_MIN: '0.00000'
+    WELL_BOTTOM_SHAPE: '2'
+    WELL_DEPTH: '11.50000'
+    WELL_DIAMETER: '3.50000'
+    WELL_GEOMETRY: '2'
+    WELL_TIP_VOLUME: '130.00000'
+    X_TEACHPOINT_TO_WELL: '2.25000'
+    X_WELL_TO_WELL: '4.50000'
+    Y_TEACHPOINT_TO_WELL: '2.25000'
+    Y_WELL_TO_WELL: '4.50000'
+    Z_TIP_ATTACH_OFFSET: '-1.00000'
+    NAME: 384 Greiner 781091 PS uclear
+  labware_type_id: 01KD4PYY7N4EG0E22P3QP1RHB9
+  created_at: 2025-12-23 04:20:00.885000
+  updated_at: 2026-01-08 20:32:34.962000
+  pf400:
+    landscape_gripping_ranges_mm: 0-10
+    landscape_open_width_mm: 135
+    landscape_closed_width_mm: 126
+    landscape_tolerance_mm: 0.1
+    portrait_gripping_ranges_mm: 0-10
+    portrait_open_width_mm: 89
+    portrait_closed_width_mm: 86
+    portrait_tolerance_mm: 0.1
+    grip_torque_percent: 50
+  planar_motor:
+    max_velocity_m_per_s: 2
+    max_acceleration_m_per_s2: 0.5
+  tip_definition_id: ''
+  supported_tip_ids: []
+- labware_type_id: lw-4914769d0af7
+  name: 384 V11 ST10 Tip Box 10734.102
+  kind: sbs_plate
+  vendor: ''
+  catalog_number: ''
+  description: ''
+  base_class: tip_box
+  wells: 384
+  plate_dimensions_mm:
+    length_mm: 127.76
+    width_mm: 85.48
+    height_mm: 0
+  plate_properties:
+    robot_gripper_offset_mm: 10
+    empty_check_offset_mm: null
+    thickness_mm: 50
+    stacking_thickness_mm: null
+    shim_thickness_mm: null
+    can_be_sealed: false
+    sealed_thickness_mm: null
+    sealed_stacking_thickness_mm: null
+    can_have_lid: false
+    lidded_thickness_mm: null
+    lidded_stacking_thickness_mm: null
+    lid_resting_height_mm: null
+    lid_departure_height_mm: null
+    lower_plate_at_labeler: false
+    can_mount: false
+    can_be_mounted: false
+    max_robot_handling_speed: fast
+    filter_tip_pin_tool_length_mm: null
+    filter_channel_resting_depth_mm: null
+    requires_insert: None
+  well_dimensions_mm:
+    volume_ul: null
+    depth_mm: null
+    diameter_mm: null
+    offset_x_mm: 2.25
+    offset_y_mm: 2.25
+    spacing_x_mm: 4.5
+    spacing_y_mm: 4.5
+    well_geometry: 1
+    well_bottom_shape: 2
+    tip_source: agilent
+    disposable_tip_capacity_ul: 10
+    disposable_tip_length_mm: null
+  pf400: {}
+  planar_motor: {}
+  labware_class_ids:
+  - class-ed784ac151ec
+  model_3d:
+    url: /labware-assets/lw-4914769d0af7/ST_Tip_Box.gltf
+    filename: ST_Tip_Box.gltf
+    format: gltf
+  tip_definition_id: ''
+  supported_tip_ids: []
+- kind: sbs_plate
+  name: 96 Costar 3596 clear cell culture PS flt btm
+  vendor: Costar
+  catalog_number: 3596/3599
+  description: "Costar 96-well cell culture plate, clear plate with clear flat bottom\
+    \ with lid, polystyrene\n \n Total vol: 360uL\n Working volume: 200uL"
+  base_class: microplate
+  labware_class_ids:
+  - 01KD4PKQ8DFP12QWDM29CQWZ8A
+  wells: 96
+  well_type: ''
+  plate_dimensions_mm:
+    length_mm: 127.76
+    width_mm: 85.48
+    height_mm: 14.3
+  plate_properties:
+    robot_gripper_offset_mm: 0.0
+    empty_check_offset_mm: null
+    thickness_mm: 14.3
+    stacking_thickness_mm: 13.0
+    shim_thickness_mm: 4.0
+    can_be_sealed: false
+    sealed_thickness_mm: 0.0
+    sealed_stacking_thickness_mm: 0.0
+    can_have_lid: true
+    lidded_thickness_mm: 16.5
+    lidded_stacking_thickness_mm: 16.0
+    lid_resting_height_mm: 7.0
+    lid_departure_height_mm: 10.0
+    lower_plate_at_labeler: true
+    can_mount: false
+    can_be_mounted: false
+    max_robot_handling_speed: fast
+    filter_tip_pin_tool_length_mm: 0.0
+    filter_channel_resting_depth_mm: 0.0
+    requires_insert: None
+  well_dimensions_mm:
+    diameter_mm: 6.4
+    depth_mm: 10.75
+    spacing_x_mm: 9.0
+    spacing_y_mm: 9.0
+    offset_x_mm: 0.0
+    offset_y_mm: 0.0
+    rows: 8
+    cols: 12
+    well_geometry: 1
+    well_bottom_shape: 2
+  model_3d:
+    url: /models/labware/uploads/01KD4P500RXXP69X03R0SDGS7C/model.gltf
+    format: gltf
+  notes: Seeded from vendor .dat; verify dimensions + map geometry/base class enums.
+  source:
+    system: legacy
+    dat_path: models/labware/96 Costar 3596 clear cell culture PS flt btm/96 Costar
+      3596 clear cell culture PS flt btm.dat
+    folder: 96 Costar 3596 clear cell culture PS flt btm
+    image_filename: null
+  legacy_raw:
+    3RD_PARTY_TIP_CAPACITY: '60'
+    A12_NOTCH: '0'
+    A1_NOTCH: '1'
+    ACCESS2_IGNORE_PLATE_SENSOR: '0'
+    ACCESS2_ROBOT_GRIPPER_OFFSET: '6.00000'
+    ACCESS2_ROBOT_LID_GRIPPER_OFFSET: '0.00000'
+    BASE_CLASS: '1'
+    BC_ERROR_CORRECTION_OFFSET: '0.00000'
+    BC_GRIPPER_HOLDING_LIDDED_PLATE_POSITION: '4.00000'
+    BC_GRIPPER_HOLDING_LID_POSITION: '3.50000'
+    BC_GRIPPER_HOLDING_PLATE_POSITION: '4.00000'
+    BC_GRIPPER_HOLDING_STACK_POSITION: '4.50000'
+    BC_GRIPPER_OPEN_POSITION: '0.10000'
+    BC_ROBOT_GRIPPER_OFFSET: '8.00000'
+    BC_R_ERROR_CORRECTION_OFFSET: '0.00000'
+    BC_R_GRIPPER_HOLDING_LIDDED_PLATE_POSITION: '9.00000'
+    BC_R_GRIPPER_HOLDING_LID_POSITION: '8.00000'
+    BC_R_GRIPPER_HOLDING_PLATE_POSITION: '9.00000'
+    BC_R_GRIPPER_HOLDING_STACK_POSITION: '10.00000'
+    BC_R_GRIPPER_INSERTION_OFFSET: '11.00000'
+    BC_R_GRIPPER_OPEN_POSITION: '-1.00000'
+    BC_R_LID_GRIPPER_OFFSET: '0.00000'
+    BC_R_PLATE_PRESENCE_GAIN: '1.00000'
+    BC_R_PLATE_PRESENCE_THRESHOLD: '50'
+    BC_R_ROBOT_GRIPPER_OFFSET: '8.00000'
+    BC_R_SENSOR_OFFSET: '8.00000'
+    BC_R_STACKER_GRIPPER_OFFSET: '6.00000'
+    BC_R_STACK_HOLDING_METHOD: Hold with stacker grippers
+    BC_SENSOR_OFFSET: '8.00000'
+    BC_STACKER_GRIPPER_OFFSET: '0.00000'
+    BENCHBOT_GRIP_TORQUE_PERCENTAGE: '100'
+    BENCHBOT_LANDSCAPE_GRIPPER_CLOSED_WIDTH: '124.00000'
+    BENCHBOT_LANDSCAPE_GRIPPER_OFFSET_RANGES: 0-5
+    BENCHBOT_LANDSCAPE_GRIPPER_OPEN_WIDTH: '133.50000'
+    BENCHBOT_LANDSCAPE_GRIPPER_TOLERANCE: '4.00000'
+    BENCHBOT_PORTRAIT_GRIPPER_CLOSED_WIDTH: '84.00000'
+    BENCHBOT_PORTRAIT_GRIPPER_OFFSET_RANGES: 0-10
+    BENCHBOT_PORTRAIT_GRIPPER_OPEN_WIDTH: '92.00000'
+    BENCHBOT_PORTRAIT_GRIPPER_TOLERANCE: '4.00000'
+    BRAVO_IGNORE_PLATE_SENSOR: '0'
+    BRAVO_ROBOT_GRIPPER_OFFSET: '3.00000'
+    BRAVO_ROBOT_LID_GRIPPER_OFFSET: '0.00000'
+    CAN_BE_MOUNTED: '0'
+    CAN_BE_SEALED: '0'
+    CAN_HAVE_LID: '1'
+    CAN_MOUNT: '0'
+    CHECK_PLATE_ORIENTATION: '1'
+    DESCRIPTION: "Costar 96-well cell culture plate, clear plate with clear flat bottom\
+      \ with lid, polystyrene\n \n Total vol: 360uL\n Working volume: 200uL"
+    DISPOSABLE_TIP_LENGTH: '38.20000'
+    FILTER_CHANNEL_RESTING_DEPTH: '0.00000'
+    FILTER_TIP_PIN_TOOL_LENGTH: '0.00000'
+    H12_NOTCH: '0'
+    H1_NOTCH: '0'
+    IMAGE_FILENAME: null
+    LIDDED_STACKING_THICKNESS: '16.00000'
+    LIDDED_THICKNESS: '16.50000'
+    LID_DEPARTURE_HEIGHT: '10.00000'
+    LID_RESTING_HEIGHT: '7.00000'
+    LOWER_PLATE_AT_VCODE: '1'
+    MANUFACTURER_PART_NUMBER: 3596/3599
+    MOUNTED_LID_ROBOT_GRIPPER_OFFSET: '3.00000'
+    NUMBER_OF_WELLS: '96'
+    PRESENTATION_OFFSET: '0.00000'
+    REQUIRES INSERT: None
+    ROBOT_GRIPPER_OFFSET: '0.00000'
+    ROBOT_HANDLING_SPEED: '2'
+    SEALED_STACKING_THICKNESS: '0.00000'
+    SEALED_THICKNESS: '0.00000'
+    SENSOR_INTENSITY: '50'
+    SENSOR_OFFSET: '8.00000'
+    SENSOR_THRESHOLD: '50'
+    SENSOR_THRESHOLD_MIN: '0'
+    SHIM_THICKNESS: '4.00000'
+    STACKER_GRIPPER_OFFSET: '0.00000'
+    STACKING_THICKNESS: '13.00000'
+    THICKNESS: '14.30000'
+    TIPBOX_SOURCE: '1'
+    TIP_CAPACITY: '60'
+    USE_VACUUM_CLAMP: '0'
+    VROBOT_GRIP_TORQUE_PERCENTAGE: '50'
+    VROBOT_IGNORE_PLATE_SENSOR: '0'
+    VROBOT_LANDSCAPE_GRIPPER_OFFSET_MAX: '10.00000'
+    VROBOT_LANDSCAPE_GRIPPER_OFFSET_MIN: '0.00000'
+    VROBOT_LANDSCAPE_GRIPPER_OFFSET_RANGES: 0-10
+    VROBOT_PORTRAIT_GRIPPER_OFFSET_MAX: '10.00000'
+    VROBOT_PORTRAIT_GRIPPER_OFFSET_MIN: '0.00000'
+    VROBOT_PORTRAIT_GRIPPER_OFFSET_RANGES: 0-10
+    VROBOT_ROBOT_LID_GRIPPER_OFFSET_MAX: '0.00000'
+    VROBOT_ROBOT_LID_GRIPPER_OFFSET_MIN: '0.00000'
+    WELL_BOTTOM_SHAPE: '2'
+    WELL_DEPTH: '10.75000'
+    WELL_DIAMETER: '6.40000'
+    WELL_GEOMETRY: '1'
+    WELL_TIP_VOLUME: '360.00000'
+    X_TEACHPOINT_TO_WELL: '0.00000'
+    X_WELL_TO_WELL: '9.00000'
+    Y_TEACHPOINT_TO_WELL: '0.00000'
+    Y_WELL_TO_WELL: '9.00000'
+    Z_TIP_ATTACH_OFFSET: '-1.00000'
+    NAME: 96 Costar 3596 clear cell culture PS flt btm
+  labware_type_id: 01KD4P500RXXP69X03R0SDGS7C
+  created_at: 2025-12-23 04:05:50.744000
+  updated_at: 2025-12-23 05:02:11.471000
+  pf400: {}
+  planar_motor: {}
+  tip_definition_id: ''
+  supported_tip_ids: []
+- labware_type_id: lw-0188881d2601
+  name: 96 Deepwell U-Bottom
+  kind: sbs_plate
+  vendor: ''
+  catalog_number: ''
+  description: ''
+  base_class: microplate
+  wells: 96
+  plate_dimensions_mm:
+    length_mm: 127.76
+    width_mm: 85.48
+    height_mm: 0
+  plate_properties:
+    robot_gripper_offset_mm: 5
+    robot_lid_gripper_offset_mm: null
+    empty_check_offset_mm: null
+    thickness_mm: 32.4
+    stacking_thickness_mm: null
+    shim_thickness_mm: null
+    can_be_sealed: false
+    sealed_thickness_mm: null
+    sealed_stacking_thickness_mm: null
+    can_have_lid: false
+    lidded_thickness_mm: null
+    lidded_stacking_thickness_mm: null
+    lid_resting_height_mm: null
+    lid_departure_height_mm: null
+    lower_plate_at_labeler: false
+    can_mount: false
+    can_be_mounted: false
+    max_robot_handling_speed: fast
+    filter_tip_pin_tool_length_mm: null
+    filter_channel_resting_depth_mm: null
+    requires_insert: None
+  well_dimensions_mm:
+    volume_ul: 200
+    depth_mm: 32.4
+    diameter_mm: 6.5
+    offset_x_mm: null
+    offset_y_mm: null
+    spacing_x_mm: 9
+    spacing_y_mm: 9
+    well_geometry: 1
+    well_bottom_shape: 1
+    tip_source: agilent
+    disposable_tip_capacity_ul: 10
+    disposable_tip_length_mm: null
+  pf400: {}
+  planar_motor: {}
+  labware_class_ids: []
+  tip_definition_id: ''
+  supported_tip_ids: []
+  model_3d:
+    url: /labware-assets/lw-0188881d2601/Part_Studio_1.gltf
+    filename: Part_Studio_1.gltf
+    format: gltf
+- labware_type_id: lw-d4fcc14aaa86
+  name: 96 Nunc Flatbottom
+  kind: sbs_plate
+  vendor: ''
+  catalog_number: ''
+  description: ''
+  base_class: microplate
+  wells: 96
+  plate_dimensions_mm:
+    length_mm: 127.76
+    width_mm: 85.48
+    height_mm: 0
+  plate_properties:
+    robot_gripper_offset_mm: 4
+    robot_lid_gripper_offset_mm: null
+    empty_check_offset_mm: null
+    thickness_mm: 14.4
+    stacking_thickness_mm: null
+    shim_thickness_mm: null
+    can_be_sealed: false
+    sealed_thickness_mm: null
+    sealed_stacking_thickness_mm: null
+    can_have_lid: true
+    lidded_thickness_mm: 16.4
+    lidded_stacking_thickness_mm: 17.7
+    lid_resting_height_mm: 7.9
+    lid_departure_height_mm: 18
+    lower_plate_at_labeler: false
+    can_mount: false
+    can_be_mounted: false
+    max_robot_handling_speed: fast
+    filter_tip_pin_tool_length_mm: null
+    filter_channel_resting_depth_mm: null
+    requires_insert: None
+  well_dimensions_mm:
+    volume_ul: 100
+    depth_mm: 9
+    diameter_mm: 6.4
+    offset_x_mm: null
+    offset_y_mm: null
+    spacing_x_mm: 9
+    spacing_y_mm: 9
+    well_geometry: 1
+    well_bottom_shape: 2
+    tip_source: agilent
+    disposable_tip_capacity_ul: 10
+    disposable_tip_length_mm: null
+  pf400: {}
+  planar_motor: {}
+  labware_class_ids: []
+  tip_definition_id: ''
+  supported_tip_ids: []
+  model_3d: null
+- labware_type_id: lw-b0704e550d2a
+  name: 96 V11 LT200 Tip Box 06880.002
+  kind: sbs_plate
+  vendor: ''
+  catalog_number: ''
+  description: ''
+  base_class: tip_box
+  wells: 96
+  plate_dimensions_mm:
+    length_mm: 127.76
+    width_mm: 85.48
+    height_mm: 0
+  plate_properties:
+    robot_gripper_offset_mm: 10
+    robot_lid_gripper_offset_mm: null
+    empty_check_offset_mm: null
+    thickness_mm: 49.9
+    stacking_thickness_mm: null
+    shim_thickness_mm: null
+    can_be_sealed: false
+    sealed_thickness_mm: null
+    sealed_stacking_thickness_mm: null
+    can_have_lid: false
+    lidded_thickness_mm: null
+    lidded_stacking_thickness_mm: null
+    lid_resting_height_mm: null
+    lid_departure_height_mm: null
+    lower_plate_at_labeler: false
+    can_mount: false
+    can_be_mounted: false
+    max_robot_handling_speed: fast
+    filter_tip_pin_tool_length_mm: null
+    filter_channel_resting_depth_mm: null
+    requires_insert: None
+  well_dimensions_mm:
+    volume_ul: null
+    depth_mm: null
+    diameter_mm: null
+    offset_x_mm: 0
+    offset_y_mm: 0
+    spacing_x_mm: 9
+    spacing_y_mm: 9
+    well_geometry: 1
+    well_bottom_shape: 2
+    tip_source: agilent
+    disposable_tip_capacity_ul: 10
+    disposable_tip_length_mm: null
+  pf400: {}
+  planar_motor: {}
+  labware_class_ids: []
+  tip_definition_id: ''
+  supported_tip_ids: []
+  model_3d: null
+- labware_type_id: lw-651f80d816b1
+  name: TestPlate
+  kind: sbs_plate
+  vendor: ''
+  catalog_number: ''
+  description: ''
+  base_class: microplate
+  wells: 96
+  plate_dimensions_mm:
+    length_mm: 127.76
+    width_mm: 85.48
+    height_mm: 0
+  plate_properties:
+    robot_gripper_offset_mm: 5
+    robot_lid_gripper_offset_mm: null
+    empty_check_offset_mm: null
+    thickness_mm: 13.2
+    stacking_thickness_mm: 12.1
+    shim_thickness_mm: null
+    can_be_sealed: false
+    sealed_thickness_mm: null
+    sealed_stacking_thickness_mm: null
+    can_have_lid: false
+    lidded_thickness_mm: null
+    lidded_stacking_thickness_mm: null
+    lid_resting_height_mm: null
+    lid_departure_height_mm: null
+    lower_plate_at_labeler: false
+    can_mount: false
+    can_be_mounted: false
+    max_robot_handling_speed: fast
+    filter_tip_pin_tool_length_mm: null
+    filter_channel_resting_depth_mm: null
+    requires_insert: None
+  well_dimensions_mm: {}
+  pf400: {}
+  planar_motor: {}
+  labware_class_ids: []
+  tip_definition_id: ''
+  supported_tip_ids: []
+labware_classes:
+- labware_class_id: 01KD4PKQ8DFP12QWDM29CQWZ8A
+  name: Standard Microplate
+  description: ''
+  created_at: 2025-12-23 04:13:53.293000
+  updated_at: 2025-12-23 04:30:21.430000
+- labware_class_id: class-ed784ac151ec
+  name: Tipbox
+  description: ''

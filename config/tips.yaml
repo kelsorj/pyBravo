@@ -1,0 +1,123 @@
+tips:
+- tip_id: st_10ul
+  capacity_ul: 10.0
+  label: 10 uL
+  length_mm: 19.9
+  source: measured
+  model_3d: /labware-assets/tips/d10.gltf
+  compatible_heads:
+  - HT_16_D_ST
+  - HT_384_D_70
+  - HT_384_D_70_S2
+  - HT_96_D_70
+  - HT_96_D_70_S2
+- tip_id: st_15ul
+  capacity_ul: 15.0
+  label: 15 uL
+  length_mm: null
+  source: vendor-source-option
+  model_3d: /labware-assets/tips/d10.gltf
+  compatible_heads:
+  - HT_16_D_ST
+  - HT_384_D_70
+  - HT_384_D_70_S2
+  - HT_96_D_70
+  - HT_96_D_70_S2
+- tip_id: lt_200ul
+  capacity_ul: 200.0
+  label: 200 uL
+  length_mm: null
+  source: vendor-source-option
+  model_3d: null
+  compatible_heads:
+  - HT_8_D_LT
+  - HT_96_D_200
+  - HT_96_D_200_S2
+- tip_id: lt_250ul
+  label: 250 uL
+  capacity_ul: 250.0
+  length_mm: 55.2
+  source: vendor-source-default
+  model_3d: null
+  compatible_heads:
+  - HT_8_D_LT
+  - HT_96_D_200
+  - HT_96_D_200_S2
+- tip_id: st_30ul
+  capacity_ul: 30.0
+  label: 30 uL
+  length_mm: 26.1
+  source: vendor-source-comment
+  model_3d: /labware-assets/tips/d30.gltf
+  compatible_heads:
+  - HT_16_D_ST
+  - HT_384_D_70
+  - HT_384_D_70_S2
+  - HT_96_D_70
+  - HT_96_D_70_S2
+- tip_id: st_50ul
+  capacity_ul: 50.0
+  label: 50 uL
+  length_mm: null
+  source: vendor-source-option
+  model_3d: /labware-assets/tips/d30.gltf
+  compatible_heads:
+  - HT_16_D_ST
+  - HT_384_D_70
+  - HT_384_D_70_S2
+  - HT_96_D_70
+  - HT_96_D_70_S2
+- tip_id: st_51ul
+  capacity_ul: 51.0
+  label: 51 uL
+  length_mm: null
+  source: vendor-source-option
+  model_3d: /labware-assets/tips/d30.gltf
+  compatible_heads:
+  - HT_16_D_ST
+  - HT_384_D_70
+  - HT_384_D_70_S2
+  - HT_96_D_70
+  - HT_96_D_70_S2
+- tip_id: st_70ul
+  capacity_ul: 70.0
+  label: 70 uL
+  length_mm: null
+  source: vendor-source-option
+  model_3d: /labware-assets/tips/d30.gltf
+  compatible_heads:
+  - HT_16_D_ST
+  - HT_384_D_70
+  - HT_384_D_70_S2
+  - HT_96_D_70
+  - HT_96_D_70_S2
+- tip_id: pin_fp1cb
+  capacity_ul: 0.0
+  label: FP1CB
+  length_mm: null
+  source: vendor-source-option
+  model_3d: null
+  compatible_heads:
+  - HT_1536_PINTOOL
+  - HT_384_PINTOOL
+  - HT_96_PINTOOL
+- tip_id: pin_fp1n
+  capacity_ul: 0.0
+  label: FP1N
+  length_mm: null
+  source: vendor-source-option
+  model_3d: null
+  compatible_heads:
+  - HT_1536_PINTOOL
+  - HT_384_PINTOOL
+  - HT_96_PINTOOL
+- tip_id: pin_fp1t
+  capacity_ul: 0.0
+  label: FP1T
+  length_mm: null
+  source: vendor-source-option
+  model_3d: null
+  compatible_heads:
+  - HT_1536_PINTOOL
+  - HT_384_PINTOOL
+  - HT_96_PINTOOL

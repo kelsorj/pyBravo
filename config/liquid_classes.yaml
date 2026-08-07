@@ -1,0 +1,1389 @@
+version: 1
+liquid_classes:
+- liquid_class_id: liq_89aeface22
+  name: 384 disposable tip 0.5 - 10ul
+  description: Enter description of new liquid type here
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_384_D_70
+  tip_id: ''
+  tip_capacity_ul: 10.0
+  aspirate:
+    w_velocity_ul_s: 1.0
+    w_acceleration_ul_s2: 2.0
+    post_delay_ms: 1000
+    z_in_velocity_mm_s: 40.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 10.0
+  dispense:
+    w_velocity_ul_s: 1.0
+    w_acceleration_ul_s2: 5.0
+    post_delay_ms: 1000
+    z_in_velocity_mm_s: 40.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 5.0
+    z_out_acceleration_mm_s2: 5.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 10.0
+      commanded_ul: 10.0
+- liquid_class_id: liq_638b36623d
+  name: OQ_384st_highVol
+  description: ''
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_384_D_70
+  tip_id: ''
+  tip_capacity_ul: 10.0
+  aspirate:
+    w_velocity_ul_s: 20.0
+    w_acceleration_ul_s2: 100.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 40.0
+    z_out_acceleration_mm_s2: 100.0
+  dispense:
+    w_velocity_ul_s: 20.0
+    w_acceleration_ul_s2: 100.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 40.0
+    z_out_acceleration_mm_s2: 100.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0799
+    - desired_ul: 10.0
+      commanded_ul: 10.3309
+- liquid_class_id: liq_af39b84186
+  name: OQ_384st_lowVol
+  description: ''
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_384_D_70
+  tip_id: ''
+  tip_capacity_ul: 10.0
+  aspirate:
+    w_velocity_ul_s: 2.0
+    w_acceleration_ul_s2: 10.0
+    post_delay_ms: 1000
+    z_in_velocity_mm_s: 30.0
+    z_in_acceleration_mm_s2: 5.0
+    z_out_velocity_mm_s: 30.0
+    z_out_acceleration_mm_s2: 5.0
+  dispense:
+    w_velocity_ul_s: 2.0
+    w_acceleration_ul_s2: 10.0
+    post_delay_ms: 1000
+    z_in_velocity_mm_s: 30.0
+    z_in_acceleration_mm_s2: 5.0
+    z_out_velocity_mm_s: 30.0
+    z_out_acceleration_mm_s2: 5.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.1026
+    - desired_ul: 10.0
+      commanded_ul: 10.6696
+- liquid_class_id: liq_cf4e01f34b
+  name: 384 disposable tip 10 - 50ul
+  description: Enter description of new liquid type here
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_384_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 20.0
+    w_acceleration_ul_s2: 100.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 40.0
+    z_in_acceleration_mm_s2: 250.0
+    z_out_velocity_mm_s: 20.0
+    z_out_acceleration_mm_s2: 10.0
+  dispense:
+    w_velocity_ul_s: 10.0
+    w_acceleration_ul_s2: 8.0
+    post_delay_ms: 500
+    z_in_velocity_mm_s: 40.0
+    z_in_acceleration_mm_s2: 250.0
+    z_out_velocity_mm_s: 5.0
+    z_out_acceleration_mm_s2: 5.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 50.0
+      commanded_ul: 50.0
+- liquid_class_id: liq_66d89a6738
+  name: D10 384 Head 1-10
+  description: ''
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_384_D_70
+  tip_id: st_10ul
+  tip_capacity_ul: 10.0
+  aspirate:
+    w_velocity_ul_s: 100.0
+    w_acceleration_ul_s2: 500.0
+    post_delay_ms: 0
+    z_in_velocity_mm_s: 100.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 100.0
+    z_out_acceleration_mm_s2: 500.0
+  dispense:
+    w_velocity_ul_s: 40.0
+    w_acceleration_ul_s2: 8.0
+    post_delay_ms: 500
+    z_in_velocity_mm_s: 40.0
+    z_in_acceleration_mm_s2: 250.0
+    z_out_velocity_mm_s: 5.0
+    z_out_acceleration_mm_s2: 5.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 10.0
+      commanded_ul: 10.0
+- liquid_class_id: liq_15de77e0bd
+  name: D10 384 Head 1-10 1ul-s
+  description: ''
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_384_D_70
+  tip_id: st_10ul
+  tip_capacity_ul: 10.0
+  aspirate:
+    w_velocity_ul_s: 1.0
+    w_acceleration_ul_s2: 500.0
+    post_delay_ms: 0
+    z_in_velocity_mm_s: 100.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 500.0
+  dispense:
+    w_velocity_ul_s: 2.0
+    w_acceleration_ul_s2: 8.0
+    post_delay_ms: 500
+    z_in_velocity_mm_s: 40.0
+    z_in_acceleration_mm_s2: 250.0
+    z_out_velocity_mm_s: 5.0
+    z_out_acceleration_mm_s2: 5.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 2.5432525951557095
+      commanded_ul: 2.824324324324324
+    - desired_ul: 4.982698961937716
+      commanded_ul: 5.004504504504505
+    - desired_ul: 7.491349480968859
+      commanded_ul: 7.828828828828828
+    - desired_ul: 10.0
+      commanded_ul: 10.0
+- liquid_class_id: liq_519f8bc0a3
+  name: D30 384 Head 1-30
+  description: ''
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_384_D_70
+  tip_id: st_30ul
+  tip_capacity_ul: 30.0
+  aspirate:
+    w_velocity_ul_s: 100.0
+    w_acceleration_ul_s2: 500.0
+    post_delay_ms: 0
+    z_in_velocity_mm_s: 100.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 100.0
+    z_out_acceleration_mm_s2: 500.0
+  dispense:
+    w_velocity_ul_s: 40.0
+    w_acceleration_ul_s2: 8.0
+    post_delay_ms: 500
+    z_in_velocity_mm_s: 40.0
+    z_in_acceleration_mm_s2: 250.0
+    z_out_velocity_mm_s: 5.0
+    z_out_acceleration_mm_s2: 5.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 7.157894736842105
+      commanded_ul: 8.027027027027028
+    - desired_ul: 16.736842105263158
+      commanded_ul: 17.54054054054054
+    - desired_ul: 24.789473684210527
+      commanded_ul: 24.18918918918919
+    - desired_ul: 30.0
+      commanded_ul: 30.0
+- liquid_class_id: liq_18568bed7e
+  name: 96 disposable tip 5 - 200ul Water
+  description: '"Developed 09/2017 by R. Keyser'
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_200
+  tip_id: ''
+  tip_capacity_ul: 200.0
+  aspirate:
+    w_velocity_ul_s: 50.0
+    w_acceleration_ul_s2: 200.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 200.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 30.0
+  dispense:
+    w_velocity_ul_s: 40.0
+    w_acceleration_ul_s2: 100.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 200.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 30.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.5213
+    - desired_ul: 200.0
+      commanded_ul: 210.7213
+- liquid_class_id: liq_9d9d9bd227
+  name: 96 disposable tip 5 - 200uL Water (fast)
+  description: '"Copy of \"96 disposable tip 5 - 200uL Water\" as of 09/25/2017'
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_200
+  tip_id: ''
+  tip_capacity_ul: 200.0
+  aspirate:
+    w_velocity_ul_s: 75.0
+    w_acceleration_ul_s2: 300.0
+    post_delay_ms: 100
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 200.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 30.0
+  dispense:
+    w_velocity_ul_s: 60.0
+    w_acceleration_ul_s2: 150.0
+    post_delay_ms: 100
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 200.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 30.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.5213
+    - desired_ul: 200.0
+      commanded_ul: 210.7213
+- liquid_class_id: liq_06e4401113
+  name: 96 disposable tip 5 - 200ul Water (slow)
+  description: 'Copy of "96 disposable tips 5 - 200uL Water"  with reduced asp/disp
+    velocities.  Not calibrated.  '
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_200
+  tip_id: ''
+  tip_capacity_ul: 200.0
+  aspirate:
+    w_velocity_ul_s: 25.0
+    w_acceleration_ul_s2: 100.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 200.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 30.0
+  dispense:
+    w_velocity_ul_s: 20.0
+    w_acceleration_ul_s2: 50.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 200.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 30.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.5213
+    - desired_ul: 200.0
+      commanded_ul: 210.7213
+- liquid_class_id: liq_9d14a7a1e0
+  name: 96 disposable tip 51 - 200ul
+  description: Enter description of new liquid type here
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_200
+  tip_id: ''
+  tip_capacity_ul: 200.0
+  aspirate:
+    w_velocity_ul_s: 100.0
+    w_acceleration_ul_s2: 300.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 100.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 5.0
+    z_out_acceleration_mm_s2: 100.0
+  dispense:
+    w_velocity_ul_s: 50.0
+    w_acceleration_ul_s2: 125.0
+    post_delay_ms: 0
+    z_in_velocity_mm_s: 100.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 5.0
+    z_out_acceleration_mm_s2: 100.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 200.0
+      commanded_ul: 200.0
+- liquid_class_id: liq_2183f6c67c
+  name: 96 disposable tip 1 - 2ul
+  description: Enter description of new liquid type here
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 2.0
+  aspirate:
+    w_velocity_ul_s: 2.0
+    w_acceleration_ul_s2: 4.0
+    post_delay_ms: 1000
+    z_in_velocity_mm_s: 10.0
+    z_in_acceleration_mm_s2: 5.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 5.0
+  dispense:
+    w_velocity_ul_s: 2.0
+    w_acceleration_ul_s2: 4.0
+    post_delay_ms: 1000
+    z_in_velocity_mm_s: 10.0
+    z_in_acceleration_mm_s2: 5.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 5.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 2.0
+      commanded_ul: 2.0
+- liquid_class_id: liq_cb7b8c94ec
+  name: 96 disposable fast mix
+  description: ''
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 500.0
+    w_acceleration_ul_s2: 1000.0
+    post_delay_ms: 10
+    z_in_velocity_mm_s: 100.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 100.0
+    z_out_acceleration_mm_s2: 500.0
+  dispense:
+    w_velocity_ul_s: 500.0
+    w_acceleration_ul_s2: 1000.0
+    post_delay_ms: 10
+    z_in_velocity_mm_s: 100.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 100.0
+    z_out_acceleration_mm_s2: 500.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 50.0
+      commanded_ul: 50.0
+- liquid_class_id: liq_b7aa2d4c2c
+  name: 96 disposable tip 1.5ul (custom)
+  description: ''
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 0.5
+    w_acceleration_ul_s2: 2.0
+    post_delay_ms: 1000
+    z_in_velocity_mm_s: 10.0
+    z_in_acceleration_mm_s2: 7.0
+    z_out_velocity_mm_s: 3.0
+    z_out_acceleration_mm_s2: 3.0
+  dispense:
+    w_velocity_ul_s: 1.0
+    w_acceleration_ul_s2: 2.0
+    post_delay_ms: 500
+    z_in_velocity_mm_s: 3.0
+    z_in_acceleration_mm_s2: 5.0
+    z_out_velocity_mm_s: 5.0
+    z_out_acceleration_mm_s2: 3.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.2
+    - desired_ul: 50.0
+      commanded_ul: 55.2
+- liquid_class_id: liq_8c3e4cc51b
+  name: 96 disposable tip 1.5uL UPDATED (custom)
+  description: Increased slope coefficient compared to 96 disposable tip 1.5ul (custom)
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 0.5
+    w_acceleration_ul_s2: 2.0
+    post_delay_ms: 1000
+    z_in_velocity_mm_s: 10.0
+    z_in_acceleration_mm_s2: 7.0
+    z_out_velocity_mm_s: 3.0
+    z_out_acceleration_mm_s2: 3.0
+  dispense:
+    w_velocity_ul_s: 1.0
+    w_acceleration_ul_s2: 2.0
+    post_delay_ms: 500
+    z_in_velocity_mm_s: 3.0
+    z_in_acceleration_mm_s2: 5.0
+    z_out_velocity_mm_s: 5.0
+    z_out_acceleration_mm_s2: 3.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.35
+    - desired_ul: 50.0
+      commanded_ul: 55.35
+- liquid_class_id: liq_20df69c756
+  name: 96 disposable tip 2 - 50ul
+  description: Enter description of new liquid type here
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 30.0
+    w_acceleration_ul_s2: 100.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 30.0
+    z_in_acceleration_mm_s2: 75.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 30.0
+  dispense:
+    w_velocity_ul_s: 5.0
+    w_acceleration_ul_s2: 10.0
+    post_delay_ms: 1200
+    z_in_velocity_mm_s: 40.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 15.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 50.0
+      commanded_ul: 50.0
+- liquid_class_id: liq_caaca06949
+  name: 96 disposable tip 2- 50 (faster)
+  description: ''
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 100.0
+    w_acceleration_ul_s2: 500.0
+    post_delay_ms: 0
+    z_in_velocity_mm_s: 30.0
+    z_in_acceleration_mm_s2: 75.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 30.0
+  dispense:
+    w_velocity_ul_s: 25.0
+    w_acceleration_ul_s2: 100.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 40.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 50.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 50.0
+      commanded_ul: 50.0
+- liquid_class_id: liq_10dc995674
+  name: 96 disposable tip 2-50ul 2
+  description: Enter description of new liquid type here
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 10.0
+    w_acceleration_ul_s2: 20.0
+    post_delay_ms: 10
+    z_in_velocity_mm_s: 100.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 250.0
+  dispense:
+    w_velocity_ul_s: 10.0
+    w_acceleration_ul_s2: 20.0
+    post_delay_ms: 10
+    z_in_velocity_mm_s: 100.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 250.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 50.0
+      commanded_ul: 50.0
+- liquid_class_id: liq_4eea3afd19
+  name: 96 disposable tip qPCR MM (custom v2)
+  description: Slower aspirate/dispense for sticky liquid. Slightly faster.
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 25.0
+    w_acceleration_ul_s2: 100.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 30.0
+    z_in_acceleration_mm_s2: 75.0
+    z_out_velocity_mm_s: 7.0
+    z_out_acceleration_mm_s2: 30.0
+  dispense:
+    w_velocity_ul_s: 25.0
+    w_acceleration_ul_s2: 5.0
+    post_delay_ms: 1200
+    z_in_velocity_mm_s: 30.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 5.0
+    z_out_acceleration_mm_s2: 15.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 50.0
+      commanded_ul: 50.0
+- liquid_class_id: liq_3d5beb7a3d
+  name: 96 disposable tip qPCR MM (custom)
+  description: Slower aspirate/dispense for sticky liquid
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 10.0
+    w_acceleration_ul_s2: 100.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 30.0
+    z_in_acceleration_mm_s2: 75.0
+    z_out_velocity_mm_s: 7.0
+    z_out_acceleration_mm_s2: 30.0
+  dispense:
+    w_velocity_ul_s: 3.0
+    w_acceleration_ul_s2: 5.0
+    post_delay_ms: 1200
+    z_in_velocity_mm_s: 30.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 5.0
+    z_out_acceleration_mm_s2: 15.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 50.0
+      commanded_ul: 50.0
+- liquid_class_id: liq_76a9324bd6
+  name: EtOH
+  description: ''
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 15.0
+    w_acceleration_ul_s2: 30.0
+    post_delay_ms: 500
+    z_in_velocity_mm_s: 100.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 1000.0
+  dispense:
+    w_velocity_ul_s: 30.0
+    w_acceleration_ul_s2: 60.0
+    post_delay_ms: 0
+    z_in_velocity_mm_s: 100.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 1000.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 50.0
+      commanded_ul: 50.0
+- liquid_class_id: liq_de256db84f
+  name: OQ_96AM_highVol
+  description: ''
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 50.0
+    w_acceleration_ul_s2: 100.0
+    post_delay_ms: 250
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 100.0
+  dispense:
+    w_velocity_ul_s: 50.0
+    w_acceleration_ul_s2: 100.0
+    post_delay_ms: 250
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 100.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 50.0
+      commanded_ul: 47.89
+- liquid_class_id: liq_480897ab58
+  name: OQ_96AM_lowVol
+  description: ''
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 5.0
+    w_acceleration_ul_s2: 10.0
+    post_delay_ms: 250
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 100.0
+  dispense:
+    w_velocity_ul_s: 5.0
+    w_acceleration_ul_s2: 10.0
+    post_delay_ms: 250
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 100.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.167
+    - desired_ul: 50.0
+      commanded_ul: 52.437
+- liquid_class_id: liq_2b2aa98876
+  name: OQ_96LT_highVol
+  description: ''
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 50.0
+    w_acceleration_ul_s2: 100.0
+    post_delay_ms: 250
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 100.0
+  dispense:
+    w_velocity_ul_s: 50.0
+    w_acceleration_ul_s2: 100.0
+    post_delay_ms: 250
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 100.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 50.0
+      commanded_ul: 50.37
+- liquid_class_id: liq_498d6654aa
+  name: OQ_96LT_lowVol
+  description: ''
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 5.0
+    w_acceleration_ul_s2: 10.0
+    post_delay_ms: 250
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 100.0
+  dispense:
+    w_velocity_ul_s: 5.0
+    w_acceleration_ul_s2: 10.0
+    post_delay_ms: 250
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 100.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0033
+    - desired_ul: 50.0
+      commanded_ul: 52.7183
+- liquid_class_id: liq_c6e418240a
+  name: OQ_96st_highVol
+  description: ''
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 20.0
+    w_acceleration_ul_s2: 100.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 40.0
+    z_out_acceleration_mm_s2: 100.0
+  dispense:
+    w_velocity_ul_s: 20.0
+    w_acceleration_ul_s2: 100.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 40.0
+    z_out_acceleration_mm_s2: 100.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0799
+    - desired_ul: 50.0
+      commanded_ul: 51.3349
+- liquid_class_id: liq_98e6c996e9
+  name: OQ_96st_lowVol
+  description: ''
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 2.0
+    w_acceleration_ul_s2: 10.0
+    post_delay_ms: 1000
+    z_in_velocity_mm_s: 30.0
+    z_in_acceleration_mm_s2: 5.0
+    z_out_velocity_mm_s: 30.0
+    z_out_acceleration_mm_s2: 5.0
+  dispense:
+    w_velocity_ul_s: 2.0
+    w_acceleration_ul_s2: 10.0
+    post_delay_ms: 1000
+    z_in_velocity_mm_s: 30.0
+    z_in_acceleration_mm_s2: 5.0
+    z_out_velocity_mm_s: 30.0
+    z_out_acceleration_mm_s2: 5.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 50.0
+      commanded_ul: 53.21
+- liquid_class_id: liq_a86c990321
+  name: OQ_AM_100uLperSec
+  description: ''
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 100.0
+    w_acceleration_ul_s2: 500.0
+    post_delay_ms: 0
+    z_in_velocity_mm_s: 100.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 100.0
+    z_out_acceleration_mm_s2: 500.0
+  dispense:
+    w_velocity_ul_s: 100.0
+    w_acceleration_ul_s2: 500.0
+    post_delay_ms: 0
+    z_in_velocity_mm_s: 100.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 100.0
+    z_out_acceleration_mm_s2: 500.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 50.0
+      commanded_ul: 50.0
+- liquid_class_id: liq_3a22f264d8
+  name: OQ_AM_100uLperSec_delay_after_aspirate
+  description: ''
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 100.0
+    w_acceleration_ul_s2: 500.0
+    post_delay_ms: 5000
+    z_in_velocity_mm_s: 100.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 100.0
+    z_out_acceleration_mm_s2: 500.0
+  dispense:
+    w_velocity_ul_s: 100.0
+    w_acceleration_ul_s2: 500.0
+    post_delay_ms: 0
+    z_in_velocity_mm_s: 100.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 100.0
+    z_out_acceleration_mm_s2: 500.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 50.0
+      commanded_ul: 50.0
+- liquid_class_id: liq_97ae4cc9af
+  name: SPRI Beads
+  description: '"Calibrated by R. Keyser 09/2017'
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 40.0
+    w_acceleration_ul_s2: 80.0
+    post_delay_ms: 1000
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 100.0
+  dispense:
+    w_velocity_ul_s: 20.0
+    w_acceleration_ul_s2: 40.0
+    post_delay_ms: 1000
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 100.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.3053
+    - desired_ul: 50.0
+      commanded_ul: 53.5803
+- liquid_class_id: liq_0919950365
+  name: SPRI Beads Fast Mix
+  description: '"Copy of \"SPRI Beads\" as of 09/25/2017'
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 80.0
+    w_acceleration_ul_s2: 160.0
+    post_delay_ms: 500
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 100.0
+  dispense:
+    w_velocity_ul_s: 40.0
+    w_acceleration_ul_s2: 80.0
+    post_delay_ms: 500
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 100.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.3053
+    - desired_ul: 50.0
+      commanded_ul: 53.5803
+- liquid_class_id: liq_ae0368a347
+  name: sprislow
+  description: ''
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 10.0
+    w_acceleration_ul_s2: 10.0
+    post_delay_ms: 1000
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 100.0
+  dispense:
+    w_velocity_ul_s: 20.0
+    w_acceleration_ul_s2: 40.0
+    post_delay_ms: 1000
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 100.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 50.0
+      commanded_ul: 50.0
+- liquid_class_id: liq_3bf1920bc3
+  name: Worm Mix
+  description: ''
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_D_70
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 50.0
+    w_acceleration_ul_s2: 80.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 100.0
+  dispense:
+    w_velocity_ul_s: 50.0
+    w_acceleration_ul_s2: 80.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 100.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 50.0
+      commanded_ul: 50.0
+- liquid_class_id: liq_f5bfc35b85
+  name: fixed tip 51 - 200ul
+  description: Enter description of new liquid type here
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_F_200
+  tip_id: ''
+  tip_capacity_ul: 200.0
+  aspirate:
+    w_velocity_ul_s: 20.0
+    w_acceleration_ul_s2: 50.0
+    post_delay_ms: 0
+    z_in_velocity_mm_s: 6.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 20.0
+    z_out_acceleration_mm_s2: 500.0
+  dispense:
+    w_velocity_ul_s: 50.0
+    w_acceleration_ul_s2: 100.0
+    post_delay_ms: 800
+    z_in_velocity_mm_s: 6.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 20.0
+    z_out_acceleration_mm_s2: 500.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 200.0
+      commanded_ul: 200.0
+- liquid_class_id: liq_13d05768d5
+  name: fixed tip 0.05 - 1ul
+  description: Enter description of new liquid type here
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_F_50
+  tip_id: ''
+  tip_capacity_ul: 1.0
+  aspirate:
+    w_velocity_ul_s: 1.0
+    w_acceleration_ul_s2: 5.0
+    post_delay_ms: 0
+    z_in_velocity_mm_s: 6.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 5.0
+  dispense:
+    w_velocity_ul_s: 1.0
+    w_acceleration_ul_s2: 1.0
+    post_delay_ms: 2100
+    z_in_velocity_mm_s: 6.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 5.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 1.0
+      commanded_ul: 1.1
+- liquid_class_id: liq_3c6f5c9f9c
+  name: fixed tip 1 - 3ul
+  description: Enter description of new liquid type here
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_F_50
+  tip_id: ''
+  tip_capacity_ul: 3.0
+  aspirate:
+    w_velocity_ul_s: 1.0
+    w_acceleration_ul_s2: 5.0
+    post_delay_ms: 0
+    z_in_velocity_mm_s: 6.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 5.0
+  dispense:
+    w_velocity_ul_s: 1.0
+    w_acceleration_ul_s2: 1.0
+    post_delay_ms: 2100
+    z_in_velocity_mm_s: 6.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 5.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 3.0
+      commanded_ul: 3.0
+- liquid_class_id: liq_d8275b97c2
+  name: fixed tip 3 - 10ul
+  description: Enter description of new liquid type here
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_F_50
+  tip_id: ''
+  tip_capacity_ul: 10.0
+  aspirate:
+    w_velocity_ul_s: 1.0
+    w_acceleration_ul_s2: 3.0
+    post_delay_ms: 500
+    z_in_velocity_mm_s: 6.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 30.0
+  dispense:
+    w_velocity_ul_s: 1.0
+    w_acceleration_ul_s2: 1.0
+    post_delay_ms: 1500
+    z_in_velocity_mm_s: 6.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 10.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 10.0
+      commanded_ul: 10.0
+- liquid_class_id: liq_dbaef36463
+  name: fixed tip 11 - 50ul
+  description: Enter description of new liquid type here
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_F_50
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 20.0
+    w_acceleration_ul_s2: 50.0
+    post_delay_ms: 0
+    z_in_velocity_mm_s: 6.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 100.0
+  dispense:
+    w_velocity_ul_s: 10.0
+    w_acceleration_ul_s2: 30.0
+    post_delay_ms: 800
+    z_in_velocity_mm_s: 6.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 100.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 50.0
+      commanded_ul: 50.0
+- liquid_class_id: liq_742fb50a3d
+  name: fixed tip wash fast
+  description: Enter description of new liquid type here
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_F_50
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 50.0
+    w_acceleration_ul_s2: 500.0
+    post_delay_ms: 300
+    z_in_velocity_mm_s: 40.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 5.0
+    z_out_acceleration_mm_s2: 30.0
+  dispense:
+    w_velocity_ul_s: 50.0
+    w_acceleration_ul_s2: 500.0
+    post_delay_ms: 300
+    z_in_velocity_mm_s: 40.0
+    z_in_acceleration_mm_s2: 50.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 30.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 50.0
+      commanded_ul: 50.0
+- liquid_class_id: liq_07fae07b68
+  name: fixed tip wash fast 2
+  description: Enter description of new liquid type here
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_F_50
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 150.0
+    w_acceleration_ul_s2: 250.0
+    post_delay_ms: 300
+    z_in_velocity_mm_s: 150.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 150.0
+    z_out_acceleration_mm_s2: 250.0
+  dispense:
+    w_velocity_ul_s: 150.0
+    w_acceleration_ul_s2: 250.0
+    post_delay_ms: 300
+    z_in_velocity_mm_s: 150.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 150.0
+    z_out_acceleration_mm_s2: 250.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 50.0
+      commanded_ul: 50.0
+- liquid_class_id: liq_a8a34b8a49
+  name: fixed tip wash slow
+  description: Enter description of new liquid type here
+  machine_id: 04-91-62-CF-7B-B0
+  head_type: HT_96_F_50
+  tip_id: ''
+  tip_capacity_ul: 50.0
+  aspirate:
+    w_velocity_ul_s: 50.0
+    w_acceleration_ul_s2: 20.0
+    post_delay_ms: 1000
+    z_in_velocity_mm_s: 100.0
+    z_in_acceleration_mm_s2: 200.0
+    z_out_velocity_mm_s: 250.0
+    z_out_acceleration_mm_s2: 200.0
+  dispense:
+    w_velocity_ul_s: 10.0
+    w_acceleration_ul_s2: 20.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 100.0
+    z_in_acceleration_mm_s2: 200.0
+    z_out_velocity_mm_s: 150.0
+    z_out_acceleration_mm_s2: 200.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 50.0
+      commanded_ul: 50.0
+- liquid_class_id: liq_opp_spri_beads
+  name: SPRI Beads
+  description: 'Adapted from HT_96_D_70 calibration (R. Keyser 09/2017) for Opportunity HT_96_D_200 / lt_250ul'
+  machine_id: SIM_OPPORTUNITY
+  head_type: HT_96_D_200
+  tip_id: lt_250ul
+  tip_capacity_ul: 250.0
+  aspirate:
+    w_velocity_ul_s: 40.0
+    w_acceleration_ul_s2: 80.0
+    post_delay_ms: 1000
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 100.0
+  dispense:
+    w_velocity_ul_s: 20.0
+    w_acceleration_ul_s2: 40.0
+    post_delay_ms: 1000
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 100.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.3053
+    - desired_ul: 50.0
+      commanded_ul: 53.5803
+- liquid_class_id: liq_opp_disp_tip2_50ul
+  name: 96 disposable tip 2 - 50ul
+  description: 'Adapted from HT_96_D_70 for Opportunity HT_96_D_200 / lt_250ul'
+  machine_id: SIM_OPPORTUNITY
+  head_type: HT_96_D_200
+  tip_id: lt_250ul
+  tip_capacity_ul: 250.0
+  aspirate:
+    w_velocity_ul_s: 30.0
+    w_acceleration_ul_s2: 100.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 30.0
+    z_in_acceleration_mm_s2: 75.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 30.0
+  dispense:
+    w_velocity_ul_s: 5.0
+    w_acceleration_ul_s2: 10.0
+    post_delay_ms: 1200
+    z_in_velocity_mm_s: 40.0
+    z_in_acceleration_mm_s2: 100.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 15.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 250.0
+      commanded_ul: 250.0
+- liquid_class_id: liq_opp_etoh
+  name: EtOH
+  description: 'Adapted from HT_96_D_70 for Opportunity HT_96_D_200 / lt_250ul'
+  machine_id: SIM_OPPORTUNITY
+  head_type: HT_96_D_200
+  tip_id: lt_250ul
+  tip_capacity_ul: 250.0
+  aspirate:
+    w_velocity_ul_s: 15.0
+    w_acceleration_ul_s2: 30.0
+    post_delay_ms: 500
+    z_in_velocity_mm_s: 100.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 1000.0
+  dispense:
+    w_velocity_ul_s: 30.0
+    w_acceleration_ul_s2: 60.0
+    post_delay_ms: 0
+    z_in_velocity_mm_s: 100.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 50.0
+    z_out_acceleration_mm_s2: 1000.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 250.0
+      commanded_ul: 250.0
+- liquid_class_id: liq_opp_200ul_water
+  name: 96 disposable tip 5 - 200ul Water
+  description: 'Adapted from 04-91-62 calibration (R. Keyser 09/2017) for Opportunity HT_96_D_200 / lt_250ul'
+  machine_id: SIM_OPPORTUNITY
+  head_type: HT_96_D_200
+  tip_id: lt_250ul
+  tip_capacity_ul: 250.0
+  aspirate:
+    w_velocity_ul_s: 50.0
+    w_acceleration_ul_s2: 200.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 200.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 30.0
+  dispense:
+    w_velocity_ul_s: 40.0
+    w_acceleration_ul_s2: 100.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 200.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 30.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 250.0
+      commanded_ul: 250.0
+- liquid_class_id: liq_opp_200ul_water_slow
+  name: 96 disposable tip 5 - 200ul Water (slow)
+  description: 'Adapted from 04-91-62 calibration for Opportunity HT_96_D_200 / lt_250ul'
+  machine_id: SIM_OPPORTUNITY
+  head_type: HT_96_D_200
+  tip_id: lt_250ul
+  tip_capacity_ul: 250.0
+  aspirate:
+    w_velocity_ul_s: 25.0
+    w_acceleration_ul_s2: 100.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 200.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 30.0
+  dispense:
+    w_velocity_ul_s: 20.0
+    w_acceleration_ul_s2: 50.0
+    post_delay_ms: 200
+    z_in_velocity_mm_s: 50.0
+    z_in_acceleration_mm_s2: 200.0
+    z_out_velocity_mm_s: 10.0
+    z_out_acceleration_mm_s2: 30.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 250.0
+      commanded_ul: 250.0
+- liquid_class_id: liq_opp_fast_mix
+  name: 96 disposable fast mix
+  description: 'Adapted from HT_96_D_70 for Opportunity HT_96_D_200 / lt_250ul'
+  machine_id: SIM_OPPORTUNITY
+  head_type: HT_96_D_200
+  tip_id: lt_250ul
+  tip_capacity_ul: 250.0
+  aspirate:
+    w_velocity_ul_s: 500.0
+    w_acceleration_ul_s2: 1000.0
+    post_delay_ms: 10
+    z_in_velocity_mm_s: 100.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 100.0
+    z_out_acceleration_mm_s2: 500.0
+  dispense:
+    w_velocity_ul_s: 500.0
+    w_acceleration_ul_s2: 1000.0
+    post_delay_ms: 10
+    z_in_velocity_mm_s: 100.0
+    z_in_acceleration_mm_s2: 500.0
+    z_out_velocity_mm_s: 100.0
+    z_out_acceleration_mm_s2: 500.0
+  equation:
+    control_points:
+    - desired_ul: 0.0
+      commanded_ul: 0.0
+    - desired_ul: 250.0
+      commanded_ul: 250.0
+pipette_techniques:
+- technique_id: tech_004a6ccbfd
+  name: Clockwise Asp-Dsp
+  description: ''
+  motion_type: circular_orbit
+  radius_mm: 0.5
+  segments: 12
+  clockwise: true
+  apply_on_aspirate: true
+  apply_on_dispense: true
+  z_phase: both

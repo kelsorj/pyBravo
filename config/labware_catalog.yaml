@@ -1,0 +1,20 @@
+# Labware catalog source.
+#
+# By default OpenBravo reads the labware catalog from the local snapshot file
+# below, which needs no database and works on a single machine.
+#
+# To share one catalog across several machines, point `uri` at your MongoDB and
+# fill in `database`. Leaving `uri` empty (the default) keeps the local snapshot
+# as the source of truth. Do NOT set this to a MongoDB you use for something
+# else: if the configured database exists but has no labware collection, the
+# catalog loads as empty and overwrites the snapshot with that empty result.
+#
+# Per-machine overrides, which take precedence over this file:
+#   PYBRAVO_LABWARE_MONGO_URI / _DB / _COLLECTION / _CLASSES_COLLECTION
+mongo:
+  uri: ""
+  database: ""
+  collection: "labware_types"
+  class_collection: "labware_classes"
+cache:
+  snapshot_path: "config/labware_catalog.snapshot.yaml"
