@@ -95,20 +95,6 @@ jobs:
           Write-Host "VIRTUAL_ENV:  '$env:VIRTUAL_ENV'"
           Write-Host "UV_PYTHON:    '$env:UV_PYTHON'"
 
-      # `uv run python` picks the right interpreter from pwsh but not from
-      # cmd.exe, which is why the launcher syncs and then invokes .venv's
-      # python by path. Keep proving that, so a future uv release that fixes
-      # the PATH behaviour does not quietly make this comment wrong.
-      - name: uv run python resolves differently under pwsh and cmd
-        shell: pwsh
-        continue-on-error: true
-        run: |
-          uv sync --frozen | Out-Null
-          Write-Host "pwsh  -> $(uv run --frozen python -c 'import sys; print(sys.executable)')"
-          $viaCmd = cmd /c "uv run --frozen python -c ""import sys; print(sys.executable)"""
-          Write-Host "cmd   -> $viaCmd"
-          Write-Host "venv  -> $((Resolve-Path .venv\Scripts\python.exe).Path)"
-
       - name: start_pybravo.bat brings up the server
         shell: pwsh
         run: |
