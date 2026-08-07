@@ -30,7 +30,6 @@ from pybravo.protocol.gemini.packet import (
     Packet,
 )
 
-
 # --- Frame header ------------------------------------------------------------
 
 

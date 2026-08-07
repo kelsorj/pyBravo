@@ -1,6 +1,6 @@
 # Labware catalog source.
 #
-# By default OpenBravo reads the labware catalog from the local snapshot file
+# By default pyBravo reads the labware catalog from the local snapshot file
 # below, which needs no database and works on a single machine.
 #
 # To share one catalog across several machines, point `uri` at your MongoDB and

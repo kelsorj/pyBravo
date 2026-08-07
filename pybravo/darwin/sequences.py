@@ -21,8 +21,8 @@ from dataclasses import dataclass
 
 from pybravo.darwin import axis as axis_module
 from pybravo.darwin.motion import (
-    _MoveWaiter,
     _compose_send_event,
+    _MoveWaiter,
     build_load_packets,
     trigger_event,
 )
@@ -36,7 +36,6 @@ from pybravo.protocol.gemini.enums import (
 )
 from pybravo.protocol.gemini.instruction import Instruction
 from pybravo.protocol.gemini.packet import InstructionAddress
-
 
 # --- Shared helpers ---------------------------------------------------------
 

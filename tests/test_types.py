@@ -1,9 +1,16 @@
 """Tests for core types and constants."""
 
 from pybravo.types import (
-    Axis, HeadType, LightColor, DeviceStateFlag,
-    location_to_row_col, row_col_to_location,
-    interpolate_tip_current, LT_TIP_CURRENT_TABLE, X_TO_X_DISTANCE, Y_TO_Y_DISTANCE,
+    LT_TIP_CURRENT_TABLE,
+    X_TO_X_DISTANCE,
+    Y_TO_Y_DISTANCE,
+    Axis,
+    DeviceStateFlag,
+    HeadType,
+    LightColor,
+    interpolate_tip_current,
+    location_to_row_col,
+    row_col_to_location,
 )
 
 

@@ -16,7 +16,6 @@ from pybravo.protocol.gemini.enums import (
     is_reserved_event,
 )
 
-
 # --- Decoder ----------------------------------------------------------------
 
 

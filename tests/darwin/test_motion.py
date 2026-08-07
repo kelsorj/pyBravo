@@ -143,7 +143,10 @@ class _AxisMotionSim:
             if send_event is not None and fake is not None:
                 from pybravo.protocol.gemini.framing import pack_packet_frame
                 from pybravo.protocol.gemini.packet import (
-                    BROADCAST_ADDRESS, Packet as _Packet,
+                    BROADCAST_ADDRESS,
+                )
+                from pybravo.protocol.gemini.packet import (
+                    Packet as _Packet,
                 )
                 echo = _Packet(
                     src=self.address, dest=BROADCAST_ADDRESS,

@@ -16,7 +16,7 @@ you would rather stay anonymous.
 
 ## Safety defects are security issues here
 
-OpenBravo drives a physical robot. A defect that causes unintended motion —
+pyBravo drives a physical robot. A defect that causes unintended motion —
 homing into an occupied deck, ignoring an axis limit, moving without
 initialization, mishandling an abort — can injure someone or destroy equipment.
 
@@ -28,7 +28,7 @@ instrument.
 
 Be realistic about what this software is.
 
-**OpenBravo has no authentication or authorization.** The HTTP API and
+**pyBravo has no authentication or authorization.** The HTTP API and
 WebSocket are unauthenticated. Anyone who can reach the port can move your
 robot. By default the server binds to `0.0.0.0:8000`, meaning every interface.
 

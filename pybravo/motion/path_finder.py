@@ -7,12 +7,12 @@ deck locations without colliding with labware or other obstacles.
 from __future__ import annotations
 
 from pybravo.types import (
-    Axis,
-    Z_CLEARANCE,
-    Z_CLEARANCE_NOT_PICKANDPLACE,
     COLLISION_BUFFER,
     MAX_LOCATIONS,
     MIN_LOCATION,
+    Z_CLEARANCE,
+    Z_CLEARANCE_NOT_PICKANDPLACE,
+    Axis,
     location_to_row_col,
 )
 

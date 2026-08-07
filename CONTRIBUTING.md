@@ -1,4 +1,4 @@
-# Contributing to OpenBravo
+# Contributing to pyBravo
 
 Thanks for wanting to help. This project keeps working instruments out of
 scrapyards, and every fix matters to somebody's lab.
@@ -20,11 +20,11 @@ tested it.
 ## Setting up
 
 ```bash
-git clone https://github.com/kelsorj/OpenBravo.git
+git clone https://github.com/kelsorj/pyBravo.git
 ```
 
 ```bash
-cd OpenBravo && ./scripts/start_pybravo.sh
+cd pyBravo && ./scripts/start_pybravo.sh
 ```
 
 The launcher uses [uv](https://docs.astral.sh/uv/) when available, which
@@ -48,9 +48,8 @@ fixtures are absent; skips are normal.
 2. **Branch** from `main`.
 3. **Write a test.** Bug fixes get a test that fails before the fix. New
    behavior gets a test that describes it.
-4. **Run the suite** and make sure you have not broken anything. Note that
-   `test_back_left_rectangle_uses_front_right_tipbox_anchor` in
-   `tests/test_bravo_init.py` is a known pre-existing failure; it is not yours.
+4. **Run the suite** and make sure you have not broken anything. It should be
+   fully green — if something fails, it is yours.
 5. **Match the surrounding code.** Read the file you are editing and follow its
    conventions rather than importing your own.
 6. **Open a pull request** describing what changed, why, and how you tested it.
@@ -102,7 +101,7 @@ Two rules specific to this project:
 
 ## Reporting bugs
 
-Include your instrument generation and `controller_type`, the OpenBravo version
+Include your instrument generation and `controller_type`, the pyBravo version
 or commit, what you expected, what happened, and the relevant log output. Debug
 logging helps:
 
@@ -118,7 +117,9 @@ See [SECURITY.md](SECURITY.md).
 
 ## Licensing your contribution
 
-OpenBravo is licensed under the [Apache License 2.0](LICENSE). By submitting a
-contribution you agree that it is licensed under those same terms, per section 5
-of the license. Please only submit code you have the right to contribute — if
-you wrote it for an employer, make sure you are allowed to.
+pyBravo is licensed under the [GNU General Public License v3.0 or later](LICENSE).
+By submitting a contribution you agree that it is licensed under those same
+terms. Note that GPLv3 is a copyleft license: anyone who distributes a modified
+version of pyBravo must also release their changes under the GPL. Please only
+submit code you have the right to contribute — if you wrote it for an employer,
+make sure you are allowed to.

@@ -21,7 +21,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 SCRIPT_SNIPPETS: list[dict[str, Any]] = [
     {
         "id": "pass-through",

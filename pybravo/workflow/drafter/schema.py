@@ -16,7 +16,6 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-
 # ── Supported node types ──────────────────────────────────────────────
 # Kept in sync with ``NODE_TYPE_MAP`` in pybravo/workflow/executor.py plus
 # the flow/* node types that executor doesn't dispatch but the designer

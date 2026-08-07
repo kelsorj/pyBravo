@@ -12,9 +12,9 @@ from dataclasses import dataclass
 from pybravo.protocol.agile_7612_crc import crc8_maxim
 from pybravo.protocol.agile_packet import (
     AGILE_PACKET_SIZE,
+    UNIQUE_VALUE_EXPECTED,
     AgileCommand,
     AgileRegister,
-    UNIQUE_VALUE_EXPECTED,
 )
 
 __all__ = [

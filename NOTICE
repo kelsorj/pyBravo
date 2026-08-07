@@ -1,0 +1,33 @@
+pyBravo
+Copyright (c) 2026 pyBravo contributors
+
+This product is licensed under the GNU General Public License, version 3 or
+later. See the LICENSE file for the full license text.
+
+
+TRADEMARK NOTICE
+----------------
+
+pyBravo is an independent, community-developed project. It is not affiliated
+with, endorsed by, sponsored by, or supported by Agilent Technologies, Inc. or
+any of its subsidiaries.
+
+"Bravo" and other product names referenced in this software and its
+documentation are trademarks or registered trademarks of their respective
+owners. They are used here solely for the nominative purpose of identifying the
+laboratory hardware that this software is designed to communicate with, as
+permitted by fair use. No claim of ownership is made to any such mark.
+
+Any support obligations, warranties, or service agreements you hold with a
+hardware manufacturer apply to that manufacturer's own products and software,
+not to pyBravo. Using pyBravo to operate an instrument may affect such
+agreements; that is between you and your vendor.
+
+
+DISCLAIMER
+----------
+
+This software controls physical laboratory robotics capable of causing damage to
+equipment and injury to people. It is provided without warranty of any kind, as
+set out in sections 15 and 16 of the GNU General Public License. See
+docs/safety.md before connecting to real hardware.

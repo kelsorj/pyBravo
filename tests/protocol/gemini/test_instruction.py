@@ -19,7 +19,6 @@ from pybravo.protocol.gemini.instruction import (
     unpack_float32,
 )
 
-
 # --- Bit layout sanity ------------------------------------------------------
 
 

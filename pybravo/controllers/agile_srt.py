@@ -33,7 +33,6 @@ import struct
 
 from pybravo.controllers.agile import _axis_bit
 from pybravo.controllers.agile_7612 import (
-    Agile7612Controller,
     _HOME_REG_ENABLE,
     _HOME_REG_HOMED,
     _SERVO_A3_INITIAL,
@@ -41,6 +40,7 @@ from pybravo.controllers.agile_7612 import (
     _SERVO_A4_INITIAL,
     _SERVO_A4_RESET,
     _SERVO_A4_SWAPPED,
+    Agile7612Controller,
     _home_reg_register,
 )
 from pybravo.controllers.base import JogParams

@@ -1,4 +1,4 @@
-"""Convert a legacy .pro protocol file to a Python script for OpenBravo.
+"""Convert a legacy .pro protocol file to a Python script for pyBravo.
 
 Parses the XML-based .pro protocol format, extracts variables, deck layout,
 subprocess definitions (tips on/off, aspirate, dispense, mix, loops), and
@@ -616,7 +616,7 @@ _LEGACY_SUBSET_CONFIG_MAP = {
 
 
 def _legacy_to_head_mode(hm: HeadMode) -> tuple[str, str, int]:
-    """Map the legacy PipetteHeadMode to OpenBravo set_head_mode args.
+    """Map the legacy PipetteHeadMode to pyBravo set_head_mode args.
 
     Returns (subset_type, subset_config, column_count).
     """
@@ -1052,7 +1052,7 @@ def print_summary(proto: Protocol):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Convert a legacy .pro protocol to a Python script for OpenBravo."
+        description="Convert a legacy .pro protocol to a Python script for pyBravo."
     )
     parser.add_argument("pro_file", type=Path, help="Path to the legacy .pro file")
     parser.add_argument(

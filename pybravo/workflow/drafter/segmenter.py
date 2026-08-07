@@ -359,7 +359,7 @@ async def _refine_with_llm(
     constraint simple.
     """
     try:
-        from pybravo.workflow.drafter.llm import _build_client, _resolve_config, _llm_structured
+        from pybravo.workflow.drafter.llm import _build_client, _llm_structured, _resolve_config
     except Exception:
         logger.info("drafter_segmenter_llm_unavailable", reason="import_failed")
         for c in candidates:

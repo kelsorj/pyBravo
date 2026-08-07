@@ -9,7 +9,10 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from pybravo.controllers.base import BravoController, AxisMoveInfo
+from pybravo import liquid_classes as liquid_classes_store
+from pybravo.accessories.barcode_reader import BarcodeReadError
+from pybravo.accessories.manager import AccessoryManager
+from pybravo.controllers.base import AxisMoveInfo, BravoController
 from pybravo.controllers.simulation import SimulationController
 from pybravo.deck.geometry import well_center_offset_from_teachpoint_mm, well_geometry_from_metadata
 from pybravo.deck.labware import (
@@ -20,7 +23,6 @@ from pybravo.deck.labware import (
     synthesize_lid_labware,
 )
 from pybravo.deck.teachpoints import Teachpoints
-from pybravo import liquid_classes as liquid_classes_store
 from pybravo.head_mode import (
     HeadMode,
     PlateSelection,
@@ -38,17 +40,25 @@ from pybravo.head_mode import (
     tipbox_selection,
 )
 from pybravo.motion.axes import DEFAULT_SPEEDS
-from pybravo.accessories.barcode_reader import BarcodeReadError
-from pybravo.accessories.manager import AccessoryManager
 from pybravo.profile.profile import BravoProfile
 from pybravo.state_machine.engine import ErrorAction, StateMachineEngine, TaskStatus
 from pybravo.state_machine.tasks import (
-    _gripper_head_offsets,
+    AspirateTask,
+    DelidPlateTask,
+    DispenseTask,
+    DockGripperTask,
     GripperTeachMoveTask,
-    InitializeTask, HomeTask, MoveToLocationTask,
-    AspirateTask, DispenseTask, MixTask, TipsOnTask, TipsOffTask,
-    PickPlaceTask, DelidPlateTask, RelidPlateTask, DockGripperTask, ScanStackHeightTask,
+    HomeTask,
+    InitializeTask,
+    MixTask,
+    MoveToLocationTask,
+    PickPlaceTask,
+    RelidPlateTask,
+    ScanStackHeightTask,
+    TipsOffTask,
+    TipsOnTask,
     _assert_neighbor_clearance,
+    _gripper_head_offsets,
     _stack_total_height_for_count,
     _stacking_support_height_for_count,
 )
@@ -59,7 +69,15 @@ from pybravo.tips import (
     get_tip_id_for_capacity,
     get_tip_length_mm,
 )
-from pybravo.types import AXIS_EPSILON, Axis, DeviceStateFlag, HeadType, OPEN_GRIPPER_POSITION, SpeedLevel, safe_home_order
+from pybravo.types import (
+    AXIS_EPSILON,
+    OPEN_GRIPPER_POSITION,
+    Axis,
+    DeviceStateFlag,
+    HeadType,
+    SpeedLevel,
+    safe_home_order,
+)
 
 logger = logging.getLogger(__name__)
 _PICKUP_FAILURE_G_THRESHOLD_MM = 10.0
@@ -85,13 +103,13 @@ _DARWIN_HEAD_RESISTOR_OHMS: dict[HeadType, int] = {
 
 class Bravo:
     """High-level interface for the Agilent Bravo liquid handler.
-    
+
     Supports async context manager usage:
         async with Bravo(profile="my_bravo.yaml") as bravo:
             await bravo.initialize()
             await bravo.aspirate(location=3, volume=50.0)
     """
-    
+
     def __init__(
         self,
         profile: str | Path | BravoProfile | None = None,
@@ -103,10 +121,10 @@ class Bravo:
             self._profile = profile
         else:
             self._profile = BravoProfile.default()
-        
+
         if mode:
             self._profile.connection.controller_type = mode
-        
+
         self._controller: BravoController | None = None
         self._engine = StateMachineEngine()
         self._engine.set_error_handler(self._handle_task_error)
@@ -133,18 +151,18 @@ class Bravo:
         self._tipbox_untracked: set[int] = set()
         self._labware_names: dict[str, int] = {}
         self._accessories = AccessoryManager(self._profile)
-    
+
     # -- Context manager --
-    
+
     async def __aenter__(self):
         self.connect()
         return self
-    
+
     async def __aexit__(self, *args):
         self.disconnect()
-    
+
     # -- Connection --
-    
+
     def connect(self) -> None:
         if self._controller is not None:
             self.disconnect()
@@ -191,7 +209,7 @@ class Bravo:
         else:
             raise ValueError(f"Unknown controller type: {cfg.controller_type}")
         logger.info("Connected via %s", cfg.controller_type)
-    
+
     def disconnect(self) -> None:
         if self._controller:
             self._controller.close()
@@ -458,7 +476,7 @@ class Bravo:
         }
 
     # -- High-level operations --
-    
+
     async def initialize(self, *, auto_confirm: bool = False) -> None:
         task = InitializeTask(self.controller, self._profile)
         auto_resolve_task: asyncio.Task[None] | None = None
@@ -485,7 +503,7 @@ class Bravo:
         self._initialized = True
         self._homed_axes.update(self._axes_expected_home())
         self._emit("initialized")
-    
+
     async def home(self, axes: list[Axis] | None = None, *, force: bool = False) -> list[Axis]:
         """Home the machine.
 
@@ -516,7 +534,7 @@ class Bravo:
         self._homed_axes.update(axes)
         self._emit("homed", axes=axes)
         return list(axes)
-    
+
     async def move_to_location(
         self,
         location: int,
@@ -559,7 +577,7 @@ class Bravo:
             wait=True,
         )
         self._emit("moved_safe_z", position=self._profile.safety.z_safe_position)
-    
+
     async def aspirate(
         self,
         location: int | str,
@@ -609,7 +627,7 @@ class Bravo:
             liquid_class=None if liquid_class_def is None else liquid_class_def.get("name"),
             pipette_technique=None if pipette_technique_def is None else pipette_technique_def.get("name"),
         )
-    
+
     async def dispense(
         self,
         location: int | str,
@@ -1111,7 +1129,7 @@ class Bravo:
             self._rebuild_stack_from_template(location, template_labware, int(result.get("inferred_count") or 0))
             self._emit("stack_scanned", **result)
         return result
-      
+
     async def tips_on(self, location: int | str) -> None:
         location = self._resolve_location(location)
         if self._tips_on_head:
@@ -1178,7 +1196,7 @@ class Bravo:
             tip_length_mm=self._attached_tip_length_mm,
             head_mode=self._head_mode.to_dict(),
         )
-    
+
     async def tips_off(self, location: int | str) -> None:
         location = self._resolve_location(location)
         tips_are_tracked = bool(self._tips_on_head)
@@ -1344,7 +1362,7 @@ class Bravo:
                 self._labware_names[name] = to_location
         self._emit("pick_placed", from_location=from_loc, to_location=to_location)
         return task.debug_plan()
-    
+
     async def move_axis(self, axis: Axis, position: float,
                         velocity: float = 0.0, acceleration: float = 0.0) -> None:
         move = AxisMoveInfo(axis=axis, position=position,
@@ -1444,9 +1462,9 @@ class Bravo:
             "zg_target": task._zg_target,
             "forced_plate_sensor": bool(getattr(task, "_plate_detected", False)),
         }
-    
+
     # -- State queries --
-    
+
     def get_position(self, axis: Axis) -> float:
         return self.controller.get_position(axis)
 
@@ -1463,7 +1481,7 @@ class Bravo:
             except Exception as exc:
                 logger.debug("Skipping position read for %s: %s", axis.name, exc)
         return positions
-    
+
     @property
     def deck(self) -> DeckState:
         return self._deck
@@ -1471,15 +1489,15 @@ class Bravo:
     @property
     def labware_catalog(self) -> LabwareCatalog:
         return self._labware_catalog
-    
+
     @property
     def profile(self) -> BravoProfile:
         return self._profile
-    
+
     @property
     def teachpoints(self) -> Teachpoints:
         return self._teachpoints
-    
+
     @property
     def engine(self) -> StateMachineEngine:
         return self._engine
@@ -1598,7 +1616,7 @@ class Bravo:
         if self._profile.connection.controller_type in ("darwin", "darwin_native"):
             return self._darwin_detect_analog_head(ctrl)
         return False
-    
+
     def _axes_expected_home(self) -> list[Axis]:
         """Axes a full home covers on this machine — the readiness benchmark."""
         axes = [Axis.X, Axis.Y, Axis.Z]
@@ -1968,12 +1986,12 @@ class Bravo:
             updated_locations.append(location)
 
         return updated_locations
-    
+
     # -- Event system --
-    
+
     def on(self, event: str, handler) -> None:
         self._event_handlers.setdefault(event, []).append(handler)
-    
+
     def _emit(self, event: str, **data) -> None:
         for handler in self._event_handlers.get(event, []):
             try:
@@ -2613,9 +2631,9 @@ class Bravo:
         self._attached_tip_length_mm = None
         self._tips_on_head_mode = None
         self._tips_on_head_selection = None
-    
+
     # -- Error handling --
-    
+
     def abort(self) -> bool:
         return self._engine.abort()
 

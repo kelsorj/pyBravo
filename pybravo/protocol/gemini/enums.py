@@ -1,11 +1,10 @@
-"""Gemini wire-protocol enums 
+"""Gemini wire-protocol enums
 
 """
 
 from __future__ import annotations
 
 from enum import IntEnum
-
 
 # --- Communication core ---------------------------------------------
 

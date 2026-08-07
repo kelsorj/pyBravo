@@ -448,7 +448,7 @@ def _pass2_user_prompt(facts: PaperFacts, current_deck: dict[str, Any] | None) -
     lines.append("")
     lines.append(
         "Pass 1 extracted the following grounded facts from the paper. "
-        "Turn them into an OpenBravo workflow JSON. EVERY non-structural "
+        "Turn them into an pyBravo workflow JSON. EVERY non-structural "
         "node (anything that isn't flow/Start, flow/End, flow/Loop, "
         "flow/IfElse, or flow/Frame) MUST include a `source_citation` "
         "field whose `fact_id` matches one of the fact_ids below, and "

@@ -4,7 +4,7 @@ import pytest
 # raise ImportError at collection instead of skipping the module.
 np = pytest.importorskip("numpy")
 
-from pybravo.vision.calibration import DeckCalibration, ROI  # noqa: E402
+from pybravo.vision.calibration import ROI, DeckCalibration  # noqa: E402
 from pybravo.vision.camera import CameraFrame  # noqa: E402
 from pybravo.vision.detector import BaselineSlotResult, SlotReport, detect_occupancy  # noqa: E402
 

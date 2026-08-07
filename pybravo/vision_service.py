@@ -12,10 +12,14 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
-from pybravo.vision.camera import FemtoBoltCamera, StaticImageSource, create_camera_source
 from pybravo.vision.calibration import (
-    DeckCalibration, draw_roi_overlays, load_calibration, save_calibration, save_reference_image,
+    DeckCalibration,
+    draw_roi_overlays,
+    load_calibration,
+    save_calibration,
+    save_reference_image,
 )
+from pybravo.vision.camera import FemtoBoltCamera, StaticImageSource, create_camera_source
 from pybravo.vision.detector import (
     capture_depth_baselines_with_diagnostics,
     detect_occupancy,

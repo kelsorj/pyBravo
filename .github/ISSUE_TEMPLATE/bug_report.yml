@@ -1,0 +1,81 @@
+name: Bug report
+description: Something behaves incorrectly
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not report security vulnerabilities or safety defects here.**
+        Use [private reporting](https://github.com/kelsorj/pyBravo/security/advisories/new)
+        instead — see [SECURITY.md](../blob/main/SECURITY.md).
+
+        Please scrub anything lab-identifying (IP addresses, machine IDs,
+        teachpoints) out of logs before pasting them.
+
+  - type: dropdown
+    id: controller_type
+    attributes:
+      label: controller_type
+      description: From your profile. Use `simulation` if no hardware is involved.
+      options:
+        - simulation
+        - darwin_native
+        - agile_7612
+        - agile_srt
+        - agile
+    validations:
+      required: true
+
+  - type: input
+    id: instrument
+    attributes:
+      label: Instrument generation
+      placeholder: e.g. Darwin-generation Bravo, Bravo SRT, or "none — simulation"
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: pyBravo version or commit
+      placeholder: e.g. main @ 4b26f3a
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected to happen
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: What actually happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Please confirm whether it reproduces in `simulation`.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: |
+        `PYBRAVO_LOG_LEVEL=DEBUG ./scripts/start_pybravo.sh` adds detail.
+        `PYBRAVO_PROTOCOL_TRACE=1` adds frame hex dumps for protocol issues.
+      render: shell
+
+  - type: checkboxes
+    id: motion
+    attributes:
+      label: Did this involve physical motion?
+      options:
+        - label: This bug involved the instrument moving (homing, tip pickup, Z/W, gripper)

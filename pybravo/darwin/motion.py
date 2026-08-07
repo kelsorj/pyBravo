@@ -43,7 +43,6 @@ from pybravo.protocol.gemini.packet import (
     Packet,
 )
 
-
 _DEFAULT_MOVE_TIMEOUT_MS = 30_000
 _DEFAULT_SETTLE_POLL_MS = 10
 # How long to insist on seeing BUSY before accepting READY as "move complete".

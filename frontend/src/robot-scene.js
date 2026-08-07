@@ -1,5 +1,5 @@
 /**
- * RobotScene — Reusable 3D robot scene for OpenBravo.
+ * RobotScene — Reusable 3D robot scene for pyBravo.
  *
  * Encapsulates URDF loading, labware rendering, motion interpolation,
  * and camera controls. Can be instantiated independently by multiple pages

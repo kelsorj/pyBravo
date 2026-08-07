@@ -42,7 +42,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from pybravo.controllers.base import AxisMoveInfo
 from pybravo.darwin import DarwinController
-from pybravo.logging_config import configure_logging
 from pybravo.deck.labware import (
     DeckState,
     InMemoryLabwareCatalog,
@@ -50,6 +49,7 @@ from pybravo.deck.labware import (
     _read_labware_snapshot,
     normalize_labware_definitions,
 )
+from pybravo.logging_config import configure_logging
 from pybravo.profile.profile import BravoProfile
 from pybravo.protocol.errors import BravoError
 from pybravo.protocol.gemini.engine import GeminiEngine
@@ -58,11 +58,10 @@ from pybravo.state_machine.tasks import (
     _GRIPPER_RECESS_DEPTH,
     _PICK_PLACE_GRIP_TARGET,
     _PICKUP_FAILURE_G_THRESHOLD_MM,
-    _gripper_head_offsets,
     PickPlaceTask,
+    _gripper_head_offsets,
 )
-from pybravo.types import Axis, OPEN_GRIPPER_POSITION, SpeedLevel
-
+from pybravo.types import OPEN_GRIPPER_POSITION, Axis, SpeedLevel
 
 logger = logging.getLogger(__name__)
 

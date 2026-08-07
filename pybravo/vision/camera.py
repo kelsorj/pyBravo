@@ -119,8 +119,13 @@ class FemtoBoltCamera:
     def open(self) -> None:
         try:
             from pyorbbecsdk import (
-                Pipeline, Config, OBSensorType, OBAlignMode,
-                AlignFilter, OBStreamType, OBFrameAggregateOutputMode,
+                AlignFilter,
+                Config,
+                OBAlignMode,
+                OBFrameAggregateOutputMode,
+                OBSensorType,
+                OBStreamType,
+                Pipeline,
             )
         except ImportError as exc:
             raise RuntimeError(

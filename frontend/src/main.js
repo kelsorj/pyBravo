@@ -5602,7 +5602,7 @@ ensureEditorLinks();
 connectWebSocket();
 void loadProfile();
 void refreshStateNow();
-log('OpenBravo', 'success');
+log('pyBravo', 'success');
 
 // ══════════════════════════════════════════════════════════════════════
 // DIAGNOSTICS: Force-limited Z jog with selectable current limit

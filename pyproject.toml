@@ -1,0 +1,117 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pybravo"
+version = "0.1.0"
+description = "Open-source Python driver and web control system for Bravo liquid handling robots"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE", "NOTICE", "AUTHORS.md"]
+keywords = ["laboratory-automation", "liquid-handling", "robotics", "bravo"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
+
+# Kept deliberately small: these are what `pybravo.web.server` needs to start
+# in simulation mode. Hardware-optional features live in the extras below.
+dependencies = [
+    "pyserial>=3.5",
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+    "pymongo>=4.16",
+    "structlog>=23.0",
+    "fastapi>=0.100",
+    "uvicorn[standard]>=0.20",
+    "python-multipart>=0.0.9",
+    "websockets>=11.0",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "pytest-cov>=4.0",
+    "ruff>=0.1",
+    "numpy>=1.24",
+    "opencv-python>=4.8",
+]
+
+# Camera-based deck verification. The Orbbec depth-camera SDK (pyorbbecsdk) is
+# not installable from PyPI — build it from source if you use that camera;
+# pybravo/vision/camera.py degrades gracefully without it.
+vision = [
+    "numpy>=1.24",
+    "opencv-python>=4.8",
+]
+
+# LLM-assisted protocol drafter.
+llm = [
+    "instructor>=1.5",
+    "anthropic>=0.40",
+    "openai>=1.50",
+    "httpx>=0.27",
+    "pypdfium2>=4.0",
+    "Pillow>=10.0",
+]
+llm-windows = ["pip-system-certs>=4.0; platform_system == 'Windows'"]
+
+[project.urls]
+Homepage = "https://github.com/kelsorj/pyBravo"
+Documentation = "https://github.com/kelsorj/pyBravo/blob/main/docs/README.md"
+Issues = "https://github.com/kelsorj/pyBravo/issues"
+
+# No console script on purpose. pybravo.web.server serves the UI from the
+# frontend/ and labware/ directories, which live beside the package rather than
+# inside it, so an installed-only copy would start a server with no UI. Run it
+# from a clone via scripts/start_pybravo.sh or `python -m pybravo.web.server`.
+
+[tool.setuptools.packages.find]
+include = ["pybravo*"]
+
+# The 3D digital twin loads its URDF and mesh assets at runtime, so they have
+# to travel with the package rather than being left behind in the source tree.
+[tool.setuptools.package-data]
+pybravo = [
+    "model/pybravo_urdf/*.urdf",
+    "model/pybravo_urdf/assets/*",
+    "**/*.yaml",
+    "**/*.json",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+# Deliberately modest. This codebase predates any linter, so the set below is
+# what is green today and therefore what CI can meaningfully enforce.
+#
+# Worth turning on once someone does a focused cleanup pass, with current
+# counts so the size of each job is known up front:
+#   B    (27)  flake8-bugbear — mostly B904 raise-without-from
+#   UP   (~80) pyupgrade — modernizes Optional[x] to x | None, etc.
+#   BLE  (192) blind-except and
+#   S110 (45)  try-except-pass
+#     ^ these two are largely the deliberate "poll a chatty register, ignore a
+#       miss" pattern in controllers/. Enabling them means auditing each site,
+#       not bulk-suppressing — several are in motion code where silently
+#       swallowing an error is exactly the failure mode that matters.
+select = ["E", "F", "W", "I"]
+ignore = [
+    # Line length. The code averages 35 chars with a long tail of protocol
+    # tables and hex literals; reflowing 254 lines of controller code buys
+    # nothing.
+    "E501",
+]

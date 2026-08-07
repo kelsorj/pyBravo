@@ -6,7 +6,7 @@ come back to this for the rules.
 
 ## What this project is
 
-OpenBravo is a Python/FastAPI control system for Bravo liquid handling robots.
+pyBravo is a Python/FastAPI control system for Bravo liquid handling robots.
 It supports several instrument generations behind one interface, plus a
 simulation backend that needs no hardware.
 
@@ -49,7 +49,8 @@ This code moves a real machine. When changing anything in `controllers/`,
 - `docs/protocol-spec.md` — the wire protocol reference
 
 ### Tests
-- `tests/` — 33 files. Run with `uv run --extra dev python -m pytest`
+- `tests/` — run with `uv run --extra dev python -m pytest`. The suite is green;
+  a failure is a real signal, not expected noise.
 - `tests/test_agile_srt_homing.py` — golden-file test pinning the SRT homing
   frame sequence. If it fails, the homing sequence changed; confirm the change
   is intended and hardware-verified before touching the fixture.
@@ -131,6 +132,3 @@ Documentation is public and describes this software on its own terms.
 - **Head detection is unavailable on Agile 7612** — the firmware supports
   neither ADC read (0xB3, which causes clicking) nor smart head detect (0xB5).
   Set the head type manually in the profile.
-- **`test_back_left_rectangle_uses_front_right_tipbox_anchor`** in
-  `tests/test_bravo_init.py` currently fails. It is a pre-existing failure in
-  head-mode anchor selection, unrelated to protocol work.

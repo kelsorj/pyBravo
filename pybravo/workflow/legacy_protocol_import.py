@@ -17,7 +17,6 @@ from html import unescape
 from pathlib import Path
 from typing import Any
 
-
 # ---------------------------------------------------------------------------
 # Legacy head-mode encoding tables
 # ---------------------------------------------------------------------------

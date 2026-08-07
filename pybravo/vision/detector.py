@@ -19,7 +19,7 @@ try:
 except ImportError:  # pragma: no cover - depends on local environment
     cv2 = None
 
-from pybravo.vision.calibration import DeckCalibration, ROI
+from pybravo.vision.calibration import ROI, DeckCalibration
 from pybravo.vision.camera import CameraFrame
 
 logger = logging.getLogger(__name__)

@@ -1,6 +1,6 @@
 # Authors and credits
 
-OpenBravo is the work of the people below. The public repository starts from a
+pyBravo is the work of the people below. The public repository starts from a
 fresh commit history, so this file — not `git log` — is the record of who built
 it.
 

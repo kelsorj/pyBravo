@@ -50,8 +50,8 @@ except Exception:
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from pybravo.darwin import DarwinController
-from pybravo.logging_config import configure_logging
 from pybravo.darwin.sequences import _z_axis_force_percent
+from pybravo.deck.geometry import well_center_offset_from_teachpoint_mm
 from pybravo.deck.labware import (
     DeckState,
     InMemoryLabwareCatalog,
@@ -59,27 +59,26 @@ from pybravo.deck.labware import (
     _read_labware_snapshot,
     normalize_labware_definitions,
 )
-from pybravo.deck.geometry import well_center_offset_from_teachpoint_mm
 from pybravo.head_mode import (
     head_selected_ranges,
     normalize_head_mode,
     tip_task_head_offsets_mm,
     tipbox_selection,
 )
+from pybravo.logging_config import configure_logging
 from pybravo.profile.profile import BravoProfile
 from pybravo.protocol.errors import BravoError
 from pybravo.protocol.gemini.engine import GeminiEngine
 from pybravo.protocol.gemini.enums import GeminiSubCommands
 from pybravo.state_machine.tasks import TipsOnTask
 from pybravo.types import (
-    Axis,
-    HeadType,
     LT_TIP_CURRENT_TABLE,
     ST_TIP_CURRENT_TABLE,
     TIPBOX_JOG_TOLERANCE,
+    Axis,
+    HeadType,
     interpolate_tip_current,
 )
-
 
 logger = logging.getLogger(__name__)
 

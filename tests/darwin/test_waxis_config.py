@@ -12,7 +12,6 @@ from pybravo.darwin.waxis_config import (
 )
 from pybravo.types import HeadType
 
-
 # --- Factor lookups ------------------------------------------------------
 
 

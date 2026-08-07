@@ -20,12 +20,12 @@ from pybravo.controllers.base import (
 from pybravo.protocol.commands import LightCommandData
 from pybravo.protocol.errors import BravoError
 from pybravo.types import (
+    NUM_AXES_WITH_GRIPPER,
+    OPEN_GRIPPER_POSITION,
     Axis,
     DeviceStateFlag,
     GripperDetectionState,
     HeadType,
-    NUM_AXES_WITH_GRIPPER,
-    OPEN_GRIPPER_POSITION,
     SpeedLevel,
 )
 

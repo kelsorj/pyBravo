@@ -7,8 +7,8 @@ regions, and inter-location distance scoring.
 from __future__ import annotations
 
 from pybravo.types import (
-    MAX_ROWS,
     MAX_COLS,
+    MAX_ROWS,
     location_to_row_col,
     row_col_to_location,
 )

@@ -19,7 +19,6 @@ from pybravo.workflow.drafter.defaults_scraper import (
 )
 from pybravo.workflow.drafter.schema import SUPPORTED_NODE_TYPES
 
-
 DESIGNER_HTML = Path(__file__).resolve().parents[1] / "frontend" / "designer.html"
 
 

@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+
 from pybravo.tips import (
     get_default_tip_id_for_head,
     get_tip_definition,

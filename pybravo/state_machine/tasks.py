@@ -8,9 +8,9 @@ BravoController interface so simulation/hardware is transparent.
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
 import logging
 import math
+from dataclasses import dataclass
 from typing import Any, Awaitable, Callable
 
 from pybravo.controllers.base import AxisMoveInfo, BravoController, JogParams
@@ -29,8 +29,8 @@ from pybravo.head_mode import (
     HeadMode,
     PlateSelection,
     TipSelection,
-    head_geometry_for_type,
     head_anchor_cell,
+    head_geometry_for_type,
     head_mode_offsets_mm,
     head_selected_ranges,
     selected_anchor_ranges,
@@ -38,31 +38,30 @@ from pybravo.head_mode import (
     tipbox_anchor_cell,
 )
 from pybravo.profile.profile import BravoProfile
-from pybravo.protocol.commands import LightCommandData
+from pybravo.protocol.commands import CommandID, LightCommandData
 from pybravo.state_machine.engine import ErrorAction, StateMachineTask, TaskStatus
-from pybravo.protocol.commands import CommandID
 from pybravo.tip_offsets import ResolvedTipOffsets
 from pybravo.tips import get_tip_length_mm
 from pybravo.types import (
-    safe_home_order,
+    AXIS_EPSILON,
+    GRIPPER_THICKNESS,
+    GRIPPER_TO_BASE_OF_HEAD_GAP,
+    LT_TIP_CURRENT_TABLE,
+    OPEN_GRIPPER_POSITION,
+    ST_TIP_CURRENT_TABLE,
+    TIPBOX_JOG_TOLERANCE,
+    X_TO_X_DISTANCE,
+    Y_TO_Y_DISTANCE,
+    Z_CLEARANCE,
+    Z_SAFE_POSITION_DEFAULT,
     Axis,
     DeviceStateFlag,
     GripperDetectionState,
     HeadType,
     LightColor,
     SpeedLevel,
-    Z_SAFE_POSITION_DEFAULT,
-    TIPBOX_JOG_TOLERANCE,
-    AXIS_EPSILON,
-    GRIPPER_THICKNESS,
-    GRIPPER_TO_BASE_OF_HEAD_GAP,
-    OPEN_GRIPPER_POSITION,
-    Z_CLEARANCE,
-    LT_TIP_CURRENT_TABLE,
-    ST_TIP_CURRENT_TABLE,
-    X_TO_X_DISTANCE,
-    Y_TO_Y_DISTANCE,
     interpolate_tip_current,
+    safe_home_order,
 )
 
 logger = logging.getLogger(__name__)

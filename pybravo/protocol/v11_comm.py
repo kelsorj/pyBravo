@@ -19,7 +19,7 @@ import logging
 import struct
 
 from pybravo.logging_config import TRACE
-from pybravo.protocol.commands import CommandID, DEFAULT_COMMAND_TIMEOUT_MS, MAX_COMMAND_RETRIES
+from pybravo.protocol.commands import DEFAULT_COMMAND_TIMEOUT_MS, MAX_COMMAND_RETRIES, CommandID
 from pybravo.protocol.errors import BravoError, ErrorType, RabbitErrorCode, rabbit_error_to_bravo_error
 from pybravo.transport.base import Transport
 

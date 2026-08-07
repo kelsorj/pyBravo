@@ -10,7 +10,6 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import IntEnum, IntFlag, auto
 
-
 # ---------------------------------------------------------------------------
 # Axis definitions
 # ---------------------------------------------------------------------------

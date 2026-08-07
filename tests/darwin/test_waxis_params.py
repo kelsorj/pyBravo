@@ -23,7 +23,6 @@ from pybravo.protocol.gemini.instruction import unpack_float32
 from pybravo.types import Axis, HeadType
 from tests.fakes.gemini_fake import FakeGeminiServer
 
-
 # --- Table integrity --------------------------------------------------------
 
 

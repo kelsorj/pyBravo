@@ -15,7 +15,7 @@ page once per instrument; after that the profile carries the configuration.
 
 ## 1. Identify your instrument
 
-OpenBravo supports several Bravo generations. Each is selected by the
+pyBravo supports several Bravo generations. Each is selected by the
 `controller_type` field in the profile's `connection` section.
 
 | Instrument generation | `controller_type` | Connection | Notes |
@@ -66,8 +66,8 @@ to send a misinterpreted move command.
 ### Put the host and the instrument on the same subnet
 
 Bravo instruments use a fixed IPv4 address set in the instrument's own
-firmware, and OpenBravo talks to them over plain TCP. There is no routing or
-NAT support, so the host running OpenBravo must have an interface on the same
+firmware, and pyBravo talks to them over plain TCP. There is no routing or
+NAT support, so the host running pyBravo must have an interface on the same
 subnet as the instrument.
 
 A typical arrangement is a dedicated instrument network — either a direct
@@ -76,7 +76,7 @@ isolated switch:
 
 | Device | Address | Netmask |
 |---|---|---|
-| Host running OpenBravo | 192.168.1.10 | 255.255.255.0 |
+| Host running pyBravo | 192.168.1.10 | 255.255.255.0 |
 | Bravo | 192.168.1.50 | 255.255.255.0 |
 
 Points worth checking:
@@ -187,8 +187,8 @@ Profiles live in the `profiles/` directory of the repository by default; set
 `PYBRAVO_PROFILE_DIR` to move them elsewhere (see
 [configuration.md](configuration.md)). Each file is named `<name>.yaml`, and
 the file stem is the profile name used by the API. On startup the server loads
-the last-used profile, falling back to `default.yaml`, and creates a simulation
-profile there if nothing exists yet.
+the last-used profile, falling back to `simulation.yaml`, and creates a
+simulation profile there if nothing exists yet.
 
 The easiest way to start a new instrument is to copy an existing profile:
 
@@ -535,7 +535,7 @@ By default the service listens on **port 8101** at `http://127.0.0.1:8101`.
 Setup:
 
 1. **Install the Orbbec SDK separately.** The Python bindings (`pyorbbecsdk`)
-   are not a dependency of OpenBravo and are not installed by the launcher —
+   are not a dependency of pyBravo and are not installed by the launcher —
    they must be built or installed for your platform following Orbbec's own
    instructions. Put the result where `vision.sdk_root` points; the default is
    `external/pyorbbecsdk`, which is outside version control. OpenCV
@@ -579,7 +579,7 @@ prevent motion.
 ### Barcode reader
 
 A **Microscan MS-3** fixed-mount scanner can be attached over a serial port and
-assigned to a deck location. The reader is an independent device: OpenBravo
+assigned to a deck location. The reader is an independent device: pyBravo
 opens the serial port itself and triggers a read. When a plate at a different
 location needs scanning, the plate is picked, placed at the reader's location,
 scanned, and returned.

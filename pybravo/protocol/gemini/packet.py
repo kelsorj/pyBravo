@@ -14,8 +14,7 @@ from __future__ import annotations
 import struct
 from dataclasses import dataclass
 
-from pybravo.protocol.gemini.enums import CommandTypes, PACKET_SIZE
-
+from pybravo.protocol.gemini.enums import PACKET_SIZE, CommandTypes
 
 # --- InstructionAddress -------------------------------------------------------
 

@@ -1,6 +1,6 @@
 # User guide
 
-A tour of the OpenBravo web interface: the operator dashboard, the editors for
+A tour of the pyBravo web interface: the operator dashboard, the editors for
 labware, tips and liquid classes, and the normal order of operations for
 bringing an instrument from cold to working.
 

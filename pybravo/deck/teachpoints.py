@@ -7,13 +7,13 @@ deck locations, with head-type-specific defaults and tip-length compensation.
 from __future__ import annotations
 
 from pybravo.types import (
-    Axis,
-    HeadType,
-    MAX_ROWS,
     MAX_COLS,
+    MAX_ROWS,
     MIN_LOCATION,
     X_TO_X_DISTANCE,
     Y_TO_Y_DISTANCE,
+    Axis,
+    HeadType,
 )
 
 _LOC1_DEFAULTS: dict[str, dict[Axis, float]] = {

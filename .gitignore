@@ -1,0 +1,56 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Build / packaging artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Test / coverage / tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Runtime output — logs written by pybravo/logging_config.py
+*.log
+logs/
+
+# Local environment and secrets. Never commit real credentials:
+# the LLM drafter reads ANTHROPIC_API_KEY / OPENAI_API_KEY from here.
+.env
+.env.*
+!.env.example
+
+# Local, machine-specific instrument configuration. Committed profiles in
+# profiles/ are the shared defaults; anything *.local.yaml is yours alone
+# and typically holds a real instrument's IP and teachpoints.
+*.local.yaml
+*.local.yml
+
+# Editor / OS cruft
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Merge and backup artifacts
+*.orig
+*.rej
+*.bak
+
+# Agent / assistant local settings
+.claude/settings.local.json

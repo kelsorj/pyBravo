@@ -3,7 +3,9 @@
 Verifies that the backend blocks aspirate/dispense/mix when a plate is lidded,
 allows them after delidding, and blocks them again after relidding.
 
-Runs in simulation mode — no hardware required.
+Always runs in simulation — no hardware required, and it cannot be pointed at a
+real instrument. It forges tip state to reach the guard conditions, which is
+only safe against a simulated deck.
 
 Deck layout:
     Location 5: 96 Greiner 655101 plate (starts LIDDED)
@@ -25,8 +27,6 @@ Test sequence:
 
 Usage:
     python -B scripts/test_lidding_access.py
-    python -B scripts/test_lidding_access.py --profile profiles/Opportunity.yaml
-    python -B scripts/test_lidding_access.py --simulation
 """
 
 from __future__ import annotations
@@ -220,15 +220,15 @@ def main() -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     ap.add_argument(
-        "--profile", default="profiles/Opportunity.yaml",
-        help="Path to Bravo profile YAML (default: profiles/Opportunity.yaml)",
-    )
-    ap.add_argument(
-        "--simulation", action="store_true",
-        help="Run in simulation mode (no hardware required)",
+        "--profile", default="profiles/simulation.yaml",
+        help="Path to Bravo profile YAML (default: profiles/simulation.yaml)",
     )
     args = ap.parse_args()
-    return asyncio.run(run(args.profile, args.simulation))
+    # Simulation is not optional here. This script asserts on backend guard
+    # logic and gets there by forging tip state (_tips_on_head below), which is
+    # a lie the software would otherwise act on — against a real instrument it
+    # would delid and move plates believing it holds tips it does not.
+    return asyncio.run(run(args.profile, simulation=True))
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from pybravo.types import Axis, SpeedLevel, SpeedProfile, AxisRange, AXIS_RANGES, TICKS_PER_MM
+from pybravo.types import AXIS_RANGES, TICKS_PER_MM, Axis, AxisRange, SpeedLevel, SpeedProfile
 
 
 @dataclass

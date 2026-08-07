@@ -20,20 +20,6 @@ from pybravo.workflow.drafter.facts import (
     FactKind,
     PaperFacts,
 )
-from pybravo.workflow.drafter.schema import (
-    DraftedDeckItem,
-    DraftedGraph,
-    DraftedLink,
-    DraftedNode,
-    DraftedWorkflow,
-    SourceCitation,
-    SUPPORTED_NODE_TYPES,
-)
-from pybravo.workflow.drafter.validator import (
-    ValidationIssue,
-    validate_drafted_workflow,
-)
-from pybravo.workflow.drafter.prompt import build_system_prompt
 from pybravo.workflow.drafter.llm import (
     LLMDrafterError,
     MissingLLMDependencyError,
@@ -50,11 +36,25 @@ from pybravo.workflow.drafter.paper_parser import (
     ParsedParagraph,
     parse_pdf_bytes,
 )
+from pybravo.workflow.drafter.prompt import build_system_prompt
+from pybravo.workflow.drafter.schema import (
+    SUPPORTED_NODE_TYPES,
+    DraftedDeckItem,
+    DraftedGraph,
+    DraftedLink,
+    DraftedNode,
+    DraftedWorkflow,
+    SourceCitation,
+)
 from pybravo.workflow.drafter.segmenter import (
     PaperProtocols,
     ProtocolCandidate,
     autoselect_top,
     segment_paper,
+)
+from pybravo.workflow.drafter.validator import (
+    ValidationIssue,
+    validate_drafted_workflow,
 )
 
 __all__ = [

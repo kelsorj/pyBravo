@@ -25,7 +25,11 @@ import cv2
 import numpy as np
 
 from pybravo.vision.calibration import (
-    DeckCalibration, ROI, save_calibration, save_reference_image, load_calibration,
+    ROI,
+    DeckCalibration,
+    load_calibration,
+    save_calibration,
+    save_reference_image,
 )
 
 LOCATION_ORDER = [1, 2, 3, 4, 5, 6, 7, 8, 9]

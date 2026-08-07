@@ -9,16 +9,28 @@ Deck layout:
     Location 8: Tip Box 3 (96 Axygen LT165 Tip Box)
     Location 9: Sample Plate (96 Eppendorf TwinTec)
 
-Usage:
-    python -B scripts/bead_cleanup_half_plate.py
-    python -B scripts/bead_cleanup_half_plate.py --profile profiles/Opportunity.yaml
-    python -B scripts/bead_cleanup_half_plate.py --simulation
+Runs in simulation unless you pass --hardware.
 
-TODOS
-- replace the fast incubation times - they're set to 10s for testing but should be 180s and 60s
-- replace the mix cycles to 10 (beads) and 12 (elution) - they're set to 2 for testing but should be 10
-- the plate move is grabbing the plate at the very top edge - should be lower on the plate
-- a pause mechanism would be great
+Usage:
+    python -B scripts/bead_cleanup_half_plate.py                         # simulation
+    python -B scripts/bead_cleanup_half_plate.py --hardware --profile profiles/Opportunity.yaml
+
+!! UNFINISHED — DO NOT RUN ON HARDWARE AS-IS !!
+
+This is a partially-converted legacy protocol kept as a worked example of what
+the converter emits. Two of the open items below are safety-relevant, not
+cosmetic:
+
+- The plate move grips the plate at its very top edge and should grip lower.
+  A grip that shallow can drop a plate in transit.
+- Incubation times are 10s placeholders for testing; the real protocol needs
+  180s and 60s.
+- Mix cycles are 2 for testing; the real protocol needs 10 (beads) and 12
+  (elution).
+- There is no pause mechanism.
+
+Read it, fix the grip height for your labware, and restore the real timings
+before running it on an instrument. Treat it as a draft, not a protocol.
 """
 
 from __future__ import annotations
@@ -327,15 +339,26 @@ async def run(profile_path: str, simulation: bool) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument(
-        '--profile', default='profiles/Opportunity.yaml',
+        '--profile', default=None,
         help='Path to Bravo profile YAML',
     )
     ap.add_argument(
-        '--simulation', action='store_true',
-        help='Run in simulation mode',
+        '--hardware', action='store_true',
+        help='Drive the real instrument named by --profile. Without this, runs in simulation.',
     )
     args = ap.parse_args()
-    return asyncio.run(run(args.profile, args.simulation))
+    profile = args.profile
+    if args.hardware:
+        if not profile:
+            ap.error('--hardware requires --profile naming the instrument to drive')
+        logger.warning(
+            'Running an UNFINISHED protocol on hardware. The plate grip height '
+            'is known-shallow and the incubation times are testing placeholders '
+            '— see the module docstring.'
+        )
+    else:
+        profile = profile or 'profiles/simulation.yaml'
+    return asyncio.run(run(profile, simulation=not args.hardware))
 
 
 if __name__ == '__main__':

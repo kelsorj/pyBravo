@@ -1,6 +1,6 @@
-# OpenBravo HTTP & WebSocket API Reference
+# pyBravo HTTP & WebSocket API Reference
 
-OpenBravo exposes a FastAPI backend (`pybravo/web/server.py`) that drives Bravo liquid-handling
+pyBravo exposes a FastAPI backend (`pybravo/web/server.py`) that drives Bravo liquid-handling
 robots, manages deck and labware configuration, stores profiles, and runs the workflow designer.
 
 - **Base URL:** `http://localhost:8000` (the server binds `0.0.0.0:8000` by default; see `run_server()`)
@@ -795,7 +795,7 @@ Returns the latest colorized depth preview image. Same response handling as `/ap
 ### GET `/api/vision/detect`
 
 *Excluded from the OpenAPI schema.* Fetches the service's live detection report and decorates each
-slot with the labware OpenBravo expects there, adding `expected_labware` and a `display_label` to
+slot with the labware pyBravo expects there, adding `expected_labware` and a `display_label` to
 every slot entry.
 
 Response: the service's `/detect` payload with the added per-slot fields.

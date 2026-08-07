@@ -3,7 +3,7 @@ import pytest
 pytest.importorskip("numpy")
 
 import pybravo.vision_service as vision_service
-from pybravo.vision.calibration import DeckCalibration, ROI
+from pybravo.vision.calibration import ROI, DeckCalibration
 from pybravo.vision.camera import CameraFrame
 
 

@@ -1,6 +1,6 @@
 # Configuration
 
-Everything OpenBravo reads at startup: environment variables, the files in
+Everything pyBravo reads at startup: environment variables, the files in
 `config/`, and the instrument profiles in `profiles/`. Most installations only
 need a profile — the rest have working defaults.
 
@@ -181,9 +181,11 @@ At startup the server:
 1. Creates the profile directory if it does not exist.
 2. Reads the `.active_profile` marker file in that directory. If it names a
    profile whose YAML file exists, that profile is loaded.
-3. Otherwise loads `default.yaml`.
-4. If `default.yaml` does not exist either, starts in simulation mode and
-   writes a fresh `default.yaml`.
+3. Otherwise loads `simulation.yaml`. The fallback is the simulation profile on
+   purpose — a fresh clone should never reach for an instrument address nobody
+   chose.
+4. If `simulation.yaml` does not exist either, starts in simulation mode and
+   writes a fresh `simulation.yaml`.
 
 The marker file records the last profile loaded through the API, so the choice
 survives a restart. It is not tracked in version control.
@@ -319,7 +321,7 @@ step and dry-run it in simulation before running it on an instrument.
 
 ## See also
 
-- [installation.md](installation.md) — installing OpenBravo and its dependencies
+- [installation.md](installation.md) — installing pyBravo and its dependencies
 - [quickstart.md](quickstart.md) — first run
 - [hardware-setup.md](hardware-setup.md) — what goes inside a profile
 - [safety.md](safety.md) — required reading before connecting to hardware

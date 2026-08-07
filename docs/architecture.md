@@ -1,11 +1,11 @@
 # Architecture
 
-How OpenBravo is put together, for people who intend to change it. If you only
+How pyBravo is put together, for people who intend to change it. If you only
 want to run the software, start with the [Quickstart](quickstart.md) instead.
 
 ## The shape of the system
 
-OpenBravo is a layered stack. Each layer talks only to the one below it, which
+pyBravo is a layered stack. Each layer talks only to the one below it, which
 is what makes it possible to support four instrument generations plus a
 simulator behind one API.
 

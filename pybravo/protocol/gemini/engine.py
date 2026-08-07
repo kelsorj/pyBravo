@@ -23,6 +23,7 @@ import time
 from collections import deque
 from typing import Callable
 
+from pybravo.logging_config import TRACE
 from pybravo.protocol.gemini.enums import (
     BROADCAST_WAIT_MS,
     FRAME_HEADER_SIZE,
@@ -53,7 +54,6 @@ from pybravo.protocol.gemini.packet import (
     InstructionAddress,
     Packet,
 )
-from pybravo.logging_config import TRACE
 from pybravo.transport.tcp import TCPTransport
 
 logger = logging.getLogger(__name__)
@@ -244,7 +244,7 @@ class GeminiEngine:
         """Synchronous SET of a uint32 value.
 
         Broadcast sends (``address.node_id == 63``) don't wait for a response —
-        they sleep ``BROADCAST_WAIT_MS`` milliseconds. 
+        they sleep ``BROADCAST_WAIT_MS`` milliseconds.
         If the subcommand is ``TRIGGER`` the packet is also
         self-routed into the local receive queue so event callbacks fire.
         """

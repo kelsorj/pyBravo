@@ -6,8 +6,12 @@ from pybravo.controllers.base import AxisMoveInfo, JogParams
 from pybravo.controllers.simulation import SimulationController
 from pybravo.protocol.commands import LightCommandData
 from pybravo.types import (
-    Axis, DeviceStateFlag, GripperDetectionState, HeadType,
-    LightColor, SpeedLevel,
+    Axis,
+    DeviceStateFlag,
+    GripperDetectionState,
+    HeadType,
+    LightColor,
+    SpeedLevel,
 )
 
 

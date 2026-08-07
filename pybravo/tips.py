@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import uuid
 from copy import deepcopy
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Iterable
-import uuid
 
 import yaml
 

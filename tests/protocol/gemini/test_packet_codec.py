@@ -13,7 +13,6 @@ from pybravo.protocol.gemini.packet import (
     Packet,
 )
 
-
 # --- InstructionAddress unit tests --------------------------------------------
 
 

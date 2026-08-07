@@ -10,46 +10,45 @@ Controller 2 (ID 1): G, Zg axes (gripper module)
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import logging
 import struct
 import time
+from typing import TYPE_CHECKING
 
+import pybravo.protocol.agile_packet as _default_agile_packet
 from pybravo.controllers.base import (
     AxisMoveInfo,
     BravoController,
     FirmwareVersion,
     JogParams,
 )
+from pybravo.protocol.agile_packet import (
+    AGILE_PACKET_SIZE,
+    UNIQUE_VALUE_EXPECTED,
+    AgileRegister,
+)
 from pybravo.protocol.commands import (
-    AgileMoveInfo,
     AgileJogInfo,
+    AgileMoveInfo,
     CommandID,
     EEPROMAddress,
     GripperParams,
     LightCommandData,
     SmartHeadEEPROMData,
 )
-import pybravo.protocol.agile_packet as _default_agile_packet
-from pybravo.protocol.agile_packet import (
-    AGILE_PACKET_SIZE,
-    AgileRegister,
-    UNIQUE_VALUE_EXPECTED,
-)
-from pybravo.protocol.v11_comm import V11DeviceComm
 from pybravo.protocol.errors import BravoError, ErrorType
+from pybravo.protocol.v11_comm import V11DeviceComm
 from pybravo.transport.serial import SerialTransport
 from pybravo.transport.tcp import TCPTransport
 from pybravo.types import (
-    Axis,
-    DeviceStateFlag,
-    GripperDetectionState,
     GRIP_POSITION_TOLERANCE,
     NUM_AXES_WITH_GRIPPER,
     OPEN_GRIPPER_POSITION,
-    SpeedLevel,
     TICKS_PER_MM,
+    Axis,
+    DeviceStateFlag,
+    GripperDetectionState,
+    SpeedLevel,
 )
 
 if TYPE_CHECKING:

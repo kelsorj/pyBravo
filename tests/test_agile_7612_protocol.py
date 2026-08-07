@@ -8,14 +8,13 @@ No hardware required — these test the encoding/decoding logic only.
 
 import struct
 
+from pybravo.protocol.agile_7612_commands import Agile7612MoveInfo
 from pybravo.protocol.agile_7612_crc import crc8_maxim
 from pybravo.protocol.agile_7612_packet import (
     register_get,
 )
-from pybravo.protocol.agile_7612_commands import Agile7612MoveInfo
 from pybravo.protocol.commands import AgileMoveInfo, CommandID
 from pybravo.types import Axis
-
 
 # ─── T1: CRC-8/MAXIM ───
 
@@ -404,8 +403,8 @@ class TestAgile7612ControllerStructure:
     """Verify Agile7612Controller has all required overrides."""
 
     def test_inherits_from_agile(self):
-        from pybravo.controllers.agile_7612 import Agile7612Controller
         from pybravo.controllers.agile import AgileController
+        from pybravo.controllers.agile_7612 import Agile7612Controller
         assert issubclass(Agile7612Controller, AgileController)
 
     def test_has_stop_method(self):

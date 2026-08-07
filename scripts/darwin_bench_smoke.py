@@ -485,10 +485,12 @@ def main() -> int:
         # None of that can live in a smoke script. Use TipsOnTask via the
         # workflow layer to actually pick up tips on hardware.
         if args.show_tips_on_force is not None:
-            from pybravo.types import (
-                LT_TIP_CURRENT_TABLE, ST_TIP_CURRENT_TABLE, interpolate_tip_current,
-            )
             from pybravo.darwin.sequences import _z_axis_force_percent
+            from pybravo.types import (
+                LT_TIP_CURRENT_TABLE,
+                ST_TIP_CURRENT_TABLE,
+                interpolate_tip_current,
+            )
             head = HeadType[args.head_type]
             use_lt = head in (HeadType.HT_8_D_LT, HeadType.HT_96_D_200, HeadType.HT_96_D_200_S2)
             tip_table = LT_TIP_CURRENT_TABLE if use_lt else ST_TIP_CURRENT_TABLE

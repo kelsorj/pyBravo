@@ -1,6 +1,6 @@
 # Installation
 
-How to install OpenBravo on macOS, Linux, or Windows, including the optional
+How to install pyBravo on macOS, Linux, or Windows, including the optional
 LLM extras and the optional camera-based deck verification service. Nothing on
 this page requires a robot — the software runs fully in simulation.
 
@@ -19,7 +19,7 @@ The runtime dependencies (FastAPI, uvicorn, pydantic, PyYAML, pyserial,
 pymongo, structlog, websockets, python-dotenv, python-multipart) are declared in
 `pyproject.toml` and pinned in `uv.lock`. You do not install them by hand.
 
-No database is required. OpenBravo can use MongoDB to share a labware catalog
+No database is required. pyBravo can use MongoDB to share a labware catalog
 across machines, but a single-machine install works with no database at all —
 see the note in [Verifying the install](#verifying-the-install).
 
@@ -61,7 +61,7 @@ git clone https://github.com/kelsorj/pyBravo.git
 ### 3. Start the server
 
 ```bash
-cd OpenBravo && ./scripts/start_pybravo.sh
+cd pyBravo && ./scripts/start_pybravo.sh
 ```
 
 On Windows, run `scripts\start_pybravo.bat` instead — but read
@@ -122,7 +122,7 @@ git clone https://github.com/kelsorj/pyBravo.git
 ```
 
 ```bash
-cd OpenBravo && python3.12 -m venv .venv
+cd pyBravo && python3.12 -m venv .venv
 ```
 
 ```bash
@@ -139,11 +139,11 @@ activate the virtualenv first.
 ### Windows
 
 ```bat
-git clone https://github.com/kelsorj/OpenBravo.git
+git clone https://github.com/kelsorj/pyBravo.git
 ```
 
 ```bat
-cd OpenBravo && py -3.12 -m venv .venv
+cd pyBravo && py -3.12 -m venv .venv
 ```
 
 ```bat
@@ -194,7 +194,7 @@ launcher does. So on Windows you must either:
 Pointing the launcher at a specific interpreter:
 
 ```bat
-set PYBRAVO_PYTHON=C:\Users\you\OpenBravo\.venv\Scripts\python.exe
+set PYBRAVO_PYTHON=C:\Users\you\pyBravo\.venv\Scripts\python.exe
 ```
 
 **Corporate TLS interception.** The `llm` extra includes `pip-system-certs` on
@@ -266,7 +266,7 @@ is affected.
 
 ## The optional vision service
 
-OpenBravo can use a depth camera to verify that the physical deck matches what
+pyBravo can use a depth camera to verify that the physical deck matches what
 the software expects before a run. This is optional and disabled by default.
 
 The vision service is a **separate process** listening on port **8101**. The
@@ -277,9 +277,9 @@ main server talks to it over HTTP at the URL in the active profile.
 The camera stack is deliberately not part of the base install:
 
 - **The Orbbec SDK Python bindings (`pyorbbecsdk`) are not vendored** with
-  OpenBravo and are not in `uv.lock`. You install them separately, following
+  pyBravo and are not in `uv.lock`. You install them separately, following
   Orbbec's own build and install instructions for your platform. The default
-  location OpenBravo expects is `external/pyorbbecsdk` — the `external/`
+  location pyBravo expects is `external/pyorbbecsdk` — the `external/`
   directory is gitignored precisely because the SDK lives there and is not part
   of this repository.
 - **NumPy** is imported unconditionally by the camera module and is *not* a
@@ -355,7 +355,7 @@ WARNING  pybravo.deck.labware: Falling back to local labware snapshot after Mong
 
 This is not an error. The labware catalog can optionally be backed by MongoDB
 (configured in `config/labware_catalog.yaml`); when no database is reachable,
-OpenBravo falls back to a local snapshot and keeps working normally. See
+pyBravo falls back to a local snapshot and keeps working normally. See
 [troubleshooting](troubleshooting.md#the-server-logs-a-mongodb-connection-warning-on-startup)
 for the full explanation.
 
@@ -371,12 +371,10 @@ Or, in an activated virtualenv with the `dev` extra installed:
 python -m pytest
 ```
 
-Expect roughly **616 passing tests**, plus:
+Expect roughly **890 passing tests and no failures**. A failing test means
+something is wrong with the install or the change you just made — it is not
+expected background noise.
 
-- **One known pre-existing failure**:
-  `test_back_left_rectangle_uses_front_right_tipbox_anchor` in
-  `tests/test_bravo_init.py`. This is a known issue and does not indicate a
-  broken install.
 - **Some skipped tests.** Skips are normal. Several tests skip when an optional
   fixture or dependency is absent — for example the legacy protocol import
   tests skip without a local protocol fixture, and the vision tests skip when

@@ -16,10 +16,12 @@ Sequence:
     6. Unload tips back to location 1
     7. Disconnect
 
+Runs in simulation unless you pass --hardware. This moves liquid and tips, so
+verify the deck matches the layout above before running it on an instrument.
+
 Usage:
-    python -B scripts/functional_test_aspirate_dispense.py
-    python -B scripts/functional_test_aspirate_dispense.py --profile profiles/Opportunity.yaml
-    python -B scripts/functional_test_aspirate_dispense.py --simulation
+    python -B scripts/functional_test_aspirate_dispense.py               # simulation
+    python -B scripts/functional_test_aspirate_dispense.py --hardware --profile profiles/Opportunity.yaml
 """
 
 from __future__ import annotations
@@ -147,15 +149,21 @@ async def run(profile_path: str, simulation: bool) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument(
-        "--profile", default="profiles/Opportunity.yaml",
+        "--profile", default=None,
         help="Path to Bravo profile YAML (default: profiles/Opportunity.yaml)",
     )
     ap.add_argument(
-        "--simulation", action="store_true",
-        help="Run in simulation mode (no hardware required)",
+        "--hardware", action="store_true",
+        help="Drive the real instrument named by --profile. Without this, runs in simulation.",
     )
     args = ap.parse_args()
-    return asyncio.run(run(args.profile, args.simulation))
+    profile = args.profile
+    if args.hardware:
+        if not profile:
+            ap.error("--hardware requires --profile naming the instrument to drive")
+    else:
+        profile = profile or "profiles/simulation.yaml"
+    return asyncio.run(run(profile, simulation=not args.hardware))
 
 
 if __name__ == "__main__":

@@ -1,17 +1,23 @@
-import pytest
-import yaml
-
-from fastapi import HTTPException
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+import yaml
+from fastapi import HTTPException
+
+from pybravo import labware_editor
 from pybravo.bravo import Bravo
 from pybravo.controllers.base import JogParams
-from pybravo.darwin import DarwinController
 from pybravo.controllers.simulation import SimulationController
+from pybravo.darwin import DarwinController
 from pybravo.deck import labware as labware_module
-from pybravo import labware_editor
-from pybravo.deck.labware import Labware, LabwareDefinition, _apply_mirrored_motion_fields, build_labware_catalog, synthesize_lid_labware
+from pybravo.deck.labware import (
+    Labware,
+    LabwareDefinition,
+    _apply_mirrored_motion_fields,
+    build_labware_catalog,
+    synthesize_lid_labware,
+)
 from pybravo.head_mode import TipSelection, normalize_head_mode, plate_selection
 from pybravo.protocol.commands import CommandID
 from pybravo.protocol.errors import BravoError, ErrorType

@@ -25,7 +25,6 @@ from pybravo.protocol.gemini.enums import (
 from pybravo.protocol.gemini.packet import InstructionAddress
 from pybravo.types import Axis
 
-
 # Default polling, timeout, and retry values.
 _STATE_POLL_MS = 200
 _DEFAULT_COMMUTATE_TIMEOUT_MS = 15_000
@@ -212,7 +211,7 @@ def is_initialized(
 ) -> bool:
     """Whether the axis has been commutated + homed (motor_state >= READY).
 
-    Re-homing an already- initialized axis requires disabling it first, or the 
+    Re-homing an already- initialized axis requires disabling it first, or the
     controller NAKs with ``MOVE_IN_PROGRESS``.
     """
     state = read_motor_state(engine, address, timeout_ms)

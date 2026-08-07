@@ -5,7 +5,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from pybravo.accessories.barcode_reader import BarcodeReader, config_for_device as barcode_config_for_device
+from pybravo.accessories.barcode_reader import BarcodeReader
+from pybravo.accessories.barcode_reader import config_for_device as barcode_config_for_device
 from pybravo.profile.profile import AccessoryDeviceConfig, BravoProfile
 
 logger = logging.getLogger(__name__)

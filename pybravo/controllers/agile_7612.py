@@ -23,27 +23,26 @@ Differences from standard AgileController:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import logging
 import struct
 import time
+from typing import TYPE_CHECKING
 
 import pybravo.protocol.agile_7612_packet as _agile_7612_packet
 from pybravo.controllers.agile import (
-    AgileController,
-    _CONTROLLER_2_ID,
     _CONTROLLER_1_AXES,
     _CONTROLLER_2_AXES,
+    _CONTROLLER_2_ID,
+    AgileController,
     _axis_bit,
     _local_axis_index,
 )
 from pybravo.controllers.base import AxisMoveInfo, JogParams
+from pybravo.protocol.agile_7612_commands import Agile7612MoveInfo
+from pybravo.protocol.agile_7612_crc import crc8_maxim
 from pybravo.protocol.agile_packet import AGILE_PACKET_SIZE
 from pybravo.protocol.commands import CommandID
 from pybravo.protocol.errors import BravoError, ErrorType
-from pybravo.protocol.agile_7612_commands import Agile7612MoveInfo
-from pybravo.protocol.agile_7612_crc import crc8_maxim
 from pybravo.protocol.v11_agile_7612_comm import V11Agile7612DeviceComm
 from pybravo.transport.tcp import TCPTransport
 from pybravo.types import Axis, DeviceStateFlag, HeadType, SpeedLevel

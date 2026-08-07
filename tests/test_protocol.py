@@ -1,14 +1,24 @@
 """Tests for protocol layer -- commands, Agile packets, and errors."""
 
 from pybravo.protocol.agile_packet import (
-    crc8, verify_packet, register_get, move_go, servo_enable,
-    AgileReply, AGILE_PACKET_SIZE,
+    AGILE_PACKET_SIZE,
+    AgileReply,
+    crc8,
+    move_go,
+    register_get,
+    servo_enable,
+    verify_packet,
 )
 from pybravo.protocol.commands import (
-    AgileMoveInfo, LightCommandData, SmartHeadEEPROMData,
+    AgileMoveInfo,
+    LightCommandData,
+    SmartHeadEEPROMData,
 )
 from pybravo.protocol.errors import (
-    BravoError, ErrorType, RabbitErrorCode, rabbit_error_to_bravo_error,
+    BravoError,
+    ErrorType,
+    RabbitErrorCode,
+    rabbit_error_to_bravo_error,
 )
 from pybravo.types import Axis, LightColor
 

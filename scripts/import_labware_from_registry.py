@@ -2,7 +2,7 @@
 
 Reads labware entries from the Velocity11 shared registry key
 ``HKLM\\SOFTWARE\\WOW6432Node\\Velocity11\\shared\\Labware\\Labware_Entries``
-and writes them into the OpenBravo labware catalog snapshot YAML.
+and writes them into the pyBravo labware catalog snapshot YAML.
 
 Usage:
     python scripts/import_labware_from_registry.py <path-to-labware.reg> [--output config/labware_catalog.snapshot.yaml]
@@ -146,7 +146,7 @@ def parse_reg_labware(text: str) -> list[dict[str, Any]]:
 
 
 def reg_entry_to_labware(entry: dict[str, str]) -> dict[str, Any]:
-    """Convert one raw registry labware entry to OpenBravo snapshot format."""
+    """Convert one raw registry labware entry to pyBravo snapshot format."""
     name = entry.get("NAME", entry.get("_section_name", "Unknown"))
     wells = _to_int(entry.get("NUMBER_OF_WELLS"), 0)
     rows, cols = _WELL_COUNT_TO_GRID.get(wells, (0, 0))
@@ -259,7 +259,7 @@ def import_labware_reg(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Import labware from a .reg export into OpenBravo's labware catalog."
+        description="Import labware from a .reg export into pyBravo's labware catalog."
     )
     parser.add_argument("reg_file", type=Path, help="Path to the labware .reg export")
     parser.add_argument(

@@ -1,6 +1,6 @@
 # Protocol specification
 
-The wire protocols OpenBravo speaks to Bravo instruments. This page is for
+The wire protocols pyBravo speaks to Bravo instruments. This page is for
 people maintaining the driver or adding support for another instrument
 generation; you do not need it to operate the software.
 

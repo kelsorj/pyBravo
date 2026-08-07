@@ -3,7 +3,7 @@
 A scientific paper's Methods section is prose — dense with volumes,
 concentrations, temperatures, durations, and equipment references, often
 stitched together across multiple paragraphs. Asking an LLM to one-shot
-this into a valid OpenBravo workflow JSON is a bad deal: the model has
+this into a valid pyBravo workflow JSON is a bad deal: the model has
 to simultaneously read for comprehension, track quantities, pick node
 types from our vocabulary, AND generate valid structured JSON. Failure
 modes compound.
@@ -18,7 +18,7 @@ The two-pass architecture splits the work:
    etc.). No workflow structure, no node types — just facts.
 
 2. **Pass 2 (llm.py: `draft_workflow_from_facts`)** — Consume the facts
-   list + OpenBravo schema and emit a :class:`DraftedWorkflow` where
+   list + pyBravo schema and emit a :class:`DraftedWorkflow` where
    every non-structural node's ``source_citation.fact_id`` points at
    the fact that spawned it. This pass doesn't re-read the paper; it
    reasons only over the structured facts.
@@ -34,7 +34,6 @@ from __future__ import annotations
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
-
 
 # ── Fact schema ───────────────────────────────────────────────────────
 

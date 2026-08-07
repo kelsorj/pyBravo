@@ -2,7 +2,7 @@
 
 ## About the project
 
-### What is OpenBravo?
+### What is pyBravo?
 
 An open-source control system for Bravo liquid handling robots: a Python driver,
 an HTTP and WebSocket API, and a browser UI for running pipetting protocols. It
@@ -18,19 +18,22 @@ This project keeps those instruments running. See the dedication in the
 
 ### Is it affiliated with Agilent?
 
-No. OpenBravo is an independent project, not affiliated with, endorsed by, or
+No. pyBravo is an independent project, not affiliated with, endorsed by, or
 supported by Agilent Technologies. Product names are used only to identify the
 hardware this software works with. See [NOTICE](../NOTICE).
 
 ### What license is it under?
 
-Apache License 2.0. You can use it commercially, modify it, and distribute it,
-provided you preserve the license and attribution notices. There is no warranty
-of any kind — see [LICENSE](../LICENSE).
+GNU General Public License v3.0 or later. You can use it commercially, modify
+it, and distribute it, provided you preserve the license and attribution
+notices — and, because GPLv3 is a copyleft license, provided you release the
+source of any modified version you distribute under the GPL as well. Running it
+in your own lab does not oblige you to publish anything. There is no warranty of
+any kind — see [LICENSE](../LICENSE).
 
 ### Can I use it for regulated or clinical work?
 
-Not as-is. OpenBravo is not a validated instrument control system and is not
+Not as-is. pyBravo is not a validated instrument control system and is not
 certified for clinical, diagnostic, or GxP use. If you operate under a quality
 system, validation is your responsibility. Read [Safety](safety.md).
 
@@ -136,9 +139,9 @@ unless you have the optional camera verification configured.
 
 ### Some tests skip when I run the suite.
 
-Normal. Some tests need optional fixtures or hardware and skip when absent. One
-test, `test_back_left_rectangle_uses_front_right_tipbox_anchor`, is a known
-pre-existing failure in head-mode anchor selection.
+Normal. Some tests need optional fixtures or hardware and skip when absent.
+Nothing should *fail*, though — the suite is green. If you see a failure, it is
+worth investigating rather than ignoring.
 
 ## Contributing
 

@@ -23,7 +23,7 @@ from typing import Any
 
 import yaml
 
-from pybravo.types import HeadType, TIPBOX_JOG_TOLERANCE
+from pybravo.types import TIPBOX_JOG_TOLERANCE, HeadType
 
 logger = logging.getLogger(__name__)
 

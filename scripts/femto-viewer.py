@@ -14,13 +14,18 @@ Controls:
 """
 
 import sys
-import time
 import threading
+import time
 
 import cv2
 import numpy as np
 from pyorbbecsdk import (
-    Pipeline, Config, OBSensorType, OBFormat, FormatConvertFilter, OBConvertFormat,
+    Config,
+    FormatConvertFilter,
+    OBConvertFormat,
+    OBFormat,
+    OBSensorType,
+    Pipeline,
 )
 
 MIN_DEPTH = 20    # mm

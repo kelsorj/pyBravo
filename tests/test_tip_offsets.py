@@ -18,9 +18,7 @@ from pybravo.tip_offsets import (
     load_tip_offset_table,
 )
 from pybravo.types import TIPBOX_JOG_TOLERANCE, Axis, HeadType
-
 from tests.test_bravo_init import RecordingSimulationController
-
 
 # ---------------------------------------------------------------------------
 # Resolver / loader unit tests

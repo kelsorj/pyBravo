@@ -12,7 +12,6 @@ These tests pin both halves.
 
 from __future__ import annotations
 
-
 from pybravo.profile.profile import AccessoriesConfig
 
 

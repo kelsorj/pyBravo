@@ -1,0 +1,75 @@
+name: CI
+
+# No job here consumes user-controlled event data (issue/PR titles, bodies,
+# branch names), so there is nothing to interpolate unsafely into a shell.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Run the test suite
+        env:
+          PYVER: ${{ matrix.python-version }}
+        run: uv run --frozen --extra dev --python "$PYVER" python -m pytest -q
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv run --frozen --extra dev ruff check .
+
+  # Launch-readiness checks. Each corresponds to a bug that actually shipped
+  # once: a missing pyproject, a non-executable launcher, a README linking at a
+  # file that was never committed.
+  smoke:
+    name: Fresh-clone smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Launcher scripts are executable
+        run: |
+          for f in scripts/*.sh; do
+            test -x "$f" || {
+              echo "::error file=$f::not executable — git update-index --chmod=+x $f"
+              exit 1
+            }
+          done
+
+      - name: Relative links in tracked markdown resolve
+        run: python3 scripts/check_doc_links.py
+
+      - name: Server starts and serves the UI
+        run: |
+          ./scripts/start_pybravo.sh &
+          for i in $(seq 1 45); do
+            if curl -fsS http://localhost:8000/ -o /dev/null; then
+              echo "server answered after ${i}s"
+              curl -fsS http://localhost:8000/openapi.json -o /dev/null
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::server did not answer on :8000 within 45s"
+          exit 1

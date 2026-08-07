@@ -7,7 +7,6 @@ not the wire-level force-control semantics (which only a real axis can verify).
 
 from __future__ import annotations
 
-
 import pytest
 
 from pybravo.darwin.params import ParameterAccess
@@ -19,8 +18,8 @@ from pybravo.darwin.sequences import (
     _z_axis_force_percent,
     force_move,
     grip,
-    open_gripper,
     jog,
+    open_gripper,
     set_peak_current_amps,
 )
 from pybravo.darwin.topology import axis_address

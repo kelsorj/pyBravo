@@ -1,6 +1,6 @@
 # docling-serve on NVIDIA Blackwell (GB10 / DGX Spark)
 
-The Phase 3 PDF-ingest pipeline (OpenBravo → `/api/workflow/parse_pdf`)
+The Phase 3 PDF-ingest pipeline (pyBravo → `/api/workflow/parse_pdf`)
 delegates document parsing to a remote [`docling-serve`][1] instance.
 This directory holds the **Dockerfile + runbook** for standing up a
 GPU-accelerated `docling-serve` on an NVIDIA Blackwell GPU — the tricky
@@ -91,9 +91,9 @@ docker logs docling-serve 2>&1 | tail -20    # look for 'Using GPU device with I
 curl -sS http://localhost:5001/health        # expect {"status":"ok"}
 ```
 
-## Point OpenBravo at it
+## Point pyBravo at it
 
-In the OpenBravo project's `.env` (on the dev/server host that runs
+In the pyBravo project's `.env` (on the dev/server host that runs
 the FastAPI backend):
 
 ```

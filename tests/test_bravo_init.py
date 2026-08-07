@@ -1,14 +1,24 @@
 import asyncio
+
 import pytest
 
-from pybravo.bravo import Bravo
 from pybravo import liquid_classes as liquid_classes_store
+from pybravo.bravo import Bravo
 from pybravo.controllers.base import AxisMoveInfo, FirmwareVersion
 from pybravo.controllers.simulation import SimulationController
 from pybravo.deck.geometry import tipbox_anchor_offset_from_teachpoint_mm, well_center_offset_from_teachpoint_mm
-from pybravo.deck.labware import DeckState, LabwareDefinition, Labware, synthesize_lid_labware
+from pybravo.deck.labware import DeckState, Labware, LabwareDefinition, synthesize_lid_labware
 from pybravo.deck.teachpoints import Teachpoints
-from pybravo.head_mode import TipSelection, head_anchor_cell, legal_plate_anchors, normalize_head_mode, plate_footprint_wells, plate_selection, tip_task_head_offsets_mm, tipbox_selection
+from pybravo.head_mode import (
+    TipSelection,
+    head_anchor_cell,
+    legal_plate_anchors,
+    normalize_head_mode,
+    plate_footprint_wells,
+    plate_selection,
+    tip_task_head_offsets_mm,
+    tipbox_selection,
+)
 from pybravo.profile.profile import BravoProfile
 from pybravo.protocol.errors import BravoError, ErrorType
 from pybravo.state_machine.engine import StateMachineEngine, StateMachineTask

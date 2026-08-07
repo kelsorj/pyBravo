@@ -2,7 +2,7 @@
 
 Reads liquid class entries from the Velocity11 shared registry key
 ``HKLM\\SOFTWARE\\WOW6432Node\\Velocity11\\Shared\\Liquid Library``
-and writes them into the OpenBravo liquid_classes.yaml store.
+and writes them into the pyBravo liquid_classes.yaml store.
 
 The registry file is typically UTF-16LE encoded (Windows .reg export default).
 Each liquid class entry has aspirate/dispense velocity/acceleration parameters,
@@ -25,7 +25,6 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-
 
 _STORE_PATH = Path(__file__).resolve().parents[1] / "config" / "liquid_classes.yaml"
 
@@ -212,7 +211,7 @@ def _coefficients_to_control_points(
     """Convert polynomial coefficients to piecewise control_points.
 
     The registry stores correction as a polynomial: commanded = c0 + c1*desired + c2*desired^2 + ...
-    OpenBravo uses sampled control_points with (desired_ul, commanded_ul) pairs.
+    pyBravo uses sampled control_points with (desired_ul, commanded_ul) pairs.
     """
     if not coefficients:
         return [
@@ -243,7 +242,7 @@ def reg_entry_to_liquid_class(
     machine_id: str,
     head_type_override: str | None = None,
 ) -> dict[str, Any]:
-    """Convert one parsed registry entry to the OpenBravo liquid class YAML format."""
+    """Convert one parsed registry entry to the pyBravo liquid class YAML format."""
     name = entry["name"]
     head_type = head_type_override or _infer_head_type(name)
     tip_capacity = _infer_tip_capacity(name)
@@ -336,7 +335,7 @@ def import_liquid_classes_reg(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Import liquid classes from a .reg export into OpenBravo's liquid_classes.yaml."
+        description="Import liquid classes from a .reg export into pyBravo's liquid_classes.yaml."
     )
     parser.add_argument("reg_file", type=Path, help="Path to the liquid class .reg export")
     parser.add_argument(

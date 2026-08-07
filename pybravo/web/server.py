@@ -40,11 +40,13 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Resp
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from pybravo.bravo import Bravo
 from pybravo import labware_editor
 from pybravo import liquid_classes as liquid_classes_store
+from pybravo.bravo import Bravo
 from pybravo.deck.labware import build_labware_catalog, normalize_labware_definitions
 from pybravo.head_mode import suggested_head_mode
+from pybravo.logging_config import configure_logging
+from pybravo.protocol.errors import BravoError
 from pybravo.tips import (
     create_tip_definition,
     delete_tip_definition,
@@ -57,8 +59,6 @@ from pybravo.tips import (
     patch_tip_definition,
     serialize_tip_options_for_head,
 )
-from pybravo.logging_config import configure_logging
-from pybravo.protocol.errors import BravoError
 from pybravo.types import Axis, HeadType, SpeedLevel, safe_home_order
 from pybravo.vision_client import VisionServiceClient, VisionServiceError
 from pybravo.web.middleware import RequestLoggingMiddleware
@@ -2896,7 +2896,7 @@ async def workflow_draft_from_pdf(
     file: UploadFile = File(...),
     include_deck: bool = True,
 ):
-    """Draft an OpenBravo workflow from a scientific paper PDF.
+    """Draft an pyBravo workflow from a scientific paper PDF.
 
     Phase 3 week 2 deliverable: end-to-end pipeline
     1. Docling on the DGX extracts structured paragraphs + section
@@ -3226,7 +3226,7 @@ async def workflow_segment_paper(
         parse_pdf_bytes,
     )
     from pybravo.workflow.drafter import store as _dstore
-    from pybravo.workflow.drafter.segmenter import segment_paper, autoselect_top
+    from pybravo.workflow.drafter.segmenter import autoselect_top, segment_paper
 
     pdf_hash = _dstore.store_pdf_bytes(pdf_bytes)
     history = _dstore.paper_upload_history(pdf_hash)
@@ -3321,11 +3321,12 @@ async def workflow_draft_from_analyzed(req: DraftFromAnalyzedRequest):
     from pybravo.workflow.drafter import (
         LLMDrafterError,
         MissingLLMDependencyError,
-        ParsedPaper, ParsedParagraph,
+        ParsedPaper,
+        ParsedParagraph,
         draft_workflow_from_paper,
     )
-    from pybravo.workflow.drafter.llm import NoLLMCredentialsError
     from pybravo.workflow.drafter import store as _dstore
+    from pybravo.workflow.drafter.llm import NoLLMCredentialsError
 
     cached = _dstore.get_parsed_paper(req.pdf_hash)
     if not cached:
@@ -3499,6 +3500,7 @@ async def drafter_paper_paragraphs(pdf_hash: str):
 async def workflow_import(file: UploadFile = File(...)):
     """Import a legacy .pro protocol file and return the parsed workflow."""
     import tempfile
+
     from pybravo.workflow.legacy_protocol_import import import_pro
 
     content = await file.read()
@@ -3737,8 +3739,8 @@ async def load_profile(req: ProfileLoadRequest):
             status_code=404,
             detail=f"Profile '{req.name}' not found",
         )
-    from pybravo.profile.profile import BravoProfile
     from pybravo.deck.teachpoints import Teachpoints
+    from pybravo.profile.profile import BravoProfile
 
     loaded = BravoProfile.load(path)
     bravo._profile = loaded
@@ -4642,15 +4644,17 @@ def run_server(
         _profile_dir = profile_dir
         profile_dir.mkdir(parents=True, exist_ok=True)
 
-        # Prefer the last-used profile, falling back to default.yaml
+        # Prefer the last-used profile. The fallback is the simulation profile
+        # rather than a hardware one on purpose: a fresh clone should never
+        # reach for an instrument address nobody chose.
         active_name = _read_active_profile(profile_dir)
         if active_name:
             profile_path = profile_dir / f"{active_name}.yaml"
             logger.info("Resuming last active profile: %s", active_name)
         else:
-            profile_path = profile_dir / "default.yaml"
+            profile_path = profile_dir / "simulation.yaml"
             logger.warning(
-                "No active profile recorded (%s); falling back to 'default'. "
+                "No active profile recorded (%s); falling back to 'simulation'. "
                 "Load the profile you intend to work in BEFORE teaching — "
                 "teachpoints are saved into whichever profile is active.",
                 profile_dir / ".active_profile",
@@ -4662,7 +4666,7 @@ def run_server(
             logger.info("Loaded profile from %s", profile_path)
         else:
             _bravo = Bravo(mode="simulation")
-            _profile_path = profile_dir / "default.yaml"
+            _profile_path = profile_dir / "simulation.yaml"
             try:
                 _bravo.profile.save(_profile_path)
                 logger.info("Created default profile at %s", _profile_path)

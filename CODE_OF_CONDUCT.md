@@ -59,8 +59,11 @@ representative at an online or offline event.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement at
-**<!-- TODO: add a contact address before publishing -->**.
+reported privately to the maintainers through GitHub's private reporting form:
+**<https://github.com/kelsorj/pyBravo/security/advisories/new>**. Reports
+submitted there are visible only to the repository maintainers, not to the
+public. If you would rather not use GitHub, open a minimal public issue asking
+a maintainer to contact you, without including details of the incident.
 
 All complaints will be reviewed and investigated promptly and fairly. All
 community leaders are obligated to respect the privacy and security of the

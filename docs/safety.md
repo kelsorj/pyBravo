@@ -1,12 +1,13 @@
 # Safety
 
-OpenBravo drives a physical robot with motors strong enough to break labware,
+pyBravo drives a physical robot with motors strong enough to break labware,
 destroy a pipette head, and injure a hand. This page is the one document you
 should read before connecting to real hardware.
 
 > [!WARNING]
-> This software is provided under the Apache License 2.0, **without warranty of
-> any kind and without any fitness-for-purpose guarantee**. It is not a
+> This software is provided under the GNU General Public License v3.0 or later,
+> **without warranty of any kind and without any fitness-for-purpose
+> guarantee**. It is not a
 > validated instrument control system, it is not certified for clinical,
 > diagnostic, or GxP use, and it has not been safety-certified by any body. You
 > are responsible for the safe operation of your instrument.

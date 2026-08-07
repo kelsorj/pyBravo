@@ -42,7 +42,7 @@ Go read the terminal the server is running in, or see
 
 ### `SyntaxError`, `TypeError` about `X | None`, or the launcher refuses to run
 
-**Cause.** Python older than 3.11. OpenBravo declares
+**Cause.** Python older than 3.11. pyBravo declares
 `requires-python = ">=3.11"` and uses syntax that older interpreters cannot
 parse.
 
@@ -94,7 +94,7 @@ or `openai` for the workflow drafter — you need the optional `llm` extra. See
 ### `Address already in use` / `[Errno 48]` / `[Errno 98]` / `WinError 10048`
 
 **Cause.** Something already holds TCP port 8000. Usually it is a previous
-OpenBravo server that did not shut down.
+pyBravo server that did not shut down.
 
 **Fix.** Find and stop it. On macOS or Linux:
 
@@ -145,7 +145,7 @@ WARNING  pybravo.deck.labware: Falling back to local labware snapshot after Mong
 **This is expected and harmless.** It is the single most common thing that
 alarms a new user, and it is not an error.
 
-**Cause.** OpenBravo can optionally back its labware catalog with MongoDB so
+**Cause.** pyBravo can optionally back its labware catalog with MongoDB so
 that several machines in a lab share one definition of every plate and tip box.
 You see this warning when a URI *is* configured but the database cannot be
 reached. The catalog then falls back to a local snapshot file and the server
@@ -314,7 +314,7 @@ Discover: bionet=0 scan=1 directed=hit (842 ms)
 **Cause 4 — a firewall.** The connection is an outbound TCP connection from the
 computer to the instrument, plus a UDP broadcast for discovery. Host firewalls
 (macOS application firewall, Windows Defender Firewall, `ufw`/`firewalld`) will
-block one or both. Allow the Python interpreter running OpenBravo to make
+block one or both. Allow the Python interpreter running pyBravo to make
 outbound connections and to send UDP broadcasts on port 7611. Corporate
 networks frequently block subnet-wide scanning outright, which shows up as
 discovery finding nothing while a directed connection works fine.
@@ -326,7 +326,7 @@ interface on the robot's subnet, or reconfigure the instrument. This is covered
 in [hardware setup](hardware-setup.md).
 
 **Cause 6 — something else is holding the connection.** These controllers
-accept a single client. If another copy of OpenBravo (or any other client) is
+accept a single client. If another copy of pyBravo (or any other client) is
 connected, the second connection fails. Make sure only one server is running.
 
 ---
@@ -713,10 +713,9 @@ Run them with the `dev` extra:
 uv run --extra dev python -m pytest
 ```
 
-**One failure is expected.**
-`test_back_left_rectangle_uses_front_right_tipbox_anchor` in
-`tests/test_bravo_init.py` is a known, pre-existing failure. A run reporting
-roughly 616 passes, that one failure, and some skips is healthy.
+**No failures are expected.** A healthy run reports roughly 890 passes, zero
+failures, and some skips. If a test fails, treat it as a real signal rather than
+known background noise.
 
 **Skips are normal.** Several tests skip themselves when an optional dependency
 or fixture is absent — the legacy protocol import tests skip without a local
@@ -741,7 +740,7 @@ skip without extracted fixture payloads. None of these indicate a problem.
 
 ## Turning on debug logging
 
-OpenBravo uses Python's standard `logging`, configured centrally in
+pyBravo uses Python's standard `logging`, configured centrally in
 `pybravo/logging_config.py`. Everything below is controlled by environment
 variables, which can also be set in a `.env` file in the repository root (the
 server loads it at startup; shell-exported variables take precedence).

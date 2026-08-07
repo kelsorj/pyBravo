@@ -55,11 +55,13 @@ https://github.com/user-attachments/assets/48de0bf6-f5a1-409d-ab84-00fcac42d9b6
   gripper pick-and-place, and lid handling.
 - **Visual workflow designer** — build protocols as a node graph in the
   browser, simulate them, then run them on the instrument.
-- **Deck management** — a 3×3 deck model with per-location teachpoints and
-  path planning that avoids obstacles.
+- **Deck management** — a 3×3 deck model with per-location teachpoints, and
+  obstacle-aware Z clearance when the gripper carries plates between locations.
 - **3D digital twin** — watch a URDF model of the robot mirror the real
   machine's position in real time.
-- **Simulation mode** — every operation works with no hardware attached.
+- **Simulation mode** — the full motion, liquid-handling, and workflow stack
+  runs with no hardware attached. The optional accessories below are the
+  exception: they talk to real serial ports.
 - **Optional extras** — camera-based deck verification, barcode reading,
   orbital shaker control, and an LLM-assisted protocol drafter.
 

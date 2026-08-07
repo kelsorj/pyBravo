@@ -34,8 +34,7 @@ from pybravo.controllers.base import (
 )
 from pybravo.controllers.base import JogParams as BaseJogParams
 from pybravo.darwin import axis as axis_module
-from pybravo.darwin import motion
-from pybravo.darwin import sequences
+from pybravo.darwin import motion, sequences
 from pybravo.darwin.calibration import (
     DEFAULT_CALIBRATION,
     AxisCalibration,
@@ -43,9 +42,10 @@ from pybravo.darwin.calibration import (
     read_motion_limits,
 )
 from pybravo.darwin.params import ParameterAccess
-from pybravo.darwin.topology import axis_address, all_axes
+from pybravo.darwin.topology import all_axes, axis_address
 from pybravo.darwin.waxis_config import config_for_head, ul_to_mm
 from pybravo.darwin.waxis_params import apply_waxis_parameters
+from pybravo.protocol.commands import LightCommandData
 from pybravo.protocol.errors import BravoError, ErrorType
 from pybravo.protocol.gemini.engine import GeminiEngine
 from pybravo.protocol.gemini.enums import (
@@ -56,17 +56,16 @@ from pybravo.protocol.gemini.enums import (
     ParamDBs,
 )
 from pybravo.protocol.gemini.packet import MASTER_ADDRESS, InstructionAddress
-from pybravo.protocol.commands import LightCommandData
 from pybravo.types import (
-    safe_home_order,
+    GRIP_POSITION_TOLERANCE,
+    OPEN_GRIPPER_POSITION,
+    TICKS_PER_MM,
     Axis,
     DeviceStateFlag,
-    GRIP_POSITION_TOLERANCE,
     GripperDetectionState,
     HeadType,
-    OPEN_GRIPPER_POSITION,
     SpeedLevel,
-    TICKS_PER_MM,
+    safe_home_order,
 )
 
 logger = logging.getLogger(__name__)

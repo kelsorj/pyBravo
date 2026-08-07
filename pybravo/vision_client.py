@@ -6,7 +6,6 @@ import urllib.error
 import urllib.request
 from typing import Any
 
-
 DEFAULT_VISION_SERVICE_URL = os.getenv("PYBRAVO_VISION_SERVICE_URL", "http://127.0.0.1:8101")
 
 

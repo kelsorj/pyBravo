@@ -18,15 +18,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pybravo.state_machine.tasks import (
-    _infer_stack_count_from_scan_height,
-    _stack_total_height_for_count,
-)
-
 import pytest
 
 from pybravo.profile.profile import BravoProfile, GripperConfig
-from pybravo.state_machine.tasks import PickPlaceTask, ScanStackHeightTask
+from pybravo.state_machine.tasks import (
+    PickPlaceTask,
+    ScanStackHeightTask,
+    _infer_stack_count_from_scan_height,
+    _stack_total_height_for_count,
+)
 from pybravo.tips import get_tip_length_mm
 
 PROFILE_DIR = Path(__file__).resolve().parent.parent / "profiles"

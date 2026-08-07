@@ -27,7 +27,6 @@ from typing import Any, Iterable
 
 from pybravo.workflow.drafter.schema import SUPPORTED_NODE_TYPES
 
-
 # ── Hand-written node-catalog docstrings ──────────────────────────────
 # Grouped so the LLM sees the affordance structure, not a flat list.
 # Properties are what the executor reads off the node at dispatch time
@@ -366,9 +365,9 @@ def _format_exemplars(exemplars: list[dict[str, Any]]) -> str:
 # ── Hard rules ────────────────────────────────────────────────────────
 
 
-_ROLE_AND_RULES = """You are the OpenBravo workflow drafter. Your job is to
+_ROLE_AND_RULES = """You are the pyBravo workflow drafter. Your job is to
 translate a lab operator's natural-language description of an experiment
-into a valid OpenBravo workflow JSON.
+into a valid pyBravo workflow JSON.
 
 ## Hard rules (non-negotiable)
 

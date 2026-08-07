@@ -1,6 +1,6 @@
 # Quickstart
 
-Your first fifteen minutes with OpenBravo: start the server, tour the browser
+Your first fifteen minutes with pyBravo: start the server, tour the browser
 UI, and drive a simulated Bravo through a home, a jog, and a complete
 aspirate/dispense cycle — with no hardware attached.
 
@@ -31,7 +31,7 @@ On Windows, use `scripts\start_pybravo.bat`.
 uvicorn starts. You should see log lines similar to:
 
 ```
-Loaded profile from /path/to/OpenBravo/profiles/default.yaml
+Loaded profile from /path/to/pyBravo/profiles/simulation.yaml
 ```
 
 You will probably also see a `WARNING` about falling back to a local labware
@@ -89,28 +89,28 @@ A few other pages are served by the same process, and are worth knowing about:
 
 ---
 
-## 3. Switch the active profile to simulation
+## 3. Confirm you are in simulation
 
-The shipped `default.yaml` profile is configured for a real instrument. Point
-it at the simulation controller so that connecting does not try to reach a
-robot over the network.
-
-In the UI: **Profiles** tab → **Connection** → set **Controller** to
-`Simulation` → click **Save Settings** in the Profile Management section.
-
-Or over the API:
+A fresh clone loads `profiles/simulation.yaml`, so there is nothing to change —
+connecting will not try to reach a robot over the network. Confirm it:
 
 ```bash
-curl -X PATCH http://localhost:8000/api/profile -H 'Content-Type: application/json' -d '{"controller_type":"simulation"}'
+curl -s http://localhost:8000/api/profile | grep -o '"controller_type":"[^"]*"'
 ```
 
-**What should happen.** The response is
-`{"status":"updated","saved":true}`. The change is written back to
-`profiles/default.yaml`, so it survives a restart. The IP address and serial
-port fields disappear from the UI, because the simulation needs neither.
+**What should happen.** You get `"controller_type":"simulation"`. In the UI the
+**Profiles** tab shows **Controller** as `Simulation`, and the IP address and
+serial port fields are hidden because the simulation needs neither.
 
-> If you would rather not modify the shipped profile, duplicate it first
-> (**Duplicate…** in the Profiles tab) and edit the copy.
+If you see something else, a previous session left a `.active_profile` marker
+pointing at another profile. Switch back in the **Profiles** tab, or delete
+`profiles/.active_profile` and restart.
+
+> The other profiles in `profiles/` are real instrument configurations kept as
+> worked examples. Do not point one at your own robot — teachpoints and axis
+> calibration are machine-specific, and loading another lab's are dangerous.
+> Copy one (**Duplicate…** in the Profiles tab) and re-teach it. See
+> [Hardware setup](hardware-setup.md).
 
 ---
 

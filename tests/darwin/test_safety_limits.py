@@ -9,7 +9,7 @@ from __future__ import annotations
 import pytest
 
 from pybravo.controllers.base import AxisMoveInfo
-from pybravo.darwin.calibration import AxisCalibration, DEFAULT_CALIBRATION
+from pybravo.darwin.calibration import DEFAULT_CALIBRATION, AxisCalibration
 from pybravo.darwin.controller import DarwinController
 from pybravo.types import Axis, SpeedLevel
 
