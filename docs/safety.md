@@ -110,7 +110,7 @@ that can break a machine.
 - **Head detection is unavailable on Agile 7612 instruments.** The firmware
   supports neither ADC read nor smart head detect, so the head type must be set
   manually in the profile and cannot be verified by software.
-- **The W position register is noisy**, with a spread of roughly 5–10 µL between
+- **The W position register is noisy**, with a spread of roughly 0.05-0.1 µL between
   reads. Do not build logic that depends on precise in-motion W readings.
 - **Controller 2 position reads (G and Zg) are unreliable during motion.**
   At-rest values are correct; in-motion values jump.
