@@ -1,5 +1,20 @@
 # URDF head alignment (3D view only)
 
+> **Status: unfinished. The misalignment described here is still present.**
+>
+> This page is a specification and an investigation record, not a report of
+> work completed. `A1_OFFSET` has not been measured, the renderer has not been
+> changed, and the head's barrels are still drawn a couple of columns from the
+> wells they are over.
+>
+> Two attempts at a fix were made and both reverted — see "Two alignments, not
+> one" below for why they failed, which is the most useful thing on this page
+> for whoever picks it up. Nothing in the 3D view is currently worse than it
+> was; it is simply not yet better.
+>
+> This is cosmetic. Real motion is unaffected, so there is no urgency beyond
+> the picture being misleading to look at.
+
 > **Scope: the 3D view, and nothing else.**
 >
 > Real motion is correct. Tips on and tips off work on hardware in full, row,
