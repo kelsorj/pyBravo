@@ -895,40 +895,6 @@ export class RobotScene {
         const xFit = fitLinear(xSamples);
         const yFit = fitLinear(ySamples);
         this.deckMotionMap = xFit && yFit ? { x: xFit, y: yFit } : null;
-        if (!this.deckMotionMap) this._ensureTeachpoints();
-    }
-
-    /**
-     * Fetch teachpoints once if nobody has pushed them in.
-     *
-     * They normally arrive on the live /ws/state feed, but the designer pauses
-     * that socket while a simulation runs (`setSimulationMode`), and nothing
-     * else ever calls `setTeachpoints`. Without them there is no deck motion
-     * map, so the head's barrels fall back to being inferred from the head
-     * mesh's bounding box and sit ~2 columns off the wells — visible in the
-     * designer and nowhere else, which is exactly where it was reported.
-     *
-     * Deck geometry is static, so one HTTP fetch is enough and it does not
-     * depend on the socket being live.
-     */
-    _ensureTeachpoints() {
-        if (this._teachpointFetch) return;
-        if (Object.keys(this.teachpoints || {}).length) return;
-        this._teachpointFetch = fetch('/api/state')
-            .then((r) => (r.ok ? r.json() : null))
-            .then((data) => {
-                if (!data?.teachpoints) return;
-                this.teachpoints = data.teachpoints;
-                this._updateDeckMotionMapping();
-                // Re-place any tips already on the head now that the mapping
-                // exists — otherwise they keep the fallback position until the
-                // next head-state change.
-                return this._renderHeadTipsFromState();
-            })
-            .catch(() => {
-                // Leave the mesh-derived fallback in place rather than failing
-                // to draw tips at all.
-            });
     }
 
     _detailWellDimensions(detail) {
