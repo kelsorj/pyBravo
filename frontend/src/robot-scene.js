@@ -46,7 +46,13 @@ const LABWARE_APPEARANCE_OVERRIDES = {
 const JOINT_AXIS_MAP = {
     'xaxis':          { bravoAxis: 'X',  homeOffset: 193.04, scale:  1 },
     'yaxis':          { bravoAxis: 'Y',  homeOffset: 0,      scale:  1 },
-    'zaxis':          { bravoAxis: 'Z',  homeOffset: 0,      scale: -1 },
+    // Robot Z is referenced to the tip of the *teach tip*, not the barrel face:
+    // the backend computes deck_surface_z as teach_z + teach_tip_length. Drawing
+    // the head as though Z meant the barrel put it one teach-tip too low —
+    // measured at 26.04 mm against a nominal 26.1 mm, constant across Z and
+    // independent of labware height. `useTeachTipLength` adds the live value
+    // from the profile so a different head or teach tip follows automatically.
+    'zaxis':          { bravoAxis: 'Z',  homeOffset: 0,      scale: -1, useTeachTipLength: true },
     'zaxis-gripper':  {
         bravoAxis: 'Zg',
         homeOffset: -20,
@@ -151,6 +157,11 @@ export class RobotScene {
         this.deckDetails = {};
         this.teachpoints = {};
         this.deckMotionMap = null;
+        // Distance from the barrel face to the tip of the teach tip. Robot Z is
+        // referenced to the latter (see JOINT_AXIS_MAP.zaxis), so this is the
+        // Z datum for the model. Seeded with the common 30 uL value and
+        // replaced by the profile's own figure once fetched.
+        this.teachTipLengthMm = 26.1;
         this.taskStatus = {};
         this.headType = null;
         this.headMode = null;
@@ -1574,14 +1585,38 @@ export class RobotScene {
         animate();
     }
 
+    /**
+     * Fetch the head's teach-tip length once, for the Z datum.
+     *
+     * It is on /api/profile rather than the state feed, and the designer pauses
+     * its socket while simulating, so this is fetched over HTTP rather than
+     * waited for. The seeded default keeps the view usable if it fails.
+     */
+    _ensureTeachTipLength() {
+        if (this._teachTipFetch) return;
+        this._teachTipFetch = fetch('/api/profile')
+            .then((r) => (r.ok ? r.json() : null))
+            .then((data) => {
+                const mm = Number(data?.head?.teach_tip_length_mm);
+                if (Number.isFinite(mm) && mm > 0) this.teachTipLengthMm = mm;
+            })
+            .catch(() => {
+                // Keep the default rather than dropping the head to the barrel
+                // face, which is the error this exists to correct.
+            });
+    }
+
     _updateURDFJoints(positions) {
         if (!this.urdfRobot) return;
+        this._ensureTeachTipLength();
         for (const [jointName, info] of Object.entries(JOINT_AXIS_MAP)) {
             const pos = positions[info.bravoAxis];
             if (pos === undefined) continue;
             const coupledPos = info.coupledAxis ? (positions[info.coupledAxis] ?? 0) : 0;
             const effectivePos = pos + coupledPos * (info.coupledScale ?? 0);
-            const urdfVal = info.scale * (effectivePos - info.homeOffset) / 1000;
+            const homeOffset = info.homeOffset
+                + (info.useTeachTipLength ? (Number(this.teachTipLengthMm) || 0) : 0);
+            const urdfVal = info.scale * (effectivePos - homeOffset) / 1000;
             if (this._debugSimulation && (jointName === 'zaxis' || jointName === 'zaxis-gripper')) {
                 // Throttle: only log when positions change meaningfully
                 const key = `_dbg_${jointName}`;

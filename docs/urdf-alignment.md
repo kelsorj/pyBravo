@@ -1,19 +1,17 @@
 # URDF head alignment (3D view only)
 
-> **Status: unfinished. The misalignment described here is still present.**
+> **Status: Z is fixed. X and Y are not.**
 >
-> This page is a specification and an investigation record, not a report of
-> work completed. `A1_OFFSET` has not been measured, the renderer has not been
-> changed, and the head's barrels are still drawn a couple of columns from the
-> wells they are over.
+> - **Z — done.** The head was drawn one teach-tip too low. Corrected, verified,
+>   and described under "The Z axis" below.
+> - **X and Y — open.** `A1_OFFSET` is still unmeasured and the head's barrels
+>   are still drawn a couple of columns from the wells they are over.
 >
-> Two attempts at a fix were made and both reverted — see "Two alignments, not
-> one" below for why they failed, which is the most useful thing on this page
-> for whoever picks it up. Nothing in the 3D view is currently worse than it
-> was; it is simply not yet better.
+> Two attempts at the X/Y fix were made and both reverted — see "Two alignments,
+> not one" below for why they failed, which is the most useful thing on this
+> page for whoever picks it up.
 >
-> This is cosmetic. Real motion is unaffected, so there is no urgency beyond
-> the picture being misleading to look at.
+> All of this is cosmetic. Real motion is unaffected.
 
 > **Scope: the 3D view, and nothing else.**
 >
@@ -155,50 +153,62 @@ A fix is only complete when all of these hold:
 5. **`git diff --name-only -- pybravo/` is empty.** No Python changed, so no
    commanded position can have changed.
 
-## The Z axis has the same problem, and the mechanism to fix it already exists
+## The Z axis — diagnosed and fixed
 
-The head also renders at the wrong height. Measured with a 384 tip box (50 mm)
-on the deck, `HT_384_D_70`, tips on the head:
+The head rendered one **teach tip** too low, at every Z.
 
-| commanded Z | head mesh bottom | box top | error |
-|---|---|---|---|
-| 115.1 (Tips On, seated on the box) | 36.0 mm | 80.1 mm | **44.1 mm too low** |
-| 100.9 (Tips Off, 14 mm clear) | 50.2 mm | 80.1 mm | **44.1 mm too low** |
+Robot Z is referenced to the tip of the teach tip, not to the barrel face: the
+backend computes `deck_surface_z = teach_z + teach_tip_length`. The renderer
+placed the head as though Z meant the barrel, so it sat low by exactly that
+length.
 
-Two things follow.
+Measured against the deck surface, head mesh only, with the synthetic tips
+excluded — they are children of the head link and contaminate the measurement
+if included, which is how an earlier pass produced a spurious 44.1 mm:
 
-**The arithmetic is right.** Moving between those two poses raised the head by
-exactly 14.2 mm, which is `tips_off_z_offset: 14.0` from
-`config/tip_offsets.yaml`. The backend already resolves the offsets and folds
-them into the commanded Z — `deck_surface_z - labware_height`, then the eject
-offset — and the view reproduces that motion faithfully. **The tip offsets are
-therefore already accounted for and must not be applied again in the renderer;
-doing so would double-count them.**
+| | before | after |
+|---|---|---|
+| loc 1 (50 mm box), Z = 0, 50, 100, 115.1, 140, 165.1 | −26.14 mm at every Z | **−0.04 mm** |
+| loc 4 (25 mm box), Z = 0, 50, 100, 115.1, 140, 164.9 | −25.94 mm at every Z | **+0.16 mm** |
 
-**The error is a constant**, identical at both poses: the model's Z datum does
-not correspond to the machine's Z reference. This is the Z analogue of
-`A1_OFFSET`.
+Constant across Z, independent of labware height, and −26.04 mm on average
+against a nominal `teach_tip_length_mm` of 26.1. The residual ±0.1 mm is the
+0.20 mm difference between the two locations' taught Z, which a flat model deck
+cannot represent — it is real machine variation, not modelling error.
 
-Unlike X and Y, the mechanism for correcting it is already present.
-`JOINT_AXIS_MAP` in `frontend/src/robot-scene.js` carries a `homeOffset` per
-joint, and it is calibrated for the axes somebody has already looked at:
+The fix uses the `homeOffset` mechanism already present in `JOINT_AXIS_MAP`,
+which was calibrated for X (193.04) and Zg (−20) but left at 0 for Z. The value
+is taken live from `head.teach_tip_length_mm` on `/api/profile` rather than
+hardcoded, so a different head or teach tip follows automatically, with the
+common 26.1 seeded as a fallback.
 
-```js
-'xaxis':         { bravoAxis: 'X',  homeOffset: 193.04, scale:  1 },
-'zaxis':         { bravoAxis: 'Z',  homeOffset: 0,      scale: -1 },   // never calibrated
-'zaxis-gripper': { bravoAxis: 'Zg', homeOffset: -20,    scale:  1, ... },
-```
+Two things were checked because they could have been broken silently:
 
-`zaxis` is the odd one out at zero. With `scale: -1`, raising `homeOffset` by
-44.1 raises the rendered head by 44.1 mm, so the measured value is the
-candidate. It should be confirmed at several Z positions and against the deck
-surface as well as a box top before being adopted, and treated as the same kind
-of measured datum as `A1_OFFSET` rather than a magic number.
+- **Tips still sit on the head.** The gap between the barrels and the tips'
+  bottoms is 17.9 mm before and after. The whole head link moves, so this
+  relationship is preserved by construction — unlike the X/Y attempts, which
+  moved only the drawn tips.
+- **The gripper did not move.** `zaxis-gripper` is coupled to Z, so it could
+  have been dragged along; measured at 87.8 mm before and after, unchanged.
 
-Worth noting: the backend computes `deck_surface_z` (`executor.py`, in the tips
-motion path) but does not send it to the frontend. Sending it would let the
-renderer derive the Z datum from the deck rather than carry a constant, which is
-the more durable version of this fix.
+### `tip_offsets.yaml` was never the problem
+
+Worth stating plainly, because it is the intuitive place to look. The backend
+already resolves `config/tip_offsets.yaml` and folds the result into the
+commanded Z: `deck_surface_z - labware_height`, then the eject offset. Moving
+between the Tips On and Tips Off poses raised the head by exactly 14.2 mm in the
+view, which is `tips_off_z_offset: 14.0` arriving intact.
+
+**Those offsets are therefore already in the Z the renderer receives, and must
+not be applied again there — that would double-count them.** What the view was
+missing was the datum, not the offsets.
+
+### A more durable version of this fix
+
+The backend computes `deck_surface_z` in the tips motion path (`executor.py`)
+but does not send it to the frontend. Sending it would let the renderer derive
+the Z datum from the deck directly, rather than reconstructing it from the teach
+tip length. Worth doing if this ever drifts again.
 
 ## Open questions
 
