@@ -673,6 +673,12 @@ class WorkflowExecutor:
                             labware_id,
                             is_lidded=item.get("is_lidded", False),
                             is_sealed=item.get("is_sealed", False),
+                            # The designer records whether a tip box starts full
+                            # or empty; without passing it through, set_labware
+                            # defaults every box to "full", so a box configured
+                            # as the empty destination for Tips Off began the
+                            # run with no room to return anything into.
+                            tipbox_fill_state=item.get("tipbox_fill_state"),
                         )
                     except (ValueError, Exception) as exc:
                         logger.warning(
@@ -736,6 +742,35 @@ class WorkflowExecutor:
                             "Could not push stack entry #%d at location %d: %s",
                             idx + 1, loc, exc,
                         )
+
+            # Seed tip inventory from the top of the finished stack. Only the
+            # bottom entry goes through set_labware, and a tip box usually sits
+            # on a riser — so for the common stacked layout nothing ever
+            # initialised occupancy, and it defaulted to "full" the first time
+            # anything asked. A box the designer marked empty then had no room
+            # to return tips into.
+            self._seed_tipbox_occupancy(loc, stack)
+
+    def _seed_tipbox_occupancy(self, loc: int, stack: list[dict]) -> None:
+        top_item = next(
+            (item for item in reversed(stack) if item.get("labware_id")), None
+        )
+        if top_item is None:
+            return
+        labware = self.bravo._deck.get_stack(loc).top
+        if labware is None:
+            return
+        base_class = str(getattr(labware, "labware_type", "") or "").lower()
+        metadata = labware.metadata or {}
+        kind = str(metadata.get("kind") or metadata.get("base_class") or "").lower()
+        if "tip_box" not in (base_class, kind):
+            return
+        try:
+            self.bravo._initialize_tipbox_occupancy(
+                loc, labware, fill_state=top_item.get("tipbox_fill_state") or "full"
+            )
+        except Exception as exc:
+            logger.warning("Could not seed tip occupancy at location %d: %s", loc, exc)
 
     def abort(self) -> None:
         """Request abort of the running workflow."""

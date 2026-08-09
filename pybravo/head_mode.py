@@ -607,18 +607,40 @@ def _is_legal_tipbox_anchor(
     else:
         raise ValueError(f"Unknown tipbox anchor purpose: {purpose}")
 
+    # Packing rule. The block has to sit flush against the work already done,
+    # measured outward from the mirror corner: a pickup consumes from the
+    # corner inward, so everything outboard of it must already be empty; a
+    # return fills from the corner inward, so everything outboard must already
+    # be full. Both keep a box contiguous — no orphaned tips on a pickup, no
+    # fragmentation on a return.
+    #
+    # This used to apply the pickup form to returns as well, which is
+    # self-defeating: after the first Tips Off filled the corner, every
+    # remaining anchor had occupied cells outboard of it, so a box went from 23
+    # legal return anchors to 0 and the second Tips Off in a loop failed with
+    # "No legal tip anchors are available for return".
+    outboard_must_be_occupied = purpose == "return"
+
     if selection.mirror_corner.endswith("left"):
         boundary_cols = range(0, col_start)
     else:
         boundary_cols = range(col_stop, total_cols)
-    if any((row, col) in occupied for row in range(row_start, row_stop) for col in boundary_cols):
+    if any(
+        ((row, col) in occupied) != outboard_must_be_occupied
+        for row in range(row_start, row_stop)
+        for col in boundary_cols
+    ):
         return False
 
     if selection.mirror_corner.startswith("front"):
         boundary_rows = range(row_stop, total_rows)
     else:
         boundary_rows = range(0, row_start)
-    if any((row, col) in occupied for row in boundary_rows for col in range(col_start, col_stop)):
+    if any(
+        ((row, col) in occupied) != outboard_must_be_occupied
+        for row in boundary_rows
+        for col in range(col_start, col_stop)
+    ):
         return False
 
     return True
