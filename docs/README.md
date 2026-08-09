@@ -26,6 +26,7 @@ Start here. The pages below are ordered roughly the way you will need them.
 | [API reference](api-reference.md) | Every HTTP and WebSocket endpoint |
 | [Architecture](architecture.md) | How the codebase fits together |
 | [Protocol specification](protocol-spec.md) | The instrument wire protocols |
+| [URDF alignment](urdf-alignment.md) | Where A1 is in the 3D head model — **the 3D view only, never motion** |
 
 ## When something is wrong
 
