@@ -2284,9 +2284,9 @@
     }
 }
 </script>
-<!-- Bump this token whenever main.js changes: the browser caches ES modules by
-     full URL, so an unchanged token serves a stale module however new the file
-     on disk is. -->
-<script type="module" src="/static/src/main.js?v=2026-08-08b"></script>
+<!-- The ?v= token is rewritten to the file's mtime when this page is served
+     (see _version_static_assets in pybravo/web/server.py), so it needs no
+     maintenance. It must stay present for the rewrite to find it. -->
+<script type="module" src="/static/src/main.js?v=dev"></script>
 </body>
 </html>

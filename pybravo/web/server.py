@@ -2358,6 +2358,46 @@ async def workflow_editor_page():
     return HTMLResponse(source_path.read_text(encoding="utf-8"))
 
 
+_STATIC_ASSET_VERSION_RE = re.compile(
+    r'(/static/[A-Za-z0-9_./-]+\.(?:js|css|gltf))\?v=[^"\'\s)]*'
+)
+
+NO_CACHE_HEADERS = {
+    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+    "Pragma": "no-cache",
+    "Expires": "0",
+}
+
+
+def _version_static_assets(html: str, static_root: Path) -> str:
+    """Stamp cached asset URLs with the referenced file's mtime.
+
+    These pages import ES modules with a hand-written ``?v=`` token. Browsers
+    cache modules by full URL, so a token that never changes pins every client
+    to whatever it fetched first: a frontend fix can be committed, served
+    correctly, and still not be running in a single browser. That is not
+    hypothetical — a tip-box rendering fix looked completely inert for exactly
+    this reason.
+
+    Deriving the token from the file's mtime removes the need for anyone to
+    remember. No-cache headers on the HTML are not enough on their own, because
+    the module URL is cached independently of the page that names it.
+    """
+
+    def replace(match: re.Match[str]) -> str:
+        url = match.group(1)
+        candidate = static_root / url[len("/static/"):]
+        try:
+            stamp = int(candidate.stat().st_mtime)
+        except OSError:
+            # Unknown file — leave the author's token alone rather than
+            # inventing one that would break the URL.
+            return match.group(0)
+        return f"{url}?v={stamp}"
+
+    return _STATIC_ASSET_VERSION_RE.sub(replace, html)
+
+
 @app.get("/designer", response_class=HTMLResponse, include_in_schema=False)
 async def workflow_designer_page():
     source_path = Path(__file__).resolve().parents[2] / "frontend" / "designer.html"
@@ -2367,12 +2407,10 @@ async def workflow_designer_page():
     # explicit no-cache headers browsers serve a stale copy across server
     # restarts and changes go invisible until the operator hard-refreshes.
     return HTMLResponse(
-        source_path.read_text(encoding="utf-8"),
-        headers={
-            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
-            "Pragma": "no-cache",
-            "Expires": "0",
-        },
+        _version_static_assets(
+            source_path.read_text(encoding="utf-8"), source_path.parent
+        ),
+        headers=NO_CACHE_HEADERS,
     )
 
 
@@ -4684,8 +4722,6 @@ def run_server(
         _labware_assets_mounted = True
 
     if static_dir:
-        from fastapi.responses import FileResponse
-
         model_dir = Path(__file__).resolve().parent.parent / "model"
         if model_dir.is_dir():
             app.mount("/model", StaticFiles(directory=str(model_dir)), name="model")
@@ -4697,7 +4733,16 @@ def run_server(
 
         @app.get("/")
         async def serve_index():
-            return FileResponse(Path(static_dir) / "index.html")
+            # Served as rewritten HTML rather than a FileResponse so the
+            # `?v=` tokens on its module imports carry the file's mtime; see
+            # _version_static_assets.
+            index_path = Path(static_dir) / "index.html"
+            return HTMLResponse(
+                _version_static_assets(
+                    index_path.read_text(encoding="utf-8"), Path(static_dir)
+                ),
+                headers=NO_CACHE_HEADERS,
+            )
 
     uvicorn.run(app, host=host, port=port, log_config=None)
 
