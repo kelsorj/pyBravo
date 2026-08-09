@@ -1,6 +1,3 @@
-# Default profile for a fresh clone: no hardware, no network.
-# Copy this to a new file and set connection.controller_type plus an
-# address to talk to a real instrument. See docs/hardware-setup.md.
 name: simulation
 connection:
   use_ethernet: false

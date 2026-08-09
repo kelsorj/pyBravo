@@ -490,26 +490,56 @@ class WorkflowExecutor:
             if values
         }
 
+    def _ensure_removed_baseline(self, loc_key: str) -> set[str]:
+        """Removed-cell baseline for a box, derived from real tip inventory.
+
+        The viewer models a tip box as "these cells are missing", so a box that
+        starts empty has to start with *every* cell missing. Without that
+        baseline a destination box had an empty removed-set, and returning tips
+        into it had nothing to subtract from — which is why tips never appeared
+        in the box they were ejected into.
+        """
+        if loc_key in self._tipbox_removed_cells:
+            return self._tipbox_removed_cells[loc_key]
+        removed: set[str] = set()
+        try:
+            location = int(loc_key)
+            labware = self.bravo._deck.get_stack(location).top
+            if labware is not None:
+                rows, cols = self.bravo._tipbox_dimensions(labware)
+                if rows > 0 and cols > 0:
+                    occupied = {
+                        f"{r}:{c}" for r, c in self.bravo._occupied_tip_wells(location)
+                    }
+                    removed = {
+                        f"{r}:{c}"
+                        for r in range(rows)
+                        for c in range(cols)
+                    } - occupied
+        except Exception as exc:  # pragma: no cover - display state only
+            logger.debug("Could not derive tip baseline at %s: %s", loc_key, exc)
+        self._tipbox_removed_cells[loc_key] = removed
+        return removed
+
     def _set_removed_tip_cells(self, location: int | None, selection: Any) -> None:
         if location is None or selection is None:
             return
         keys = self._selection_keys(selection)
         if not keys:
             return
-        self._tipbox_removed_cells[str(int(location))] = set(keys)
+        loc_key = str(int(location))
+        # Accumulate. This used to assign, so each pickup replaced the record
+        # of the previous one and every tip taken in an earlier loop iteration
+        # popped back into view.
+        self._ensure_removed_baseline(loc_key).update(keys)
 
     def _restore_tip_cells(self, location: int | None, selection: Any) -> None:
         if location is None or selection is None:
             return
         loc_key = str(int(location))
-        current = set(self._tipbox_removed_cells.get(loc_key, set()))
-        if not current:
-            return
+        current = self._ensure_removed_baseline(loc_key)
         current.difference_update(self._selection_keys(selection))
-        if current:
-            self._tipbox_removed_cells[loc_key] = current
-        else:
-            self._tipbox_removed_cells.pop(loc_key, None)
+        self._tipbox_removed_cells[loc_key] = current
 
     def _apply_node_head_mode(self, head_mode_payload: Any) -> None:
         """Apply a per-workflow-node head_mode override (if present) to
@@ -1370,7 +1400,14 @@ class WorkflowExecutor:
             self._apply_node_head_mode(properties.get("head_mode"))
             anchor_row = properties.get("anchor_row", properties.get("tip_anchor_row"))
             anchor_col = properties.get("anchor_col", properties.get("tip_anchor_col"))
-            if node_type == "tips/TipsOn" and (anchor_row is not None or anchor_col is not None):
+            # Applies to Tips Off as well as Tips On. The anchor is a *starting*
+            # position, not a fixed one: if it is still legal it is used, and
+            # once the block it names is taken (or filled) the selection falls
+            # through to the next legal anchor, so the head walks across the box
+            # from wherever the operator chose to start. Tips Off used to parse
+            # this and then discard it, so a chosen return anchor was ignored
+            # and every return began at the mirror corner.
+            if anchor_row is not None or anchor_col is not None:
                 try:
                     self.bravo.set_tip_selection(
                         int(properties.get("location", 1)),

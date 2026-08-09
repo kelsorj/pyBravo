@@ -607,26 +607,39 @@ def _is_legal_tipbox_anchor(
     else:
         raise ValueError(f"Unknown tipbox anchor purpose: {purpose}")
 
-    # Packing rule. The block has to sit flush against the work already done,
-    # measured outward from the mirror corner: a pickup consumes from the
-    # corner inward, so everything outboard of it must already be empty; a
-    # return fills from the corner inward, so everything outboard must already
-    # be full. Both keep a box contiguous — no orphaned tips on a pickup, no
-    # fragmentation on a return.
-    #
-    # This used to apply the pickup form to returns as well, which is
-    # self-defeating: after the first Tips Off filled the corner, every
-    # remaining anchor had occupied cells outboard of it, so a box went from 23
-    # legal return anchors to 0 and the second Tips Off in a loop failed with
-    # "No legal tip anchors are available for return".
-    outboard_must_be_occupied = purpose == "return"
+    if purpose == "return":
+        # Returns are anchored by the operator, not by the box. The first
+        # ejection into an empty box may go anywhere, and every later one has
+        # to sit flush against what is already there — so the head walks
+        # steadily across the box in whichever direction that first choice
+        # implied, and the filled region stays contiguous.
+        #
+        # This branch used to run the pickup rule below, which demands the
+        # outboard side be empty. That is self-defeating for a return: once the
+        # first Tips Off had landed, every remaining anchor had occupied cells
+        # outboard of it, so a box went from 23 legal return anchors to zero
+        # and the second Tips Off in a loop failed outright.
+        if not occupied:
+            return True
+        # Step along whichever axis the block does not already span: a
+        # full-column head walks across columns, a full-row head down rows.
+        if (row_stop - row_start) >= total_rows:
+            band = {col for _, col in occupied}
+            start, stop = col_start, col_stop
+        else:
+            band = {row for row, _ in occupied}
+            start, stop = row_start, row_stop
+        return stop == min(band) or start == max(band) + 1
 
+    # Pickup: consume from the mirror corner inward, so everything outboard of
+    # the block must already be empty. Keeps the head taking the outermost
+    # remaining block rather than orphaning tips behind it.
     if selection.mirror_corner.endswith("left"):
         boundary_cols = range(0, col_start)
     else:
         boundary_cols = range(col_stop, total_cols)
     if any(
-        ((row, col) in occupied) != outboard_must_be_occupied
+        (row, col) in occupied
         for row in range(row_start, row_stop)
         for col in boundary_cols
     ):
@@ -637,7 +650,7 @@ def _is_legal_tipbox_anchor(
     else:
         boundary_rows = range(0, row_start)
     if any(
-        ((row, col) in occupied) != outboard_must_be_occupied
+        (row, col) in occupied
         for row in boundary_rows
         for col in range(col_start, col_stop)
     ):
