@@ -1476,7 +1476,11 @@ body {
 <!-- Dagre: DAG layout engine used by the "Arrange" toolbar button. -->
 <script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
 <script type="module">
-import { RobotScene } from '/static/src/robot-scene.js?v=stickytargets1';
+// Bump this token whenever robot-scene.js changes. The browser caches ES
+// modules by full URL, so leaving it alone means a stale module keeps being
+// served no matter what is on disk — which is exactly how a fixed tip-box
+// rendering fix appeared not to work at all.
+import { RobotScene } from '/static/src/robot-scene.js?v=tipbox-render2';
 
 // Litegraph is loaded as a global via the script tag above
 const LiteGraph = window.LiteGraph;
