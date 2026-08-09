@@ -192,12 +192,18 @@ async def test_returned_tips_appear_in_the_destination_box():
 
 
 @pytest.mark.asyncio
-async def test_a_full_source_box_reports_nothing_removed_initially():
+async def test_nothing_hidden_is_reported_rather_than_omitted():
+    """An empty list is a message, not an absence.
+
+    The viewer falls back to the configured fill state when it has no per-cell
+    information, so a box that started empty and has been filled back up must
+    say "nothing hidden" explicitly. Omitting the entry made it fall back and
+    draw no tips at all.
+    """
     executor = await _executor_with_boxes()
     assert executor._ensure_removed_baseline("1") == set()
-    assert "1" not in executor._serialize_tipbox_removed_cells(
-        executor._tipbox_removed_cells
-    ), "a full box should not send an empty removal list to the viewer"
+    payload = executor._serialize_tipbox_removed_cells(executor._tipbox_removed_cells)
+    assert payload["1"] == []
 
 
 @pytest.mark.asyncio

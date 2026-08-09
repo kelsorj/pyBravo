@@ -349,7 +349,11 @@ export class RobotScene {
     setTipboxTransientState(state) {
         const nextState = {};
         for (const [location, cells] of Object.entries(state || {})) {
-            if (!Array.isArray(cells) || !cells.length) continue;
+            // Keep empty arrays. "No cells hidden" is real information — it is
+            // how a box that started empty and has been filled back up says so
+            // — and dropping it made the renderer fall back to the configured
+            // fill state and draw nothing.
+            if (!Array.isArray(cells)) continue;
             nextState[String(location)] = [...new Set(cells.map(String))].sort();
         }
         const signature = JSON.stringify(nextState);
@@ -1381,9 +1385,16 @@ export class RobotScene {
         if (!isTipBox) return;
         const geometry = this._getTipboxGeometry(detail);
         if (!geometry) return;
-        const hiddenCells = new Set(this.tipboxTransientState?.[String(entry.location)] || []);
-        const isFull = detail?.tipbox_fill_state !== 'empty';
-        if (!isFull) return;
+        // Per-cell state from a running workflow, when we have it. `undefined`
+        // means nobody has told us anything about this box; an empty array
+        // means "told, and nothing is hidden" — the two are not the same.
+        const transient = this.tipboxTransientState?.[String(entry.location)];
+        // A box configured empty used to return here without building any tip
+        // meshes at all. That made returned tips impossible to show: there was
+        // no geometry to reveal. Now the configured fill state is only the
+        // fallback for when no per-cell state exists.
+        if (transient === undefined && detail?.tipbox_fill_state === 'empty') return;
+        const hiddenCells = new Set(transient || []);
 
         const capacityUl = Number(detail?.disposable_tip_capacity_ul || this.activeTipCapacityUl || 0);
         const tipLengthMm = this._tipLengthMmForDetail(detail, capacityUl);

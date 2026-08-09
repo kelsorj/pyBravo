@@ -484,10 +484,13 @@ class WorkflowExecutor:
 
     @staticmethod
     def _serialize_tipbox_removed_cells(cells: dict[str, set[str]]) -> dict[str, list[str]]:
+        # Empty lists are kept deliberately. For a box that started empty and
+        # has since been filled back up, "nothing is hidden" is the whole
+        # message; dropping the entry left the viewer with no per-cell state at
+        # all, so it fell back to the configured fill state and drew no tips.
         return {
             str(location): sorted(values)
             for location, values in sorted(cells.items(), key=lambda item: int(item[0]))
-            if values
         }
 
     def _ensure_removed_baseline(self, loc_key: str) -> set[str]:
