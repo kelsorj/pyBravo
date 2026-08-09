@@ -1762,10 +1762,21 @@ class Bravo:
                 # indicator on plates that are locked to whatever is
                 # beneath them (mirrors Labware.is_mounted; travels
                 # with the instance across moves).
+                #
+                # tipbox_fill_state is attached for the top of the stack for a
+                # similar reason: the 3D view falls back to it when it has no
+                # per-cell state, and without it every tip box drew as full —
+                # so a box configured empty still showed 384 tips until a
+                # workflow started reporting occupancy.
                 str(loc): [
                     {
                         **(lw.metadata or {"name": lw.name, "height_mm": lw.height}),
                         "is_mounted": bool(lw.is_mounted),
+                        **(
+                            {"tipbox_fill_state": self._tipbox_fill_state(loc, lw)}
+                            if lw is stack.items[-1]
+                            else {}
+                        ),
                     }
                     for lw in stack.items
                 ]
@@ -2492,6 +2503,33 @@ class Bravo:
 
     def _occupied_tip_wells(self, location: int) -> set[tuple[int, int]]:
         return set(self._tipbox_occupancy.get(location, set()))
+
+    def _tipbox_fill_state(self, location: int, labware: Labware) -> str | None:
+        """'full' / 'empty' / 'partial' for a tip box, else None.
+
+        Derived from live inventory rather than from whatever the box was
+        configured with, so it stays true after tips are picked or returned.
+        The 3D view uses it as its fallback when no per-cell state is available.
+        """
+        base_class = self._labware_base_class(labware)
+        kind = self._labware_kind(labware)
+        if base_class != "tip_box" and kind != "tip_box":
+            return None
+        try:
+            rows, cols = self._tipbox_dimensions(labware)
+        except Exception:
+            return None
+        if rows <= 0 or cols <= 0:
+            return None
+        if location in self._tipbox_untracked:
+            return "full"
+        self._ensure_tipbox_occupancy(location, labware)
+        occupied = len(self._occupied_tip_wells(location))
+        if occupied == 0:
+            return "empty"
+        if occupied >= rows * cols:
+            return "full"
+        return "partial"
 
     def _apply_tipbox_selection(
         self,

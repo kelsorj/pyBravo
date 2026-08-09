@@ -240,3 +240,42 @@ async def test_a_chosen_return_anchor_sets_the_direction_of_travel():
     assert sorted({c for _, c in bravo._occupied_tip_wells(4)}) == [0, 1, 2, 3, 4, 5], (
         "returns should have started at the chosen column 0 and walked right"
     )
+
+
+@pytest.mark.asyncio
+async def test_deck_details_reports_tipbox_fill_state():
+    """The 3D view falls back to fill state when it has no per-cell data.
+
+    Without it every tip box drew as full, so a box configured empty still
+    showed 384 tips until a workflow started reporting occupancy. It is derived
+    from live inventory rather than the original configuration, so it stays
+    true as tips are picked and returned.
+    """
+    executor = await _executor_with_boxes()
+    bravo = executor.bravo
+
+    def fill(loc: int):
+        details = bravo.get_state()["deck_details"][str(loc)]
+        return details[-1].get("tipbox_fill_state")
+
+    assert fill(1) == "full"
+    assert fill(4) == "empty"
+
+    bravo.set_head_mode("column", "back_left", column_count=2)
+    bravo._tip_selection = None
+    await bravo.tips_on(1)
+    bravo._tip_selection = None
+    await bravo.tips_off(4)
+
+    assert fill(1) == "partial", "a part-used source box is neither full nor empty"
+    assert fill(4) == "partial", "a part-filled destination box likewise"
+
+
+@pytest.mark.asyncio
+async def test_fill_state_is_only_attached_to_the_top_of_a_stack():
+    """A riser under a tip box is not itself a tip box."""
+    executor = await _executor_with_boxes()
+    entries = executor.bravo.get_state()["deck_details"]["1"]
+    assert len(entries) == 2
+    assert "tipbox_fill_state" not in entries[0]
+    assert entries[-1]["tipbox_fill_state"] == "full"
