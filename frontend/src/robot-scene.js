@@ -1223,53 +1223,6 @@ export class RobotScene {
         );
     }
 
-    /**
-     * Where the barrel array sits in the head link, derived from the deck.
-     *
-     * `_getHeadTipMountFrame` infers the array from the bounding box of the
-     * head mesh's bottom slice, which picks up shroud and mounting structure
-     * and leaves the rendered barrels a constant ~10.4 mm (2.3 columns) off.
-     * That is invisible mid-array in a full box and obvious at the edge of an
-     * empty one.
-     *
-     * The physical invariant is that the head's A1 barrel sits exactly over the
-     * tip box's A1 well. Both are 16x24 grids on the same pitch, so the two
-     * arrays coincide, and the head's array centre can be derived rather than
-     * measured off a mesh:
-     *
-     *   - deck slot anchors are slot-mesh centres, and a box is drawn centred
-     *     on its slot, so mapping robot XY lands on the slot centre;
-     *   - commanded XY is teachpoint + (col * pitch - offset), so for the A1
-     *     anchor it sits one A1 offset short of the teachpoint.
-     *
-     * Adding that offset back puts the array centre where the box's array
-     * centre is, which by the invariant aligns A1 with A1. The offset is half
-     * the pitch for SBS labware.
-     *
-     * Rendering only — the motion path never reads the scene.
-     *
-     * Returns null when the mapping is not ready, so the caller falls back to
-     * the mesh frame rather than drawing tips somewhere arbitrary.
-     */
-    _headTipMountCenterFromDeck(hostLink, pitchXMm, pitchYMm) {
-        if (!hostLink || !this.labwareRoot || !this.deckMotionMap) return null;
-        const deckPt = this._mapRobotXYToDeckLocal(
-            Number(this.renderPositions?.X) || 0,
-            Number(this.renderPositions?.Y) || 0,
-        );
-        if (!deckPt) return null;
-        const world = this.labwareRoot.localToWorld(deckPt.clone());
-        const local = hostLink.worldToLocal(world);
-        if (!Number.isFinite(local.x) || !Number.isFinite(local.y)) return null;
-        // The row axis is negated relative to the column axis: a box draws its
-        // rows flipped (`displayRow = rows - 1 - row`) while the head does not,
-        // so the same A1 offset applies with the opposite sign there.
-        return {
-            centerX: local.x + (pitchXMm / 2) / 1000,
-            centerY: local.y - (pitchYMm / 2) / 1000,
-        };
-    }
-
     _getHeadTipMountFrame(hostLink) {
         if (!hostLink) return { centerX: 0, centerY: 0, minZ: -0.01 };
         hostLink.updateWorldMatrix(true, true);
@@ -1399,12 +1352,6 @@ export class RobotScene {
         const xOrigin = -((geometry.columns - 1) * pitchX) / 2;
         const yOrigin = -((geometry.rows - 1) * pitchY) / 2;
         const mountFrame = this._getHeadTipMountFrame(hostLink);
-        // Prefer the deck-derived centre; the mesh frame is the fallback while
-        // the deck mapping is still coming up. Z always comes from the mesh —
-        // only the in-plane origin was wrong.
-        const deckCenter = this._headTipMountCenterFromDeck(hostLink, pitchX, pitchY);
-        const centerX = deckCenter ? deckCenter.centerX : mountFrame.centerX;
-        const centerY = deckCenter ? deckCenter.centerY : mountFrame.centerY;
         const tipLengthMm = Number(this.attachedTipLengthMm || 26.1) || 26.1;
         const capacityUl = Number(this.activeTipCapacityUl || 30) || 30;
         const tipTemplate = await this._buildTipTemplate(this._tipModelUrl(capacityUl), tipLengthMm);
@@ -1418,8 +1365,8 @@ export class RobotScene {
                 if (!selected.has(`${row}:${col}`)) continue;
                 const tip = useGltf ? tipTemplate.clone(true) : this._buildSimpleTip(tipHeightM);
                 tip.position.set(
-                    centerX + ((xOrigin + col * pitchX) / 1000),
-                    centerY + ((yOrigin + row * pitchY) / 1000),
+                    mountFrame.centerX + ((xOrigin + col * pitchX) / 1000),
+                    mountFrame.centerY + ((yOrigin + row * pitchY) / 1000),
                     mountFrame.minZ - tipHeightM + 0.002,
                 );
                 tip.traverse(obj => {
