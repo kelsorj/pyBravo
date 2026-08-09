@@ -8,6 +8,7 @@ import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 
 const state = {
     theme: 'dark',
+    jelly: false,
     connected: false,
     positions: { X: 0, Y: 0, Z: 0, W: 0, G: 0, Zg: 0 },
     renderPositions: { X: 0, Y: 0, Z: 0, W: 0, G: 0, Zg: 0 },
@@ -109,6 +110,7 @@ const MOTION_ANIMATION = {
     snapDistanceMm: 0.02,
 };
 const THEME_STORAGE_KEY = 'pybravo-theme';
+const JELLY_STORAGE_KEY = 'pybravo-jelly';
 const HEAD_CARRIAGE_VISUAL_Y_OFFSET_M = 0.008;
 const FINGER_VISUAL_Z_OFFSET_M = 0.012;
 const FINGER_JOINT_Y_OFFSET_M = -0.010;
@@ -1075,6 +1077,52 @@ function applyTheme(theme, persist = true) {
 }
 
 applyTheme(getStoredTheme(), false);
+
+// ── Jelly button skin ─────────────────────────────────────────────────
+// An opt-in cosmetic skin, toggled with Cmd/Ctrl+Option+Shift+V. Same shape
+// as the theme toggle above: a data attribute on <html> that the stylesheet
+// keys off, plus a localStorage preference. Off by default.
+
+function getStoredJelly() {
+    try {
+        return localStorage.getItem(JELLY_STORAGE_KEY) === 'on';
+    } catch {
+        return false;
+    }
+}
+
+function setStoredJelly(on) {
+    try {
+        localStorage.setItem(JELLY_STORAGE_KEY, on ? 'on' : 'off');
+    } catch {
+        // Ignore storage failures and keep the active in-memory choice.
+    }
+}
+
+function applyJelly(on, persist = true) {
+    state.jelly = Boolean(on);
+    if (state.jelly) {
+        document.documentElement.dataset.jelly = 'on';
+    } else {
+        delete document.documentElement.dataset.jelly;
+    }
+    if (persist) {
+        setStoredJelly(state.jelly);
+    }
+}
+
+// event.code, not event.key: on macOS Option rewrites the character, so
+// Option+Shift+V arrives as '◊' and matching on the letter would silently
+// depend on keyboard layout. Accept Ctrl as well as Cmd so the chord also
+// works on Windows and Linux.
+function isJellyToggleChord(event) {
+    return event.code === 'KeyV'
+        && event.altKey
+        && event.shiftKey
+        && (event.metaKey || event.ctrlKey);
+}
+
+applyJelly(getStoredJelly(), false);
 
 function describeDeckLocationLabware(location) {
     const detail = getDeckDetail(Number(location || 0));
@@ -5688,6 +5736,20 @@ const VIEW_KEYS = { f: 'back', d: 'front', r: 'right', e: 'left', c: 'top', v: '
 
 document.addEventListener('keydown', (ev) => {
     if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+
+    if (isJellyToggleChord(ev)) {
+        ev.preventDefault();
+        applyJelly(!state.jelly);
+        log(`Jelly buttons ${state.jelly ? 'on' : 'off'}`, 'info');
+        return;
+    }
+
+    // The view presets are bare-key shortcuts. Without this guard they also
+    // fire on modified keypresses and preventDefault() them, which quietly
+    // stole Cmd+R (reload), Cmd+F (find), Cmd+D and Cmd+B from the browser
+    // whenever focus was outside a field.
+    if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+
     const preset = VIEW_KEYS[ev.key.toLowerCase()];
     if (preset) {
         ev.preventDefault();
