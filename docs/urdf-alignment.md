@@ -1,17 +1,23 @@
 # URDF head alignment (3D view only)
 
-> **Status: Z is fixed. X and Y are not.**
+> **Status: all three axes are fixed.**
 >
-> - **Z — done.** The head was drawn one teach-tip too low. Corrected, verified,
->   and described under "The Z axis" below.
-> - **X and Y — open.** `A1_OFFSET` is still unmeasured and the head's barrels
->   are still drawn a couple of columns from the wells they are over.
->
-> Two attempts at the X/Y fix were made and both reverted — see "Two alignments,
-> not one" below for why they failed, which is the most useful thing on this
-> page for whoever picks it up.
+> - **Z — done.** The head was drawn one teach-tip too low. Corrected via the
+>   live `head.teach_tip_length_mm`; see "The Z axis" below.
+> - **X and Y — done.** Fixed as measured gantry datums in `JOINT_AXIS_MAP`
+>   (`xaxis: 182.64`, `yaxis: 2.3`), not by moving the drawn tips; see "The X/Y
+>   datum" below. Two earlier attempts moved the tips instead of the gantry and
+>   were reverted — "Two alignments, not one" below explains why that can never
+>   work, and remains the most useful thing on this page.
 >
 > All of this is cosmetic. Real motion is unaffected.
+>
+> **Confirmation recording:**
+> [docs/media/tips-on-off-simulation.mov](media/tips-on-off-simulation.mov) — a
+> simulate run captured after the fixes: the head descends aligned with the
+> box, the tips leave the box and attach at the bottom of the press, ride up
+> with the head, and are released into the destination box at the eject.
+> (GitHub plays committed videos from the file's blob page; open the link.)
 
 > **Scope: the 3D view, and nothing else.**
 >
@@ -26,17 +32,43 @@
 > If a proposed change to the 3D view would require editing anything under
 > `pybravo/`, the proposal is wrong.
 
-## The problem this exists to solve
+## The problem this existed to solve
 
-In the 3D view the head's barrels are drawn a couple of columns away from the
-wells they are actually over. It shows up worst at the edge of an empty tip box,
-where the tips visibly hang off the end.
+In the 3D view the head's barrels were drawn a couple of columns away from the
+wells they were actually over — worst at the edge of an empty tip box, where
+the tips visibly hung off the end.
 
-The cause is that the renderer does not know where the head's A1 barrel is. It
-guesses, in `_getHeadTipMountFrame`, by taking the bounding box of the bottom
-slice of the head mesh and treating its centre as the centre of the barrel
-array. That picks up shroud and mounting structure, so the guess is wrong by a
-constant — measured at about 10.4 mm in X and 4.5 mm in Y for `HT_384_D_70`.
+## The X/Y datum — diagnosed and fixed
+
+The error was in the gantry's visual datum, not in where the tips sit on the
+head. Measured with the head-tip array (placed from the head mesh) against the
+rendered wells, at four commanded poses spanning 99 mm of X travel and both
+deck rows:
+
+| | error, every pose |
+|---|---|
+| X | **−10.40 mm** (≈2.3 columns), constant |
+| row (robot Y) | **+2.40 / +2.19 mm** per location (mean ≈ half a pitch) |
+
+Constant across the whole span in both axes — a datum error, not scale. Both
+derivatives measured exactly 1 mm world per commanded mm, so the correction is
+a pure `homeOffset` shift in `JOINT_AXIS_MAP` (`frontend/src/robot-scene.js`):
+`xaxis` 193.04 → **182.64**, `yaxis` 0 → **2.3**. After the change the residual
+is 0.00 mm in X and ±0.11 mm in row at all four poses — the ±0.11 is the two
+locations' real taught difference, which a flat model deck cannot represent.
+
+Why this works where the two reverted attempts could not: `homeOffset` moves
+the **whole gantry chain** — head mesh, attached tips, and gripper together, as
+on the real machine (they share one carriage; confirmed against the URDF joint
+tree, where both hang under `ygantry` ← `xgantry`). The tips↔mesh relationship
+is preserved by construction (barrel-to-tip gap 17.9 mm before and after), and
+deck pads and labware are static children of the base and do not move. The
+earlier attempts moved only the drawn tips, which can satisfy tips↔labware or
+tips↔mesh but never both.
+
+The remaining per-location ±0.1 mm class of residual would only be removable by
+modelling the deck's taught Z/XY variation, which is not worth it for a
+visualization.
 
 This document is the definition the renderer should use instead.
 
@@ -94,49 +126,21 @@ BACK as −Y, LEFT as −X, and marks the anchor corner at back-left:
 barrel. The two grids are concentric at different pitches, so their A1 corners
 do not coincide.
 
-## The definition to establish
+## How this was defined in the end
 
-One constant per head type, expressed in the head link's own frame:
+The original plan on this page was a per-head-link constant (`A1_OFFSET`,
+placing the barrel array within the head link). The fix that actually shipped
+is simpler and sits one level up: the error was the same for the whole gantry,
+so it lives in the per-joint `homeOffset` datums in `JOINT_AXIS_MAP`, and the
+tips stay placed from the head mesh exactly as before. A per-head constant
+would only become necessary if a head's *mesh* were misplaced within its own
+link — no evidence of that once the gantry datum was corrected.
 
-> **`A1_OFFSET[head_type]`** — the position of the centre of barrel A1
-> (row 0, column 0) relative to the origin of the URDF link the head model is
-> attached to, in millimetres, as (x, y).
-
-Everything else follows without further constants:
-
-```
-barrel(row, col) = A1_OFFSET[head_type] + (col * pitch_x, row * pitch_y)
-```
-
-with pitch from the table above, and the axis directions as stated.
-
-| head type | `A1_OFFSET` (x, y) mm | status |
-|---|---|---|
-| `HT_384_D_70` | _to be measured_ | see procedure below |
-| 96-format | _to be measured_ | expected to differ from the 384 value by (+2.25, +2.25) |
-| others | _not yet needed_ | add when a model exists for them |
-
-The 2.25 mm relationship above is a useful cross-check: once both are measured,
-their difference should come out at (2.25, 2.25). If it does not, one of the two
-measurements is wrong.
-
-## Procedure for measuring `A1_OFFSET`
-
-To be done in simulation, by jogging — no hardware, no teachpoints touched.
-
-1. Load a tip box of the matching format at a known deck location, so the
-   rendered wells give a reference grid.
-2. Command the robot to the position that puts A1 on that box's A1 well — the
-   A1 anchor of a tip operation at that location.
-3. Read where the head **mesh's** own barrels are drawn, not the synthetic
-   tips. The mesh is the ground truth for where the physical barrels are; the
-   tips are what we are trying to place correctly.
-4. `A1_OFFSET` is the position of the mesh's back-left barrel expressed in the
-   head link's local frame.
-5. Repeat at a second, distant location. The value must come out the same — it
-   is a property of the model, not of position. If it drifts, the deck mapping
-   and the URDF kinematics disagree about scale, which is a different problem.
-6. Repeat for the 96 head and check the (2.25, 2.25) difference.
+If a future head model does need a per-link constant, the measurement
+procedure is unchanged: command the A1 anchor over a known box, read where the
+mesh's barrels render versus the wells, at two distant locations (the value
+must be constant), and for the 96/384 pair check their difference comes out at
+(2.25, 2.25) — the two grids are concentric at different pitches.
 
 ## Verification
 
@@ -177,7 +181,8 @@ against a nominal `teach_tip_length_mm` of 26.1. The residual ±0.1 mm is the
 cannot represent — it is real machine variation, not modelling error.
 
 The fix uses the `homeOffset` mechanism already present in `JOINT_AXIS_MAP`,
-which was calibrated for X (193.04) and Zg (−20) but left at 0 for Z. The value
+which at the time was calibrated for X (193.04 — since re-measured to 182.64,
+see "The X/Y datum" above) and Zg (−20) but left at 0 for Z. The value
 is taken live from `head.teach_tip_length_mm` on `/api/profile` rather than
 hardcoded, so a different head or teach tip follows automatically, with the
 common 26.1 seeded as a fallback.
@@ -212,11 +217,12 @@ tip length. Worth doing if this ever drifts again.
 
 ## Open questions
 
-- `A1_OFFSET` for both head types — the measurement above.
-- Whether the head link's origin is a stable reference across URDF revisions, or
-  whether the constant should be expressed relative to a named mesh feature.
-- Whether the 1536 and single-column heads need entries, or whether they are
-  never rendered.
+- The X/Y/Z datums were measured with the 384 head model. If a 96-head mesh is
+  ever added to the URDF, re-run the four-pose sweep with it — the gantry
+  datums should hold (they are properties of the gantry, not the head), and any
+  residual would indicate the new head mesh is misplaced within its link.
+- The datums are tied to this revision of the URDF. If the URDF is re-exported,
+  re-measure — the sweep takes minutes and the procedure is above.
 
 ## Notes for whoever picks this up
 

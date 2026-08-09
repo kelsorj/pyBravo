@@ -2134,10 +2134,6 @@ class WorkflowExecutor:
             tips_z = max(0.0, min(tips_z, 150.0))
             # Extra press/eject travel
             press_z = min(tips_z + 5.0, 150.0)
-            if is_on:
-                self._set_removed_tip_cells(loc, tip_selection)
-            else:
-                self._restore_tip_cells(loc, tip_selection)
             tip_labware_name = getattr(labware, "name", "") or ""
             metadata = getattr(labware, "metadata", {}) or {}
             mounted_tip_capacity_ul = metadata.get("disposable_tip_capacity_ul")
@@ -2164,6 +2160,24 @@ class WorkflowExecutor:
             if mounted_tip_length is None:
                 mounted_tip_length = self._get_tip_length()
             mounted_tip_length_mm = float(mounted_tip_length)
+            # Snapshot ordering matters: _tip_change_event serializes
+            # _tipbox_removed_cells at build time. The pre-press event must
+            # show the box as it looks BEFORE this operation (tips still in it
+            # during the approach), and main_tip_event as it looks after — so
+            # the inventory mutation sits between the two builds. It used to
+            # run before both, which emptied the box on screen before the head
+            # had even started to descend.
+            if is_on:
+                pre_clear_event = self._tip_change_event(
+                    tips_on=False,
+                    location=loc,
+                    head_mode=head_mode,
+                    tip_selection=None,
+                    tip_labware_name=tip_labware_name,
+                )
+                self._set_removed_tip_cells(loc, tip_selection)
+            else:
+                self._restore_tip_cells(loc, tip_selection)
             main_tip_event = self._tip_change_event(
                 tips_on=is_on,
                 location=loc,
@@ -2174,26 +2188,20 @@ class WorkflowExecutor:
                 active_tip_capacity_ul=None if mounted_tip_capacity_ul is None else float(mounted_tip_capacity_ul),
                 tip_definition_id=mounted_tip_definition_id or (self.bravo._tip_definition_id if not is_on else ""),
             )
-            # Visual sequencing: for tips_on we must NOT show tips attached
-            # during the descent (the runtime snapshot may start with
-            # tips_on_head=True). Clear first, descend empty, attach after
-            # retract. For tips_off, keep tips attached through the descent
-            # and have them disappear at the eject step (before retract).
+            # Visual sequencing: for tips_on the head descends empty and the
+            # exchange happens at the bottom of the press — the tips leave the
+            # box and appear on the head in the same event, which is when it
+            # physically happens. The head then retracts carrying them. For
+            # tips_off, tips stay attached through the descent and disappear
+            # into the box at the eject, before the retract.
             if is_on:
-                pre_clear_event = self._tip_change_event(
-                    tips_on=False,
-                    location=loc,
-                    head_mode=head_mode,
-                    tip_selection=None,
-                    tip_labware_name=tip_labware_name,
-                )
                 steps_with_events = [
-                    (None, pre_clear_event),                                                                                    # Clear visual tips before descent
+                    (None, pre_clear_event),                                                                                    # Clear visual tips; box still shows pre-pickup state
                     ({"X": target_x, "Y": target_y, "Z": self._Z_SAFE, "Zg": self._GRIPPER_RECESS, "G": 0, "W": 0}, None),    # Move XY (head empty)
                     ({"X": target_x, "Y": target_y, "Z": tips_z, "Zg": self._GRIPPER_RECESS, "G": 0, "W": 0}, None),          # Lower head to tip box top
                     ({"X": target_x, "Y": target_y, "Z": press_z, "Zg": self._GRIPPER_RECESS, "G": 0, "W": 0}, None),         # Press into tips
-                    ({"X": target_x, "Y": target_y, "Z": self._Z_SAFE, "Zg": self._GRIPPER_RECESS, "G": 0, "W": 0}, None),    # Retract (head still empty visually)
-                    (None, main_tip_event),                                                                                     # Tips appear attached after retract
+                    (None, main_tip_event),                                                                                     # At the bottom: tips leave the box and attach to the head
+                    ({"X": target_x, "Y": target_y, "Z": self._Z_SAFE, "Zg": self._GRIPPER_RECESS, "G": 0, "W": 0}, None),    # Retract carrying tips
                 ]
             else:
                 steps_with_events = [

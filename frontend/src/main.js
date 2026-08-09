@@ -9,6 +9,10 @@ import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 const state = {
     theme: 'dark',
     jelly: false,
+    // Barrel-face-to-teach-tip distance; the Z visual datum (see
+    // JOINT_AXIS_MAP). Seeded with the common 30 uL value, replaced by the
+    // profile's own figure in loadProfile().
+    teachTipLengthMm: 26.1,
     connected: false,
     positions: { X: 0, Y: 0, Z: 0, W: 0, G: 0, Zg: 0 },
     renderPositions: { X: 0, Y: 0, Z: 0, W: 0, G: 0, Zg: 0 },
@@ -699,10 +703,20 @@ gizmoScene.add(gizmoGroup);
 // homeOffset (mm): Bravo position when URDF joint value = 0.
 // scale: sign correction for axes where the URDF joint moves opposite to the Bravo axis.
 //   zaxis upper=0, lower=-0.105 → head moves in the negative direction as Z increases.
+//
+// KEEP IN SYNC with the map of the same name in robot-scene.js — the designer
+// and this control panel render the same URDF, and diverging datums draw the
+// head in two different places for one commanded position. The copies are
+// deliberate (a cross-module import would dodge the mtime cache-busting that
+// only page-level URLs get); tests/test_frontend_joint_datums.py fails if the
+// numbers drift apart.
+//
+// X/Y are measured visual datums and Z is referenced to the teach tip, not
+// the barrel face — see docs/urdf-alignment.md for the measurements.
 const JOINT_AXIS_MAP = {
-    'xaxis':          { bravoAxis: 'X',  homeOffset: 193.04, scale:  1 },
-    'yaxis':          { bravoAxis: 'Y',  homeOffset: 0,      scale:  1 },
-    'zaxis':          { bravoAxis: 'Z',  homeOffset: 0,      scale: -1 },
+    'xaxis':          { bravoAxis: 'X',  homeOffset: 182.64, scale:  1 },
+    'yaxis':          { bravoAxis: 'Y',  homeOffset: 2.3,    scale:  1 },
+    'zaxis':          { bravoAxis: 'Z',  homeOffset: 0,      scale: -1, useTeachTipLength: true },
     // The exported URDF puts the gripper Z carriage under ygantry instead of
     // under the main Z carriage, so the viewer has to synthesize the hidden Z
     // contribution explicitly: the gripper should follow Z and then apply its
@@ -4845,6 +4859,8 @@ async function loadProfile() {
         );
         state.activeTipId = res.head.teach_tip_id || res.head.default_tip_id || state.activeTipId;
         state.activeTipCapacityUl = Number(res.head.teach_tip_capacity || res.head.default_tip_capacity || 0);
+        const teachTipMm = Number(res.head.teach_tip_length_mm);
+        if (Number.isFinite(teachTipMm) && teachTipMm > 0) state.teachTipLengthMm = teachTipMm;
     }
 
     await loadHeadMode();
@@ -5666,7 +5682,11 @@ function updateURDFJointsFromPositions(positions) {
         if (pos === undefined) continue;
         const coupledPos = info.coupledAxis ? (positions[info.coupledAxis] ?? 0) : 0;
         const effectivePos = pos + coupledPos * (info.coupledScale ?? 0);
-        const value = info.scale * (effectivePos - info.homeOffset) / 1000;
+        // Same Z-datum handling as robot-scene.js: robot Z is referenced to
+        // the tip of the teach tip, so the datum tracks the profile's value.
+        const homeOffset = info.homeOffset
+            + (info.useTeachTipLength ? (Number(state.teachTipLengthMm) || 0) : 0);
+        const value = info.scale * (effectivePos - homeOffset) / 1000;
         urdfRobot.setJointValue(jointName, value);
     }
 }

@@ -43,9 +43,22 @@ const LABWARE_APPEARANCE_OVERRIDES = {
     },
 };
 
+// KEEP IN SYNC with the map of the same name in main.js — the control panel
+// renders the same URDF with its own copy of this table. The duplication is
+// deliberate (a cross-module import would dodge the mtime cache-busting that
+// only page-level URLs get); tests/test_frontend_joint_datums.py fails if the
+// numbers drift apart.
 const JOINT_AXIS_MAP = {
-    'xaxis':          { bravoAxis: 'X',  homeOffset: 193.04, scale:  1 },
-    'yaxis':          { bravoAxis: 'Y',  homeOffset: 0,      scale:  1 },
+    // X and Y homeOffsets are measured visual datums (see
+    // docs/urdf-alignment.md). The head's barrels rendered 10.40 mm to -X and
+    // 2.3 mm toward +row of the wells they were commanded over — constant
+    // across a 99 mm X span and both deck rows, so a datum error, not scale.
+    // The previous values (193.04 / 0) drew the head ~2.3 columns and half a
+    // row off the labware; these were derived by zeroing that error against
+    // the rendered wells at four poses. Rendering only — commanded positions
+    // come from the backend and never read these.
+    'xaxis':          { bravoAxis: 'X',  homeOffset: 182.64, scale:  1 },
+    'yaxis':          { bravoAxis: 'Y',  homeOffset: 2.3,    scale:  1 },
     // Robot Z is referenced to the tip of the *teach tip*, not the barrel face:
     // the backend computes deck_surface_z as teach_z + teach_tip_length. Drawing
     // the head as though Z meant the barrel put it one teach-tip too low —
@@ -1343,6 +1356,13 @@ export class RobotScene {
     }
 
     async _renderHeadTipsFromState() {
+        // Generation guard, same shape as labwareRefreshToken. This function
+        // awaits mid-way (the tip template load), and the timeline scrubber
+        // fires it unawaited on every frame restore — so without the token a
+        // stale tips-ON render could resume after its await and repopulate the
+        // root that a newer tips-OFF call had just cleared, leaving ghost tips
+        // that contradict the scrubbed frame.
+        const token = (this._headTipsRenderToken = (this._headTipsRenderToken || 0) + 1);
         this.headTipsRoot.clear();
         if (!this.urdfRobot || !this.tipsOnHead) return;
 
@@ -1366,6 +1386,9 @@ export class RobotScene {
         const tipLengthMm = Number(this.attachedTipLengthMm || 26.1) || 26.1;
         const capacityUl = Number(this.activeTipCapacityUl || 30) || 30;
         const tipTemplate = await this._buildTipTemplate(this._tipModelUrl(capacityUl), tipLengthMm);
+        // A newer render (or clear) superseded this one while the template
+        // loaded — populating now would resurrect tips the newer call removed.
+        if (token !== this._headTipsRenderToken) return;
         const useGltf = !!tipTemplate;
         const tipHeightM = useGltf
             ? Number(tipTemplate.userData?.tipHeightM || Math.max(0.008, tipLengthMm / 1000))
