@@ -155,6 +155,51 @@ A fix is only complete when all of these hold:
 5. **`git diff --name-only -- pybravo/` is empty.** No Python changed, so no
    commanded position can have changed.
 
+## The Z axis has the same problem, and the mechanism to fix it already exists
+
+The head also renders at the wrong height. Measured with a 384 tip box (50 mm)
+on the deck, `HT_384_D_70`, tips on the head:
+
+| commanded Z | head mesh bottom | box top | error |
+|---|---|---|---|
+| 115.1 (Tips On, seated on the box) | 36.0 mm | 80.1 mm | **44.1 mm too low** |
+| 100.9 (Tips Off, 14 mm clear) | 50.2 mm | 80.1 mm | **44.1 mm too low** |
+
+Two things follow.
+
+**The arithmetic is right.** Moving between those two poses raised the head by
+exactly 14.2 mm, which is `tips_off_z_offset: 14.0` from
+`config/tip_offsets.yaml`. The backend already resolves the offsets and folds
+them into the commanded Z — `deck_surface_z - labware_height`, then the eject
+offset — and the view reproduces that motion faithfully. **The tip offsets are
+therefore already accounted for and must not be applied again in the renderer;
+doing so would double-count them.**
+
+**The error is a constant**, identical at both poses: the model's Z datum does
+not correspond to the machine's Z reference. This is the Z analogue of
+`A1_OFFSET`.
+
+Unlike X and Y, the mechanism for correcting it is already present.
+`JOINT_AXIS_MAP` in `frontend/src/robot-scene.js` carries a `homeOffset` per
+joint, and it is calibrated for the axes somebody has already looked at:
+
+```js
+'xaxis':         { bravoAxis: 'X',  homeOffset: 193.04, scale:  1 },
+'zaxis':         { bravoAxis: 'Z',  homeOffset: 0,      scale: -1 },   // never calibrated
+'zaxis-gripper': { bravoAxis: 'Zg', homeOffset: -20,    scale:  1, ... },
+```
+
+`zaxis` is the odd one out at zero. With `scale: -1`, raising `homeOffset` by
+44.1 raises the rendered head by 44.1 mm, so the measured value is the
+candidate. It should be confirmed at several Z positions and against the deck
+surface as well as a box top before being adopted, and treated as the same kind
+of measured datum as `A1_OFFSET` rather than a magic number.
+
+Worth noting: the backend computes `deck_surface_z` (`executor.py`, in the tips
+motion path) but does not send it to the frontend. Sending it would let the
+renderer derive the Z datum from the deck rather than carry a constant, which is
+the more durable version of this fix.
+
 ## Open questions
 
 - `A1_OFFSET` for both head types — the measurement above.
