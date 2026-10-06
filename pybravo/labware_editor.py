@@ -621,6 +621,11 @@ def _definition_to_editor_type(definition: LabwareDefinition) -> dict[str, Any]:
         "well_dimensions_mm": {
             "rows": definition.rows,
             "cols": definition.cols,
+            "depth_mm": definition.well_depth_mm,
+            "offset_x_mm": definition.offset_x_mm,
+            "offset_y_mm": definition.offset_y_mm,
+            "spacing_x_mm": definition.spacing_x_mm,
+            "spacing_y_mm": definition.spacing_y_mm,
             "volume_ul": definition.well_volume_ul,
             "diameter_mm": definition.well_diameter_mm,
             "disposable_tip_capacity_ul": definition.disposable_tip_capacity_ul,

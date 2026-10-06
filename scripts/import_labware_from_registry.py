@@ -22,7 +22,8 @@ from typing import Any
 import yaml
 
 _SECTION_RE = re.compile(
-    r"\[HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Velocity11\\shared\\Labware\\Labware_Entries\\([^\]]+)\]"
+    r"\[HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Velocity11\\shared\\Labware\\Labware_Entries\\([^\]]+)\]",
+    re.IGNORECASE,  # registry keys are case-insensitive; exports write "Shared"
 )
 _KV_RE = re.compile(r'^"((?:[^"\\]|\\.)*)"=(.*)$')
 
