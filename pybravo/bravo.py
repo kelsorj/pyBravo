@@ -170,7 +170,8 @@ class Bravo:
         self._tipbox_occupancy: dict[int, set[tuple[int, int]]] = {}
         self._tipbox_untracked: set[int] = set()
         self._labware_names: dict[str, int] = {}
-        self._accessories = AccessoryManager(self._profile)
+        self._simulated_accessory_bus = None
+        self._accessories = AccessoryManager(self._profile, self._accessory_serial_sender)
 
     # -- Context manager --
 
@@ -266,6 +267,8 @@ class Bravo:
             )
 
     def disconnect(self) -> None:
+        # Pumps are stopped over the instrument link, so do it before closing it.
+        self.stop_all_pumps()
         if self._controller:
             self._controller.close()
             self._controller = None
@@ -316,6 +319,7 @@ class Bravo:
                         "loaded": driver is not None,
                         "is_open": bool(getattr(driver, "is_open", False)),
                         "is_running": bool(getattr(driver, "is_running", False)),
+                        "seconds_remaining": getattr(driver, "seconds_remaining", None),
                     },
                 }
             )
@@ -353,6 +357,75 @@ class Bravo:
         driver = self._accessories.get_driver(device)
         driver.stop()
         return {"status": "stopped", "accessory_id": accessory_id}
+
+    def _accessory_serial_sender(self):
+        """Return the callable that reaches the instrument's accessory bus."""
+        if self._profile.connection.controller_type == "simulation":
+            if self._simulated_accessory_bus is None:
+                from pybravo.accessories.autofill import SimulatedAutofillModule
+                self._simulated_accessory_bus = SimulatedAutofillModule()
+            return self._simulated_accessory_bus
+        send_serial = getattr(self._controller, "send_serial", None)
+        if send_serial is None:
+            raise RuntimeError(
+                "The accessory bus needs a connected darwin_native instrument"
+                if self._controller is not None else "Not connected"
+            )
+        return send_serial
+
+    def _autofill_driver(self, accessory_id: str, *, require_enabled: bool = True):
+        device = self._accessories.find_by_id(accessory_id)
+        if device is None:
+            raise ValueError(f"Accessory {accessory_id!r} is not configured")
+        if device.type != "autofill":
+            raise ValueError(f"Accessory {accessory_id!r} is not an autofill station")
+        if require_enabled and not device.enabled:
+            raise ValueError(f"Accessory {accessory_id!r} is disabled")
+        return self._accessories.get_driver(device)
+
+    def read_autofill_level(self, accessory_id: str) -> dict[str, Any]:
+        return {"accessory_id": accessory_id, **self._autofill_driver(accessory_id).read_level()}
+
+    def run_autofill_pumps(
+        self,
+        accessory_id: str,
+        *,
+        duration_s: float,
+        fill: bool = True,
+        empty: bool = True,
+        fill_speed_pct: float | None = None,
+        empty_speed_pct: float | None = None,
+    ) -> dict[str, Any]:
+        from pybravo.accessories.autofill import AutofillError
+
+        driver = self._autofill_driver(accessory_id)
+        try:
+            driver.run_pumps(
+                duration_s,
+                fill=fill,
+                empty=empty,
+                fill_speed_pct=fill_speed_pct,
+                empty_speed_pct=empty_speed_pct,
+            )
+        except AutofillError as exc:
+            raise ValueError(str(exc)) from exc
+        return {"status": "running", "accessory_id": accessory_id, "duration_s": duration_s}
+
+    def stop_autofill_pumps(self, accessory_id: str) -> dict[str, Any]:
+        # Stopping is allowed even when the accessory has been disabled since it started.
+        self._autofill_driver(accessory_id, require_enabled=False).stop_pumps()
+        return {"status": "stopped", "accessory_id": accessory_id}
+
+    def stop_all_pumps(self) -> None:
+        """Best-effort stop of every autofill pump that this session started."""
+        from pybravo.accessories.autofill import AutofillStation
+
+        for accessory_id, driver in list(self._accessories._drivers.items()):
+            if isinstance(driver, AutofillStation) and driver.is_running:
+                try:
+                    driver.stop_pumps()
+                except Exception:
+                    logger.exception("Could not stop autofill pumps on %s", accessory_id)
 
     async def read_barcode(self, location: int) -> dict[str, Any]:
         """Read the barcode of the plate at `location`.
@@ -2813,6 +2886,9 @@ class Bravo:
     # -- Error handling --
 
     def abort(self) -> bool:
+        # Pumps run until told to stop, so an abort must stop them whether or
+        # not a task is waiting on an error prompt.
+        self.stop_all_pumps()
         return self._engine.abort()
 
     def retry(self) -> bool:

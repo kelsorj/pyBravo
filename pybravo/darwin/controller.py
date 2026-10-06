@@ -1302,6 +1302,24 @@ class DarwinController(BravoController):
         )
 
     # ------------------------------------------------------------------
+    # Serial peripherals forwarded by the instrument
+    # ------------------------------------------------------------------
+
+    def send_serial(self, payload: bytes, timeout_ms: int = 1000) -> bytes:
+        """Send a 9-byte payload to a serial peripheral behind the instrument.
+
+        Accessory modules on the instrument's accessory bus (the autofill pump
+        module and weigh pad) are reached this way rather than over a COM port.
+        Returns the peripheral's response; the first byte echoes the command.
+        """
+        if not self.is_connected:
+            raise BravoError(
+                ErrorType.DARWIN_SOFTWARE_INTERNAL,
+                custom_text="Cannot reach accessory module: not connected.",
+            )
+        return self._engine.send_serial(payload, timeout_ms=timeout_ms)
+
+    # ------------------------------------------------------------------
     # Error tracking
     # ------------------------------------------------------------------
 
