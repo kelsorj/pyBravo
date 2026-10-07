@@ -176,6 +176,63 @@ Scan Stack Height treats a blank, zero or negative `expected_count` as "no
 expectation — just report what was measured". Any positive integer turns on
 validation, and a mismatch raises the operator prompt.
 
+### Accessories
+
+Steps for the autofill station (pump module and weigh pad, see
+[hardware setup](hardware-setup.md#autofill-station-pumps-and-weigh-pad)). They
+address the station by its deck `location`, like plate steps do.
+
+| Node | Operation | Key properties |
+|---|---|---|
+| Pump Reagent | `pump_reagent` | location, reservoir mode (Fill / Empty / Hold level), pump speed, pump on time, how often, allow concurrent, second pump, weigh station thresholds, hold target level, hold time from target, max reach time |
+| Stop Pumps | `autofill_stop_pumps` | location |
+| Read Level | `autofill_read_level` | location, `store_as` |
+
+**Pump Reagent** fills or empties the reservoir:
+
+- **Pump.** `reservoir_mode` (Fill / Empty) picks the pump that does the job.
+  It runs at `pump_speed_pct` for up to `pump_on_time_s` (1–600 s).
+- **Second pump.** `run_second_pump` runs the other pump as well, at
+  `second_pump_speed_pct`. Fill plus drain gives a flowing reservoir.
+- **Concurrent.** By default the step waits until the pumps stop. With
+  `allow_concurrent` it returns at once, so the next steps run while it pumps.
+- **How often.** `how_often` = N acts on the first pass and then on every Nth
+  one, which is useful inside a Loop.
+- **Weigh station.** With `use_weigh_station`, Fill only acts while the level
+  is below `action_threshold_pct` and stops once it reaches
+  `stop_threshold_pct`. Empty works the other way round. The station needs its
+  tare and range set.
+- **Hold level.** `reservoir_mode` "hold" keeps liquid flowing through the
+  tray for `pump_on_time_s` while holding it at `target_level_pct`. The fill
+  pump runs at `pump_speed_pct` and the weigh pad steers the drain pump. The
+  working target ramps from the current level to the requested one, both
+  lines are primed at 100 % first (supply until the level rises, drain near
+  the target until the level falls), and the inflow is throttled when the
+  drain cannot keep up. If the supply stops delivering while filling (air in
+  the hose: the level stops rising with the drain closed), it is primed at
+  100 % again. The pumps stop if the tray reaches 100 %. Hold always uses the
+  weigh station, so it needs tare and range set.
+- **Hold time from the target.** By default `pump_on_time_s` includes filling
+  and priming. With `time_from_target` the clock starts only once both hoses
+  are primed and the level is within 2 % of `target_level_pct`. Getting there
+  may take up to `max_reach_time_s` (default 120 s); if the target is not
+  reached by then, the pumps stop and the step fails. Hold time plus
+  `max_reach_time_s` must fit within the station's run limit. Combined with
+  `allow_concurrent`, the step returns once the target is reached and keeps
+  holding alongside the next steps, so a following Mix never starts in an
+  empty or priming tray.
+
+A tip wash is a Loop around three steps: Pump Reagent (Fill), a Mix at the
+station's location as if it were a plate, and Pump Reagent (Empty). To change
+the water while mixing instead, use one Pump Reagent with
+`run_second_pump` and `allow_concurrent` before the Mix.
+
+Pumps never outlive the workflow: stopping a workflow, or reaching its end
+however it ended, stops every autofill pump.
+
+Read Level publishes the level (in %) on its data output; `store_as` writes it
+to the blackboard.
+
 ### System
 
 | Node | Operation |

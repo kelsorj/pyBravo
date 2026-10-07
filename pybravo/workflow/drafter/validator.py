@@ -65,6 +65,9 @@ _REQUIRED_PROPERTIES: dict[str, tuple[str, ...]] = {
     "tips/TipsOff":    ("location",),
     "sensor/ReadBarcode":     ("location",),
     "sensor/ScanStackHeight": ("location",),
+    "accessory/PumpReagent":  ("location",),
+    "accessory/StopPumps":    ("location",),
+    "accessory/ReadLevel":    ("location",),
     "flow/Loop":       ("count",),
     "logic/Script":    ("script",),
 }
