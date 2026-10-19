@@ -80,6 +80,18 @@ def test_explicit_actions_lower_to_fixed_primitives_without_inferred_steps():
     assert ActionPlan.model_json_schema()["additionalProperties"] is False
 
 
+def test_model_authored_top_dispense_is_explicit_and_aspiration_stays_in_well():
+    draft = _draft()
+    draft["actions"][2]["location"] = "top"
+    code = _compile(draft)
+    assert ".dispense(5.0, lw_2.wells_by_name()['A1'].top())" in code
+    assert ".aspirate(5.0, lw_1.wells_by_name()['A1'])" in code
+
+    draft["actions"][1]["location"] = "top"
+    with pytest.raises(ActionPlanError, match="cannot aspirate from the well rim"):
+        _compile(draft)
+
+
 def test_comment_records_exact_model_authored_note_without_pausing():
     draft = _draft()
     draft["actions"].insert(0, {

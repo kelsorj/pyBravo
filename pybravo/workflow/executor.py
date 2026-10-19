@@ -451,7 +451,19 @@ class WorkflowExecutor:
         strict_validation: bool = False,
         reviewed_protocol: bool = False,
         physical_simulation: bool = False,
+        capture_checkpoint: bool = False,
+        checkpoint: dict[str, Any] | None = None,
     ) -> None:
+        if capture_checkpoint or checkpoint is not None:
+            from pybravo.workflow.checkpoints import validate_checkpoint_workflow
+
+            if not physical_simulation:
+                raise ValueError("Checkpoint continuation is available only for checked simulation")
+            if checkpoint is not None and not capture_checkpoint:
+                raise ValueError("Restoring a checkpoint requires capture_checkpoint=true")
+            validate_checkpoint_workflow(graph_data, library_src)
+        self._capture_checkpoint = capture_checkpoint
+        self._checkpoint = copy.deepcopy(checkpoint)
         self.bravo = bravo
         self._deck_config = deck_config or {}
         # Workflow-level "Library" — Python defined once at run start, its
@@ -1267,7 +1279,17 @@ class WorkflowExecutor:
             # reviewed tip inventory no longer matches the configured deck.
             # Keep it inside the event-recording and callback-cleanup boundary.
             await self._setup_deck()
-            self._apply_runtime_snapshot()
+            if self._checkpoint is not None:
+                from pybravo.workflow.checkpoints import restore_checkpoint
+
+                restore_checkpoint(self.bravo, self._checkpoint, self._deck_config)
+            else:
+                self._apply_runtime_snapshot()
+            initial_checkpoint = {}
+            if self._capture_checkpoint:
+                from pybravo.workflow.checkpoints import export_checkpoint
+
+                initial_checkpoint = {"simulation_checkpoint": export_checkpoint(self.bravo, self._deck_config)}
             if self._physical_simulation:
                 from pybravo.controllers.simulation import SimulationController
 
@@ -1282,6 +1304,7 @@ class WorkflowExecutor:
                 "type": "workflow:start",
                 "positions": self._current_positions(),
                 "runtime_state": self._current_runtime_event_state(),
+                **initial_checkpoint,
                 **self._physical_report_fields(),
             })
             await self._emit_positions()
@@ -1339,6 +1362,17 @@ class WorkflowExecutor:
             })
             return
 
+        final_checkpoint = {}
+        if self._capture_checkpoint and not self._aborted:
+            from pybravo.workflow.checkpoints import export_checkpoint
+
+            try:
+                final_checkpoint = {"simulation_checkpoint": export_checkpoint(self.bravo, self._deck_config)}
+            except Exception as exc:
+                await self._emit({"type": "workflow:error", "error": f"Checkpoint capture failed: {exc}",
+                                  **self._physical_report_fields(exc)})
+                return
+
         # Clean completion — green idle so the operator can tell the run
         # is done from across the room.
         self._set_workflow_light("idle")
@@ -1346,6 +1380,7 @@ class WorkflowExecutor:
             "type": "workflow:complete",
             "status": "aborted" if self._aborted else "ok",
             "vars": _safe_json_snapshot(self._vars),
+            **final_checkpoint,
             **self._physical_report_fields(),
         })
 

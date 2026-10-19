@@ -11,18 +11,6 @@ tips:
   - HT_384_D_70_S2
   - HT_96_D_70
   - HT_96_D_70_S2
-- tip_id: st_15ul
-  capacity_ul: 15.0
-  label: 15 uL
-  length_mm: null
-  source: vendor-source-option
-  model_3d: /labware-assets/tips/d10.gltf
-  compatible_heads:
-  - HT_16_D_ST
-  - HT_384_D_70
-  - HT_384_D_70_S2
-  - HT_96_D_70
-  - HT_96_D_70_S2
 - tip_id: lt_200ul
   capacity_ul: 200.0
   label: 200 uL
@@ -55,30 +43,6 @@ tips:
   - HT_384_D_70_S2
   - HT_96_D_70
   - HT_96_D_70_S2
-- tip_id: st_50ul
-  capacity_ul: 50.0
-  label: 50 uL
-  length_mm: null
-  source: vendor-source-option
-  model_3d: /labware-assets/tips/d30.gltf
-  compatible_heads:
-  - HT_16_D_ST
-  - HT_384_D_70
-  - HT_384_D_70_S2
-  - HT_96_D_70
-  - HT_96_D_70_S2
-- tip_id: st_51ul
-  capacity_ul: 51.0
-  label: 51 uL
-  length_mm: null
-  source: vendor-source-option
-  model_3d: /labware-assets/tips/d30.gltf
-  compatible_heads:
-  - HT_16_D_ST
-  - HT_384_D_70
-  - HT_384_D_70_S2
-  - HT_96_D_70
-  - HT_96_D_70_S2
 - tip_id: st_70ul
   capacity_ul: 70.0
   label: 70 uL
@@ -91,6 +55,15 @@ tips:
   - HT_384_D_70_S2
   - HT_96_D_70
   - HT_96_D_70_S2
+- tip_id: am_cartridge_60ul
+  kind: cartridge
+  capacity_ul: 60.0
+  label: AssayMAP cartridge (60 uL bed)
+  length_mm: 29.2
+  source: vendor-labware-96AM-Cartridge-Rack-and-Receiver-Plate
+  model_3d: null
+  compatible_heads:
+  - HT_96_ASSAYMAP
 - tip_id: pin_fp1cb
   capacity_ul: 0.0
   label: FP1CB
@@ -121,31 +94,12 @@ tips:
   - HT_1536_PINTOOL
   - HT_384_PINTOOL
   - HT_96_PINTOOL
-# AssayMAP labware definitions (labware/*.roiZip) give these directly.
-#
-# The head is taught with a standard LT250 tip -- "96 V11 LT250 Tip Box
-# 19477.002", whose DISPOSABLE_TIP_LENGTH is 55.5 mm -- and then operated with
-# cartridges, which are shorter (29.2 mm) and hold 60 uL of packed bed. The
-# syringe behind them is 250 uL; that is the W-axis range, not a tip capacity.
 - tip_id: am_lt250_teach
   capacity_ul: 250.0
-  # Agilent Getting Started Guide: above 140 uL through 250 uL tips on a 96AM
-  # head, "the excess aspirated liquid will enter the syringes". The tip holds
-  # 250; the head only keeps 140 of it out of the plumbing. Warned about, not
-  # blocked -- it is contamination and a wash, not a crash.
   overflow_ul: 140.0
   label: LT250 teach tip (AssayMAP)
   length_mm: 55.5
   source: vendor-labware-96AM-250uL-Tip-Loading-Station
-  model_3d: null
-  compatible_heads:
-  - HT_96_ASSAYMAP
-- tip_id: am_cartridge_60ul
-  kind: cartridge
-  capacity_ul: 60.0
-  label: AssayMAP cartridge (60 uL bed)
-  length_mm: 29.2
-  source: vendor-labware-96AM-Cartridge-Rack-and-Receiver-Plate
   model_3d: null
   compatible_heads:
   - HT_96_ASSAYMAP

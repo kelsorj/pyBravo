@@ -2978,17 +2978,17 @@ def _validate_workflow_liquid_classes(graph_data: dict, bravo: Bravo) -> list[di
     return errors
 
 
-async def _run_designer_workflow(workflow_id: str, *, mode: str) -> dict:
+async def _run_designer_workflow(workflow_id: str, *, mode: str, checkpoint_options: dict | None = None) -> dict:
     """Reserve workflow ownership before initialization can yield to another request."""
     if _workflow_start_lock.locked() or _active_workflow_executor is not None:
         raise HTTPException(status_code=409, detail="A workflow is starting or running. Wait for it to finish stopping before starting another.")
     async with _workflow_start_lock:
         if _active_workflow_executor is not None:
             raise HTTPException(status_code=409, detail="A workflow is already running.")
-        return await _start_designer_workflow(workflow_id, mode=mode)
+        return await _start_designer_workflow(workflow_id, mode=mode, **({"checkpoint_options": checkpoint_options} if checkpoint_options else {}))
 
 
-async def _start_designer_workflow(workflow_id: str, *, mode: str) -> dict:
+async def _start_designer_workflow(workflow_id: str, *, mode: str, checkpoint_options: dict | None = None) -> dict:
     """Shared implementation for both simulate and execute endpoints.
 
     mode="simulate": builds a fresh simulation-mode Bravo that reuses the
@@ -3006,6 +3006,16 @@ async def _start_designer_workflow(workflow_id: str, *, mode: str) -> dict:
     data = _get_workflow_storage().get_workflow(workflow_id)
     if data is None:
         raise HTTPException(status_code=404, detail="Workflow not found")
+
+    if checkpoint_options:
+        from pybravo.workflow.checkpoints import validate_checkpoint_workflow
+
+        if mode != "simulate":
+            raise HTTPException(status_code=400, detail="Checkpoints are available only for software simulation")
+        try:
+            validate_checkpoint_workflow(data.get("graph", {}), data.get("library", "") or "")
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     generated_rehearsal = bool(
         data.get("protocol_generated_draft") or _has_unreviewed_protocol_nodes(data)
@@ -3068,7 +3078,7 @@ async def _start_designer_workflow(workflow_id: str, *, mode: str) -> dict:
         target_bravo = _bravo
         runtime_snapshot = None
     else:
-        runtime_snapshot = _designer_runtime_snapshot(_bravo)
+        runtime_snapshot = {} if checkpoint_options and checkpoint_options.get("checkpoint") is not None else _designer_runtime_snapshot(_bravo)
         if _bravo is not None:
             # Bravo's mode override mutates its profile. A deep copy keeps the
             # active instrument configuration and controller untouched.
@@ -3170,6 +3180,7 @@ async def _start_designer_workflow(workflow_id: str, *, mode: str) -> dict:
         preview_animation=False,
         library_src=data.get("library", "") or "",
         **({"reviewed_protocol": True} if release_run else {}),
+        **(checkpoint_options or {}),
     )
     _active_workflow_executor = executor
 
@@ -3192,10 +3203,29 @@ async def _start_designer_workflow(workflow_id: str, *, mode: str) -> dict:
     return result
 
 
+class SimulationCheckpointRequest(BaseModel):
+    capture_checkpoint: bool = False
+    checkpoint: dict[str, Any] | None = None
+
+
+@app.get("/api/simulation-checkpoints/capabilities", tags=["Designer"])
+async def simulation_checkpoint_capabilities():
+    """Discover the narrow checkpoint contract without launching a workflow."""
+    from pybravo.workflow.checkpoints import LIMITATIONS, SCHEMA_VERSION
+
+    return {"supported": True, "schema_version": SCHEMA_VERSION, "limitations": LIMITATIONS}
+
+
 @app.post("/api/workflows/{workflow_id}/simulate", tags=["Designer"])
-async def simulate_designer_workflow(workflow_id: str):
+async def simulate_designer_workflow(workflow_id: str, request: SimulationCheckpointRequest | None = None):
     """Run a workflow in simulation mode (no hardware)."""
-    return await _run_designer_workflow(workflow_id, mode="simulate")
+    if request is None or (not request.capture_checkpoint and request.checkpoint is None):
+        return await _run_designer_workflow(workflow_id, mode="simulate")
+    if not request.capture_checkpoint:
+        raise HTTPException(status_code=400, detail="Restoring a checkpoint requires capture_checkpoint=true")
+    return await _run_designer_workflow(workflow_id, mode="simulate", checkpoint_options={
+        "capture_checkpoint": True, "checkpoint": request.checkpoint,
+    })
 
 
 @app.get("/api/workflows/{workflow_id}/mechanical-readiness", tags=["Designer"])

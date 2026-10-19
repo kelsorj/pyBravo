@@ -79,20 +79,47 @@ _COLUMN = re.compile(r"([A-Z]+)([1-9][0-9]*)\Z")
 
 def _source_binds_supply(
     quote: str, *, item: LabwareLoad, supply: InitialSupply, well: str,
-) -> bool:
+) -> str | None:
+    """Return the smallest cited clause that binds this material to this well.
+
+    Deck instructions sometimes describe a reservoir by numbered columns
+    rather than literal well names. Keep each semicolon-separated assignment
+    separate so that an amount for another reagent cannot support this one.
+    """
     named_labware = any(
         re.search(rf"(?<![\w]){re.escape(name)}(?![\w])", quote, re.I)
         for name in (item.label, item.id, item.load_name) if name is not None
     )
-    named_material = supply.source_material_name.casefold() in quote.casefold()
-    named_well = re.search(rf"(?<![A-Za-z0-9]){re.escape(well)}(?![A-Za-z0-9])",
-                           quote, re.I) is not None
-    if supply.selection == "all" and re.search(
-        r"\b(?:all|every|each|entire)\b.*\b(?:well|plate|rack)\b|"
-        r"\bempty\s+at\s+the\s+start\b", quote, re.I,
-    ):
-        named_well = True
-    return named_labware and named_well and named_material
+    if item.slot is not None:
+        named_labware |= re.search(rf"\bslot\s*{item.slot}\b", quote, re.I) is not None
+    if not named_labware:
+        return None
+    column_match = _COLUMN.fullmatch(well)
+    column = int(column_match.group(2)) if column_match else None
+    has_column_assignments = re.search(r"\bcolumns?\s*:", quote, re.I) is not None
+    for clause in quote.split(";"):
+        if supply.source_material_name.casefold() not in clause.casefold():
+            continue
+        if re.search(rf"(?<![A-Za-z0-9]){re.escape(well)}(?![A-Za-z0-9])",
+                     clause, re.I):
+            return clause
+        if supply.selection == "all" and re.search(
+            r"\b(?:all|every|each|entire)\b.*\b(?:well|plate|rack)\b|"
+            r"\bempty\s+at\s+the\s+start\b", clause, re.I,
+        ):
+            return clause
+        if not has_column_assignments or column is None:
+            continue
+        # A column list is a series of assignments: ``2 beads; 4 buffer;
+        # 6–7 alcohol``. Strip only Markdown decoration, then require the
+        # number or range at the start of this reagent's own clause.
+        assignment = re.split(r"\bcolumns?\s*:", clause, maxsplit=1,
+                              flags=re.I)[-1]
+        assignment = re.sub(r"[*_`]", "", assignment).strip()
+        match = re.match(r"^(\d+)(?:\s*[-–—]\s*(\d+))?\s+", assignment)
+        if match and int(match.group(1)) <= column <= int(match.group(2) or match.group(1)):
+            return clause
+    return None
 
 
 def _quotes(
@@ -174,10 +201,11 @@ def parse_setup(
             if (supply.volume_ul is not None and capacity is not None and
                     supply.volume_ul > capacity):
                 raise ActionPlanError("An initial supply exceeds trusted well capacity.")
-            bound = [quote for ref, quote in zip(supply.evidence_refs, quotes, strict=True)
-                     if spans[ref].source == "instruction" and _source_binds_supply(
+            bound = [clause for ref, quote in zip(supply.evidence_refs, quotes, strict=True)
+                     if spans[ref].source == "instruction"
+                     if (clause := _source_binds_supply(
                          quote, item=item, supply=supply, well=well,
-                     )]
+                     )) is not None]
             if not bound:
                 raise ActionPlanError(
                     f"Initial supply {item.id}/{well} needs one cited line naming "

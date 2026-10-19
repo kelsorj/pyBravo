@@ -1,5 +1,3 @@
-# dead_volume_ul values are unreviewed review placeholders; see
-# docs/labware_dead_volume_review.md before using them for a protocol.
 version: 1
 labware_types:
 - labware_type_id: lw-3918306f45b8
@@ -39,8 +37,8 @@ labware_types:
     rows: 32
     cols: 48
     volume_ul: 5.5
-    dead_volume_ul: 0.3
-    dead_volume_status: placeholder
+    dead_volume_ul: 1.0
+    dead_volume_status: reviewed
     depth_mm: 5.2
     diameter_mm: 1.7
     offset_x_mm: 3.375
@@ -60,8 +58,13 @@ labware_types:
     url: /labware-assets/lw-3918306f45b8/1536_Labcyte_LP-0400_LDV.gltf
     filename: 1536_Labcyte_LP-0400_LDV.gltf
     format: gltf
-  tip_definition_id: ''
-  supported_tip_ids: []
+  tip_definition_id: st_10ul
+  supported_tip_ids:
+  - st_10ul
+  - st_30ul
+  - st_70ul
+  compatible_head_types: []
+  provisional: false
 - labware_type_id: lw-34358f93e2a0
   name: 384 CellVis 1.5H
   kind: sbs_plate
@@ -110,9 +113,10 @@ labware_types:
     robot_lid_gripper_offset_mm: 0.5
   well_dimensions_mm:
     dead_volume_ul: 5.0
-    dead_volume_status: placeholder
+    dead_volume_status: reviewed
     rows: 16
     cols: 24
+    volume_ul: 60
     depth_mm: 11.38
     diameter_mm: 3.3
     offset_x_mm: 2.25
@@ -120,13 +124,22 @@ labware_types:
     spacing_x_mm: 4.5
     spacing_y_mm: 4.5
     well_geometry: 2
+    well_bottom_shape: 2
+    tip_source: agilent
+    disposable_tip_capacity_ul: 10
+    disposable_tip_length_mm: null
   pf400: {}
   planar_motor: {}
   labware_class_ids:
   - 01KD4PKQ8DFP12QWDM29CQWZ8A
-  tip_definition_id: ''
-  supported_tip_ids: []
+  tip_definition_id: st_30ul
+  supported_tip_ids:
+  - st_10ul
+  - st_30ul
+  - st_70ul
   model_3d: /labware-assets/lw-34358f93e2a0/Cellvis_P384_1.5H_N.glb
+  compatible_head_types: []
+  provisional: false
 - kind: sbs_plate
   name: 384 Labcyte PP0200 PP sq flt
   vendor: Beckman
@@ -169,7 +182,7 @@ labware_types:
     depth_mm: 11.4
     volume_ul: 130
     dead_volume_ul: 6.5
-    dead_volume_status: placeholder
+    dead_volume_status: reviewed
     spacing_x_mm: 4.5
     spacing_y_mm: 4.5
     offset_x_mm: 2.25
@@ -309,6 +322,8 @@ labware_types:
     max_acceleration_m_per_s2: 0.5
   tip_definition_id: ''
   supported_tip_ids: []
+  compatible_head_types: []
+  provisional: false
 - labware_type_id: lw-4914769d0af7
   name: 384 V11 ST10 Tip Box 10734.102
   kind: sbs_plate
@@ -369,12 +384,12 @@ labware_types:
     url: /labware-assets/lw-4914769d0af7/ST_Tip_Box.gltf
     filename: ST_Tip_Box.gltf
     format: gltf
-  # The ST10 rack also accepts 70 uL ST tips (scientist-confirmed).
-  # Rack naming/defaults do not select the consumable loaded by the scientist.
   tip_definition_id: st_10ul
   supported_tip_ids:
   - st_10ul
   - st_70ul
+  compatible_head_types: []
+  provisional: false
 - kind: sbs_plate
   name: 96 Costar 3596 clear cell culture PS flt btm
   vendor: Costar
@@ -412,18 +427,22 @@ labware_types:
     filter_channel_resting_depth_mm: 0.0
     requires_insert: None
   well_dimensions_mm:
-    dead_volume_ul: 10.0
-    dead_volume_status: placeholder
+    dead_volume_ul: 4.0
+    dead_volume_status: reviewed
     diameter_mm: 6.4
     depth_mm: 10.75
-    spacing_x_mm: 9.0
-    spacing_y_mm: 9.0
-    offset_x_mm: 0.0
-    offset_y_mm: 0.0
+    spacing_x_mm: 9
+    spacing_y_mm: 9
+    offset_x_mm: 0
+    offset_y_mm: 0
     rows: 8
     cols: 12
     well_geometry: 1
     well_bottom_shape: 2
+    volume_ul: 120
+    tip_source: agilent
+    disposable_tip_capacity_ul: 10
+    disposable_tip_length_mm: null
   model_3d:
     url: /models/labware/uploads/01KD4P500RXXP69X03R0SDGS7C/model.gltf
     format: gltf
@@ -541,8 +560,15 @@ labware_types:
   updated_at: 2025-12-23 05:02:11.471000
   pf400: {}
   planar_motor: {}
-  tip_definition_id: ''
-  supported_tip_ids: []
+  tip_definition_id: lt_200ul
+  supported_tip_ids:
+  - lt_200ul
+  - lt_250ul
+  - st_10ul
+  - st_30ul
+  - st_70ul
+  compatible_head_types: []
+  provisional: false
 - labware_type_id: lw-0188881d2601
   name: 96 Deepwell U-Bottom
   kind: sbs_plate
@@ -580,7 +606,7 @@ labware_types:
   well_dimensions_mm:
     volume_ul: 200
     dead_volume_ul: 10.0
-    dead_volume_status: placeholder
+    dead_volume_status: reviewed
     depth_mm: 32.4
     diameter_mm: 6.5
     offset_x_mm: null
@@ -592,6 +618,8 @@ labware_types:
     tip_source: agilent
     disposable_tip_capacity_ul: 10
     disposable_tip_length_mm: null
+    rows: null
+    cols: null
   pf400: {}
   planar_motor: {}
   labware_class_ids: []
@@ -601,6 +629,8 @@ labware_types:
     url: /labware-assets/lw-0188881d2601/Part_Studio_1.gltf
     filename: Part_Studio_1.gltf
     format: gltf
+  compatible_head_types: []
+  provisional: false
 - labware_type_id: lw-d4fcc14aaa86
   name: 96 Nunc Flatbottom
   kind: sbs_plate
@@ -637,8 +667,8 @@ labware_types:
     requires_insert: None
   well_dimensions_mm:
     volume_ul: 100
-    dead_volume_ul: 5.0
-    dead_volume_status: placeholder
+    dead_volume_ul: 10.0
+    dead_volume_status: reviewed
     depth_mm: 9
     diameter_mm: 6.4
     offset_x_mm: null
@@ -650,12 +680,67 @@ labware_types:
     tip_source: agilent
     disposable_tip_capacity_ul: 10
     disposable_tip_length_mm: null
+    rows: null
+    cols: null
   pf400: {}
   planar_motor: {}
   labware_class_ids: []
   tip_definition_id: ''
   supported_tip_ids: []
   model_3d: null
+  compatible_head_types: []
+  provisional: false
+- labware_type_id: lw-96st-provisional
+  name: 96 ST Tip Box
+  provisional: true
+  compatible_head_types:
+  - HT_96_D_70
+  - HT_96_D_70_S2
+  kind: sbs_plate
+  vendor: ''
+  catalog_number: ''
+  description: Proposed 96-position ST rack for visual review only. The 8x12 grid
+    at 9 mm pitch follows the requested 96LT spacing; the 3.3 mm support-hole opening
+    is derived from the checked-in 384ST mesh. The external 127.76 x 85.48 mm footprint
+    and 50 mm catalog thickness are borrowed from the existing 384ST record, not confirmed
+    for a physical 96ST product. Agilent documents 2.25 mm ST teachpoint-to-well offsets.
+    No tip types are approved for this rack until the scientist confirms the model
+    and physical dimensions.
+  base_class: tip_box
+  wells: 96
+  plate_dimensions_mm:
+    length_mm: 127.76
+    width_mm: 85.48
+    height_mm: 0
+  plate_properties:
+    robot_gripper_offset_mm: 10
+    thickness_mm: 50.0
+    stacking_thickness_mm: 0
+    can_be_sealed: false
+    can_have_lid: false
+    can_mount: false
+    can_be_mounted: false
+    max_robot_handling_speed: fast
+  well_dimensions_mm:
+    rows: 8
+    cols: 12
+    offset_x_mm: 2.25
+    offset_y_mm: 2.25
+    spacing_x_mm: 9.0
+    spacing_y_mm: 9.0
+    diameter_mm: 3.3
+    disposable_tip_capacity_ul: 0
+    disposable_tip_length_mm: null
+  pf400: {}
+  planar_motor: {}
+  labware_class_ids:
+  - class-ed784ac151ec
+  model_3d:
+    url: /labware-assets/lw-96st-provisional/96_ST_Tip_Box_Provisional.gltf
+    filename: 96_ST_Tip_Box_Provisional.gltf
+    format: gltf
+  tip_definition_id: ''
+  supported_tip_ids: []
 - labware_type_id: lw-b0704e550d2a
   name: 96 V11 LT200 Tip Box 06880.002
   kind: sbs_plate
@@ -712,100 +797,8 @@ labware_types:
   supported_tip_ids:
   - lt_200ul
   model_3d: null
-- labware_type_id: lw-651f80d816b1
-  name: TestPlate
-  kind: sbs_plate
-  vendor: ''
-  catalog_number: ''
-  description: ''
-  base_class: microplate
-  wells: 96
-  plate_dimensions_mm:
-    length_mm: 127.76
-    width_mm: 85.48
-    height_mm: 0
-  plate_properties:
-    robot_gripper_offset_mm: 5
-    robot_lid_gripper_offset_mm: null
-    empty_check_offset_mm: null
-    thickness_mm: 13.2
-    stacking_thickness_mm: 12.1
-    shim_thickness_mm: null
-    can_be_sealed: false
-    sealed_thickness_mm: null
-    sealed_stacking_thickness_mm: null
-    can_have_lid: false
-    lidded_thickness_mm: null
-    lidded_stacking_thickness_mm: null
-    lid_resting_height_mm: null
-    lid_departure_height_mm: null
-    lower_plate_at_labeler: false
-    can_mount: false
-    can_be_mounted: false
-    max_robot_handling_speed: fast
-    filter_tip_pin_tool_length_mm: null
-    filter_channel_resting_depth_mm: null
-    requires_insert: None
-  well_dimensions_mm:
-    dead_volume_ul: 10.0
-    dead_volume_status: placeholder
-  pf400: {}
-  planar_motor: {}
-  labware_class_ids: []
-  tip_definition_id: ''
-  supported_tip_ids: []
-- labware_type_id: lw-96st-provisional
-  name: 96 ST Tip Box (provisional model)
-  provisional: true
-  compatible_head_types:
-  - HT_96_D_70
-  - HT_96_D_70_S2
-  kind: sbs_plate
-  vendor: ''
-  catalog_number: ''
-  description: >-
-    Proposed 96-position ST rack for visual review only. The 8x12 grid at 9 mm
-    pitch follows the requested 96LT spacing; the 3.3 mm support-hole opening
-    is derived from the checked-in 384ST mesh. The external 127.76 x 85.48 mm
-    footprint and 50 mm catalog thickness are borrowed from the existing 384ST
-    record, not confirmed for a physical 96ST product. Agilent documents 2.25 mm
-    ST teachpoint-to-well offsets. No tip types are approved for this rack until
-    the scientist confirms the model and physical dimensions.
-  base_class: tip_box
-  wells: 96
-  plate_dimensions_mm:
-    length_mm: 127.76
-    width_mm: 85.48
-    height_mm: 0
-  plate_properties:
-    robot_gripper_offset_mm: 10
-    thickness_mm: 50.0
-    stacking_thickness_mm: 0
-    can_be_sealed: false
-    can_have_lid: false
-    can_mount: false
-    can_be_mounted: false
-    max_robot_handling_speed: fast
-  well_dimensions_mm:
-    rows: 8
-    cols: 12
-    offset_x_mm: 2.25
-    offset_y_mm: 2.25
-    spacing_x_mm: 9.0
-    spacing_y_mm: 9.0
-    diameter_mm: 3.3
-    disposable_tip_capacity_ul: 0
-    disposable_tip_length_mm: null
-  pf400: {}
-  planar_motor: {}
-  labware_class_ids:
-  - class-ed784ac151ec
-  model_3d:
-    url: /labware-assets/lw-96st-provisional/96_ST_Tip_Box_Provisional.gltf
-    filename: 96_ST_Tip_Box_Provisional.gltf
-    format: gltf
-  tip_definition_id: ''
-  supported_tip_ids: []
+  compatible_head_types: []
+  provisional: false
 labware_classes:
 - labware_class_id: 01KD4PKQ8DFP12QWDM29CQWZ8A
   name: Standard Microplate

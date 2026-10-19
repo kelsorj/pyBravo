@@ -140,6 +140,58 @@ def test_setup_claims_need_exact_source_units_and_catalog_wells():
                     paper=None, labware_catalog=_LABWARE)
 
 
+def test_reservoir_column_supplies_bind_material_and_quantity_within_one_clause():
+    instruction = (
+        "Reservoir (slot 5) columns: **2** 40 uL beads; **4** 100 uL buffer; "
+        "**6–7** isopropanol.\n"
+    )
+    spans, _ = one_shot._line_spans(instruction, None)
+    catalog = {"reservoir": LabwareFacts(
+        frozenset({f"A{column}" for column in range(1, 8)}),
+        tuple(f"A{column}" for column in range(1, 8)),
+        well_capacity_ul={f"A{column}": 15000 for column in range(1, 8)},
+    )}
+    setup = {
+        "labware": [{"id": "reservoir", "load_name": "reservoir", "slot": 5}],
+        "pipettes": [],
+        "stages": [{"id": "later", "goal": "Do later work", "evidence_refs": ["task.L1"]}],
+        "initial_supplies": [
+            {"labware": "reservoir", "selection": "wells_in_columns",
+             "columns": [2], "volume_ul": 40, "material_id": "beads",
+             "source_material_name": "beads", "evidence_refs": ["task.L1"]},
+            {"labware": "reservoir", "selection": "wells_in_columns",
+             "columns": [4], "volume_ul": 100, "material_id": "buffer",
+             "source_material_name": "buffer", "evidence_refs": ["task.L1"]},
+            {"labware": "reservoir", "selection": "wells_in_columns",
+             "columns": [6, 7], "volume_ul": None, "material_id": "isopropanol",
+             "source_material_name": "isopropanol", "evidence_refs": ["task.L1"]},
+        ],
+    }
+    assert len(parse_setup(setup, spans=spans, instruction=instruction,
+                           paper=None, labware_catalog=catalog).initial_supplies) == 3
+
+    aliased = json.loads(json.dumps(setup))
+    aliased["labware"][0].update(id="stock", load_name="synthetic_trough")
+    for supply in aliased["initial_supplies"]:
+        supply["labware"] = "stock"
+    assert len(parse_setup(aliased, spans=spans, instruction=instruction,
+                           paper=None,
+                           labware_catalog={"synthetic_trough": catalog["reservoir"]}
+                           ).initial_supplies) == 3
+
+    wrong = json.loads(json.dumps(setup))
+    wrong["initial_supplies"][0]["volume_ul"] = 100
+    with pytest.raises(ActionPlanError, match="same cited"):
+        parse_setup(wrong, spans=spans, instruction=instruction,
+                    paper=None, labware_catalog=catalog)
+
+    wrong = json.loads(json.dumps(setup))
+    wrong["initial_supplies"][0]["source_material_name"] = "buffer"
+    with pytest.raises(ActionPlanError, match="source material"):
+        parse_setup(wrong, spans=spans, instruction=instruction,
+                    paper=None, labware_catalog=catalog)
+
+
 def test_saved_setup_alias_is_narrow_and_source_coverage_is_not_certification():
     original = _setup()
     original["initial_supplies"][0]["labware_id"] = original["initial_supplies"][0].pop(

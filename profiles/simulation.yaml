@@ -1,11 +1,9 @@
 name: simulation
 connection:
-  use_ethernet: false
+  use_ethernet: true
   address: ''
   serial_port: ''
   controller_type: simulation
-  # Model this configured Bravo while using the software-only controller.
-  # Liquid classes are shared with its physical profile, not copied.
   machine_id: 04-91-62-CF-7B-B0
 head:
   head_type: HT_384_D_70
@@ -44,8 +42,10 @@ safety:
   allow_tos_fluid_handling: false
   enable_tips_on_tip_touch: false
   pin_tool_tip_type: 33 mm
+  cartridge_shuck_g_mm: 4.0
+  cartridge_shuck_zg_mm: 20.0
 vision:
-  enabled: false
+  enabled: true
   service_url: http://127.0.0.1:8101
   sdk_root: external/pyorbbecsdk
 accessories:
@@ -69,6 +69,7 @@ axes:
     homing_soft_stop_decel: 300.0
     min_move_full_accel: 0.0
     check_for_alignment: 1
+    darwin_calibration_offset: 0.0
     fast_velocity: 400.0
     fast_acceleration: 2000.0
     med_velocity: 200.0
@@ -91,6 +92,7 @@ axes:
     homing_soft_stop_decel: 300.0
     min_move_full_accel: 0.0
     check_for_alignment: 1
+    darwin_calibration_offset: 0.0
     fast_velocity: 400.0
     fast_acceleration: 2000.0
     med_velocity: 200.0
@@ -113,6 +115,7 @@ axes:
     homing_soft_stop_decel: 300.0
     min_move_full_accel: 0.0
     check_for_alignment: 1
+    darwin_calibration_offset: 0.0
     fast_velocity: 150.0
     fast_acceleration: 1500.0
     med_velocity: 75.0
@@ -135,6 +138,7 @@ axes:
     homing_soft_stop_decel: 300.0
     min_move_full_accel: 0.0
     check_for_alignment: 1
+    darwin_calibration_offset: 0.0
     fast_velocity: 250.0
     fast_acceleration: 2500.0
     med_velocity: 125.0
@@ -157,6 +161,7 @@ axes:
     homing_soft_stop_decel: 300.0
     min_move_full_accel: 0.0
     check_for_alignment: 1
+    darwin_calibration_offset: 0.0
     fast_velocity: 50.0
     fast_acceleration: 500.0
     med_velocity: 25.0
@@ -179,6 +184,7 @@ axes:
     homing_soft_stop_decel: 300.0
     min_move_full_accel: 0.0
     check_for_alignment: 1
+    darwin_calibration_offset: 0.0
     fast_velocity: 150.0
     fast_acceleration: 1500.0
     med_velocity: 75.0

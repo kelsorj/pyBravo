@@ -62,6 +62,7 @@ class Stroke(_ActionBase):
     labware: str
     well: str
     volume_ul: float = Field(gt=0)
+    location: Literal["well", "top"] = "well"
 
 
 class Mix(_ActionBase):
@@ -701,6 +702,8 @@ def compile_actions(
                 f"{minimum:g}–{maximum:g} µL range with loaded tips."
             )
         if isinstance(action, Stroke):
+            if action.kind == "aspirate" and action.location != "well":
+                raise ActionPlanError(f"{path} cannot aspirate from the well rim.")
             if action.kind == "aspirate":
                 if held[name] + action.volume_ul > maximum + 1e-9:
                     raise ActionPlanError(f"{path} would exceed {name!r}'s tip capacity.")
@@ -778,7 +781,8 @@ def compile_actions(
                 if isinstance(action, Mix):
                     lines.append(f"    {pip}.mix({action.cycles!r}, {action.volume_ul!r}, {well})")
                 else:
-                    lines.append(f"    {pip}.{action.kind}({action.volume_ul!r}, {well})")
+                    location = f"{well}.top()" if action.location == "top" else well
+                    lines.append(f"    {pip}.{action.kind}({action.volume_ul!r}, {location})")
     if not expanded_actions and not plan.labware and not plan.modules and not plan.pipettes:
         lines.append("    pass")
     return "\n".join(lines) + "\n"
