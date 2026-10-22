@@ -549,6 +549,12 @@ FILL_PRIMED_RISE_PCT = 1.5  # level rise (above weigh-pad ripple) that shows the
 DRAIN_PRIME_TIMEOUT_S = 8.0  # a dry drain line took several seconds even at 100 %
 DRAIN_PRIMED_SLOPE_PCT_S = 1.5  # level falling at least this fast: the drain pulls
 INTEGRAL_UNWIND_GAIN = 3.0
+# Supply stall: filling at >= this inflow with the drain closed, the level
+# rising slower than FILL_STALL_SLOPE_PCT_S for FILL_STALL_S -> prime again
+# (measured 2026-10-07: air in the supply hose, 50 % then lifts nothing).
+FILL_STALL_MIN_INFLOW_PCT = 20.0
+FILL_STALL_SLOPE_PCT_S = 0.3
+FILL_STALL_S = 4.0
 
 
 class LevelHoldController:
@@ -607,6 +613,9 @@ class LevelHoldController:
         # speed until the level actually rises, then drop to the request.
         self._fill_priming = prime_fill
         self._fill_prime_left = fill_prime_timeout_s
+        self._fill_prime_timeout = fill_prime_timeout_s
+        self._stall_s = 0.0
+        self.fill_reprimes = 0  # times the supply had to be primed again
         self._start_level: float | None = None
         self._prime_s = prime_s
         self._prime_lead = prime_before_target_pct
@@ -687,6 +696,18 @@ class LevelHoldController:
             # The inflow is the slow loop and the drain the fast one, so the
             # two never chase each other.
             self.inflow = self._ramp(self.inflow, goal, self._inflow_rate, dt_s)
+            # Supply lost its prime (air in the hose): filling with the drain
+            # closed, yet the level has stopped rising. Prime it again.
+            stalled = (self.inflow >= FILL_STALL_MIN_INFLOW_PCT and self.drain < 5.0
+                       and self._slope < FILL_STALL_SLOPE_PCT_S and level_pct < self.target)
+            self._stall_s = self._stall_s + dt_s if stalled else 0.0
+            if self._stall_s >= FILL_STALL_S:
+                self._stall_s = 0.0
+                self._fill_priming = True
+                self._start_level = level_pct
+                self._fill_prime_left = self._fill_prime_timeout
+                self.fill_reprimes += 1
+                self.inflow = 100.0
 
         # Drain: PI around "drain = inflow". Well below the target the
         # "drain = inflow" share fades out, so the drain stays closed while filling.
@@ -731,6 +752,13 @@ class LevelHoldController:
     def priming(self) -> bool:
         """True while the drain-priming pulse is running."""
         return self._priming_left > 1e-9
+
+    @property
+    def ready(self) -> bool:
+        """Both lines primed and the working target at the requested one."""
+        drain_primed = self._primed or self.requested_target < PRIME_MIN_LEVEL_PCT
+        return (not self._fill_priming and drain_primed and not self.priming
+                and abs(self.target - self.requested_target) < 1e-6)
 
 
 class SimulatedAutofillModule:

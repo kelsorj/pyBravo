@@ -184,7 +184,7 @@ address the station by its deck `location`, like plate steps do.
 
 | Node | Operation | Key properties |
 |---|---|---|
-| Pump Reagent | `pump_reagent` | location, reservoir mode (Fill / Empty / Hold level), pump speed, pump on time, how often, allow concurrent, second pump, weigh station thresholds, hold target level |
+| Pump Reagent | `pump_reagent` | location, reservoir mode (Fill / Empty / Hold level), pump speed, pump on time, how often, allow concurrent, second pump, weigh station thresholds, hold target level, hold time from target, max reach time |
 | Stop Pumps | `autofill_stop_pumps` | location |
 | Read Level | `autofill_read_level` | location, `store_as` |
 
@@ -208,8 +208,19 @@ address the station by its deck `location`, like plate steps do.
   working target ramps from the current level to the requested one, both
   lines are primed at 100 % first (supply until the level rises, drain near
   the target until the level falls), and the inflow is throttled when the
-  drain cannot keep up. The pumps stop if the tray reaches 100 %. Hold always
-  uses the weigh station, so it needs tare and range set.
+  drain cannot keep up. If the supply stops delivering while filling (air in
+  the hose: the level stops rising with the drain closed), it is primed at
+  100 % again. The pumps stop if the tray reaches 100 %. Hold always uses the
+  weigh station, so it needs tare and range set.
+- **Hold time from the target.** By default `pump_on_time_s` includes filling
+  and priming. With `time_from_target` the clock starts only once both hoses
+  are primed and the level is within 2 % of `target_level_pct`. Getting there
+  may take up to `max_reach_time_s` (default 120 s); if the target is not
+  reached by then, the pumps stop and the step fails. Hold time plus
+  `max_reach_time_s` must fit within the station's run limit. Combined with
+  `allow_concurrent`, the step returns once the target is reached and keeps
+  holding alongside the next steps, so a following Mix never starts in an
+  empty or priming tray.
 
 A tip wash is a Loop around three steps: Pump Reagent (Fill), a Mix at the
 station's location as if it were a plate, and Pump Reagent (Empty). To change

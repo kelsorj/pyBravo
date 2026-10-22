@@ -79,7 +79,7 @@ def test_pump_reagent_params():
         "location": 3, "reservoir_mode": "empty", "pump_speed_pct": 80.0, "pump_on_time_s": 7.0,
         "allow_concurrent": True, "run_second_pump": True, "second_pump_speed_pct": 30.0,
         "use_weigh_station": True, "action_threshold_pct": 60.0, "stop_threshold_pct": 10.0,
-        "target_level_pct": 75.0,
+        "target_level_pct": 75.0, "time_from_target": False, "max_reach_time_s": 120.0,
     }
 
 
@@ -233,12 +233,30 @@ def test_the_supply_is_primed_at_full_speed_until_the_level_rises():
     assert controller.update(2.0, 0.5)[0] == 50.0  # it arrives: straight to the request
 
 
+def test_a_supply_that_stops_delivering_is_primed_again():
+    """Measured 2026-10-07: the supply delivered for a few seconds at 50 %,
+    then air reached the pump and the level stayed flat for 110 s."""
+    from pybravo.accessories.autofill import LevelHoldController
+
+    controller = LevelHoldController(75.0, 50.0)
+    controller.update(0.0, 0.5)
+    for i in range(1, 6):
+        controller.update(2.0 * i, 0.5)  # delivering: priming over, inflow 50 %
+    assert controller.inflow == 50.0
+    inflows = [controller.update(10.0, 0.5)[0] for _ in range(40)]  # level stuck for 20 s
+    assert inflows[-1] == 100.0 and controller.fill_reprimes == 1
+    assert inflows.index(100.0) <= 30  # noticed within ~15 s (the slope is smoothed)
+    assert controller.update(12.0, 0.5)[0] == 50.0  # flowing again: back to the request
+
+
 def test_supply_priming_gives_up_after_its_timeout():
     from pybravo.accessories.autofill import LevelHoldController
 
     controller = LevelHoldController(75.0, 50.0, fill_prime_timeout_s=5.0)
     inflows = [controller.update(0.0, 0.5)[0] for _ in range(20)]
-    assert inflows[8] == 100.0 and inflows[-1] == 50.0
+    # Gives up after 5 s; with nothing arriving it later tries again (the
+    # hold's max_reach_time_s is what ends a supply that never delivers).
+    assert inflows[8] == 100.0 and inflows[9] == 50.0
 
 
 def test_a_hold_starting_above_target_ramps_the_drain_open():
@@ -314,6 +332,78 @@ async def test_hold_mode_in_simulation_settles_at_the_target():
     assert result["status"] == "done"
     assert abs(result["end_level_pct"] - 40) < 5
     assert abs(result["final_inflow_pct"] - 50) < 3  # back near the request once settled
+    assert not _driver(bravo).is_running
+
+
+@pytest.mark.asyncio
+async def test_hold_time_can_count_from_reaching_the_target():
+    import time
+
+    bravo = _sim_bravo()  # empty tray: filling and priming come first
+    t0 = time.monotonic()
+    result = await bravo.pump_reagent(STATION, reservoir_mode="hold", pump_speed_pct=50,
+                                      target_level_pct=40, pump_on_time_s=3, time_from_target=True)
+    elapsed = time.monotonic() - t0
+    assert result["reached_target_after_s"] > 1.0
+    assert result["held_s"] == 3
+    assert elapsed >= result["reached_target_after_s"] + 3 - 0.6  # the hold itself was not cut short
+    assert abs(result["end_level_pct"] - 40) < 5
+    assert not _driver(bravo).is_running
+
+
+@pytest.mark.asyncio
+async def test_hold_from_target_fails_when_the_target_is_out_of_reach():
+    bravo = _sim_bravo()
+    with pytest.raises(ValueError, match="not reached"):
+        await bravo.pump_reagent(STATION, reservoir_mode="hold", pump_speed_pct=50,
+                                 target_level_pct=90, pump_on_time_s=30,
+                                 time_from_target=True, max_reach_time_s=1.5)
+    assert not _driver(bravo).is_running
+
+
+@pytest.mark.asyncio
+async def test_hold_from_target_explains_the_run_limit():
+    bravo = _sim_bravo()
+    with pytest.raises(ValueError, match="run limit"):
+        await bravo.pump_reagent(STATION, reservoir_mode="hold", target_level_pct=50, pump_on_time_s=600,
+                                 time_from_target=True, max_reach_time_s=120)
+    assert not _driver(bravo).is_running
+
+
+@pytest.mark.asyncio
+async def test_a_hold_reports_its_phase():
+    bravo = _sim_bravo()
+    await bravo.pump_reagent(STATION, reservoir_mode="hold", pump_speed_pct=50, target_level_pct=60,
+                             pump_on_time_s=30, allow_concurrent=True, time_from_target=True,
+                             wait_for_target=False)  # as the manual panel does
+    hold = bravo.accessory_status()["devices"][0]["runtime"]["hold"]
+    assert hold["phase"] == "reaching" and hold["hold_seconds_remaining"] is None
+    bravo.stop_all_pumps()
+
+
+@pytest.mark.asyncio
+async def test_a_concurrent_hold_from_target_returns_once_the_target_is_reached():
+    """So a following Mix never starts in an empty or priming reservoir."""
+    bravo = _sim_bravo()
+    result = await bravo.pump_reagent(STATION, reservoir_mode="hold", pump_speed_pct=50,
+                                      target_level_pct=40, pump_on_time_s=30, allow_concurrent=True,
+                                      time_from_target=True)
+    assert result["status"] == "running"
+    level = bravo.read_autofill_level("autofill")["level_pct"]
+    assert abs(level - 40) < 4
+    hold = bravo.accessory_status()["devices"][0]["runtime"]["hold"]
+    assert hold["phase"] == "holding" and hold["hold_seconds_remaining"] > 25
+    assert _driver(bravo).is_running  # still holding alongside the next steps
+    bravo.stop_all_pumps()
+
+
+@pytest.mark.asyncio
+async def test_a_concurrent_hold_from_target_fails_the_step_when_out_of_reach():
+    bravo = _sim_bravo()
+    with pytest.raises(ValueError, match="not reached"):
+        await bravo.pump_reagent(STATION, reservoir_mode="hold", pump_speed_pct=50,
+                                 target_level_pct=90, pump_on_time_s=30, allow_concurrent=True,
+                                 time_from_target=True, max_reach_time_s=1.5)
     assert not _driver(bravo).is_running
 
 

@@ -416,6 +416,8 @@ def _build_task_params(node_type: str, properties: dict[str, Any]) -> dict[str, 
             params["action_threshold_pct"] = float(properties.get("action_threshold_pct", 50))
             params["stop_threshold_pct"] = float(properties.get("stop_threshold_pct", 50))
             params["target_level_pct"] = float(properties.get("target_level_pct", 75))
+            params["time_from_target"] = bool(properties.get("time_from_target", False))
+            params["max_reach_time_s"] = float(properties.get("max_reach_time_s", 120))
 
     elif node_type == "system/Home":
         axes_str = properties.get("axes", "X,Y,Z,W,G,Zg")

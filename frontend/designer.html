@@ -3285,7 +3285,8 @@ function registerNodeTypes() {
             if (this.type === 'accessory/PumpReagent') {
                 const rm = this.properties.reservoir_mode;
                 if (rm === 'hold') {
-                    parts.push(`Hold ${this.properties.target_level_pct}% ${this.properties.pump_on_time_s}s`);
+                    const fromTarget = this.properties.time_from_target ? ' at target' : '';
+                    parts.push(`Hold ${this.properties.target_level_pct}% ${this.properties.pump_on_time_s}s${fromTarget}`);
                 } else {
                     const mode = rm === 'empty' ? 'Empty' : 'Fill';
                     parts.push(`${mode}${this.properties.run_second_pump ? '+2nd' : ''} ${this.properties.pump_on_time_s}s`);
@@ -3410,6 +3411,11 @@ function registerNodeTypes() {
         run_second_pump: false, second_pump_speed_pct: 50,
         use_weigh_station: false, action_threshold_pct: 50, stop_threshold_pct: 50,
         target_level_pct: 75,
+        // Hold only: count pump_on_time_s from when the level reaches the
+        // target (filling + priming excluded), allowing max_reach_time_s.
+        // With allow_concurrent the step returns once the target is reached
+        // and holds alongside the next steps (e.g. Mix in flowing water).
+        time_from_target: false, max_reach_time_s: 120,
     });
     makeTaskNode('Stop Pumps', 'accessory', 'accessory', { location: 1 });
     makeTaskNode('Read Level', 'accessory', 'accessory', { location: 1, store_as: '' }, [['level', 'number']]);

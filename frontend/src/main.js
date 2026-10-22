@@ -5148,8 +5148,13 @@ function watchAutofillRun(accessoryId) {
             ? ` · inflow limited to ${Math.round(hold.inflow_limit_pct)} % (drain can't keep up)` : '';
         const stepping = hold && hold.step_target_pct != null && hold.step_target_pct !== hold.target_level_pct
             ? ` (step ${Math.round(hold.step_target_pct)} %)` : '';
-        const what = hold ? `holding ${hold.target_level_pct} %${stepping}${limited}` : 'running';
-        setAutofillStatus(`${what}${speedText ? ` · ${speedText}` : ''}${timeText}`);
+        const what = !hold ? 'running'
+            : hold.phase === 'reaching' ? `reaching ${hold.target_level_pct} % (priming, time not counted yet)${limited}`
+            : `holding ${hold.target_level_pct} %${stepping}${limited}`;
+        // A hold that counts from the target reports its own time left.
+        const holdTime = hold && hold.hold_seconds_remaining != null
+            ? `, ${hold.hold_seconds_remaining.toFixed(1)} s left` : (hold && hold.phase === 'reaching' ? '' : timeText);
+        setAutofillStatus(`${what}${speedText ? ` · ${speedText}` : ''}${holdTime}`);
         // Follow the liquid in the 3D view while pumping, even without Live.
         if (!autofillLiveTimer) void readAutofillWeight();
     }, 500);
@@ -5216,14 +5221,15 @@ async function holdSelectedAutofill() {
         return;
     }
     const current = selectedAutofill() || device;
+    const fromTarget = !!document.getElementById('accessory-autofill-hold-from-target')?.checked;
     const res = await apiCall(`/api/accessories/${encodeURIComponent(current.id)}/autofill/hold`, 'POST', {
-        target_level_pct: target, inflow_pct: inflow, duration_s: duration,
+        target_level_pct: target, inflow_pct: inflow, duration_s: duration, time_from_target: fromTarget,
     });
     if (!res) {
         setAutofillStatus('error');
         return;
     }
-    log(`Holding ${target} % at ${inflow} % inflow for ${duration} s`, 'success');
+    log(`Holding ${target} % at ${inflow} % inflow for ${duration} s${fromTarget ? ' from reaching the target' : ''}`, 'success');
     autofillHoldAccessoryId = current.id;
     setAutofillLive(true);
     watchAutofillRun(current.id);

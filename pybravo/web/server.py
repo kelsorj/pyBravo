@@ -1817,9 +1817,11 @@ class AutofillHoldRequest(BaseModel):
     target_level_pct: float
     inflow_pct: float = 50.0
     duration_s: float
+    time_from_target: bool = False
+    max_reach_time_s: float = 120.0
 
 
-@app.post("/api/accessories/{accessory_id}/autofill/hold", **_route_meta("State", "Hold the autofill level", "Runs fill and drain together for duration_s while the weigh pad steers the drain to hold target_level_pct at the given inflow. Returns at once; the pumps stop after duration_s, on Stop, or if the tray reaches 100 %."))
+@app.post("/api/accessories/{accessory_id}/autofill/hold", **_route_meta("State", "Hold the autofill level", "Runs fill and drain together for duration_s while the weigh pad steers the drain to hold target_level_pct at the given inflow. With time_from_target, duration_s counts from when the hoses are primed and the level is at the target (reaching it may take up to max_reach_time_s). Returns at once; the pumps stop after the hold, on Stop, or if the tray reaches 100 %."))
 async def hold_autofill_level(accessory_id: str, req: AutofillHoldRequest):
     try:
         bravo = get_bravo()
@@ -1829,6 +1831,8 @@ async def hold_autofill_level(accessory_id: str, req: AutofillHoldRequest):
         return await bravo.pump_reagent(
             int(device.location or 0), reservoir_mode="hold", pump_speed_pct=req.inflow_pct,
             target_level_pct=req.target_level_pct, pump_on_time_s=req.duration_s, allow_concurrent=True,
+            time_from_target=req.time_from_target, max_reach_time_s=req.max_reach_time_s,
+            wait_for_target=False,  # the panel follows the phase in the status instead
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

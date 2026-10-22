@@ -702,17 +702,30 @@ Control it from **Config → Accessories** or the API:
 - `GET /api/accessories/{accessory_id}/autofill/level` returns the raw reading and the level in %.
 - `POST /api/accessories/{accessory_id}/autofill/run` with `{"duration_s": 5, "fill": true, "empty": false}` runs pumps for a set time.
 - `POST /api/accessories/{accessory_id}/autofill/stop` stops every pump on the module.
-- `POST /api/accessories/{accessory_id}/autofill/hold` with `{"target_level_pct": 75, "inflow_pct": 50, "duration_s": 120}` holds the level while liquid flows through the tray; it returns at once.
+- `POST /api/accessories/{accessory_id}/autofill/hold` with `{"target_level_pct": 75, "inflow_pct": 50, "duration_s": 120}` holds the level while liquid flows through the tray; it returns at once. Add `"time_from_target": true` to count `duration_s` only from when the level reaches the target, and `"max_reach_time_s"` (default 120) to limit how long reaching it may take.
 - `POST /api/accessories/{accessory_id}/autofill/hold/update` with `{"target_level_pct": 50}` and/or `{"inflow_pct": 70}` changes a running hold; the pumps ramp to the new values.
 
 **Hold level.** Fill and drain run together; the weigh pad steers the drain to
 keep the tray at the target while the fill pump runs at the requested inflow.
 Idle lines lose their prime, so a hold first runs the supply at 100 % until the
 level rises, and the drain at 100 % once the level is near the target until it
-clearly falls. The inflow is throttled when the drain cannot keep up, and the
-pumps stop if the tray reaches 100 %. The Accessories panel has a **Hold**
-button with target and inflow fields (edits apply to a running hold), shows the
-commanded pump speeds, and charts level and pump speeds over the last 120 s.
+clearly falls. If the supply stops delivering while filling (air reached the
+pump: the level stops rising with the drain closed for a few seconds), it is
+primed at 100 % again; the hold reports how often as `fill_reprimes`. The
+inflow is throttled when the drain cannot keep up, and the pumps stop if the
+tray reaches 100 %.
+
+By default the run time includes filling and priming. With **time from
+target** (`time_from_target`), the clock starts only once both hoses are
+primed and the level is within 2 % of the target; until then the hold reports
+phase `reaching`, then `holding` with `hold_seconds_remaining`. Reaching the
+target may take up to `max_reach_time_s` (default 120 s); after that the pumps
+stop and the hold fails.
+
+The Accessories panel has a **Hold** button with target and inflow fields
+(edits apply to a running hold) and a **time from target** checkbox, shows the
+hold phase, the time left and the commanded pump speeds, and charts level and
+pump speeds over the last 120 s.
 The empty-tray reading depends on whether the hoses are full, so set tare with
 the lines in the state they will be in during a run.
 

@@ -198,13 +198,18 @@ _NODE_CATALOG: tuple[tuple[str, dict[str, Any]], ...] = (
             "`stop_threshold_pct` (empty: above / down to). "
             "`reservoir_mode` \"hold\" keeps liquid flowing for "
             "`pump_on_time_s` at `target_level_pct`: inflow at "
-            "`pump_speed_pct`, the weigh pad steers the drain."
+            "`pump_speed_pct`, the weigh pad steers the drain. With "
+            "`time_from_target`=true the time counts only from when the "
+            "level reaches the target (filling and priming take up to "
+            "`max_reach_time_s`, else the step fails); with "
+            "`allow_concurrent` too the step returns once the target is "
+            "reached and keeps holding alongside the next steps (e.g. Mix)."
         ),
         "required": ("location",),
         "optional": ("reservoir_mode", "pump_speed_pct", "pump_on_time_s", "how_often",
                      "allow_concurrent", "run_second_pump", "second_pump_speed_pct",
                      "use_weigh_station", "action_threshold_pct", "stop_threshold_pct",
-                     "target_level_pct"),
+                     "target_level_pct", "time_from_target", "max_reach_time_s"),
     }),
     ("accessory/StopPumps", {
         "desc": "Stop all pumps of the autofill station at `location`.",
