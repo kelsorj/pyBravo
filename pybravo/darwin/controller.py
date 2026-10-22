@@ -77,6 +77,10 @@ logger = logging.getLogger(__name__)
 # the firmware booted with, read once per session.
 _PEAK_CURRENT_AXES: tuple[Axis, ...] = (Axis.G, Axis.Z, Axis.Zg, Axis.W)
 
+# Axes the head speed limit applies to: the head's travel. W sets liquid
+# handling rates and the gripper axes have their own tuned speeds.
+HEAD_TRAVEL_AXES: frozenset[Axis] = frozenset({Axis.X, Axis.Y, Axis.Z})
+
 
 def _motion_timeout_ms(
     distance_mm: float,
@@ -136,7 +140,14 @@ class DarwinController(BravoController):
         # (bravo.py, tasks.py) expect from get_state_snapshot().
         self._last_snapshot: dict[str, Any] | None = None
         self._last_snapshot_at: float = 0.0
+        self._head_speed_limit_pct: float = 100.0
         self._init_axis_state()
+
+    def set_head_speed_limit(self, percent: float) -> None:
+        """Cap head travel (X, Y, Z) at ``percent`` of each axis's maximum
+        velocity and acceleration. 100 removes the cap. Never speeds a move up."""
+        self._head_speed_limit_pct = min(100.0, max(1.0, float(percent)))
+        logger.info("Head speed limit: %.0f %% of maximum (X, Y, Z)", self._head_speed_limit_pct)
 
     def _init_axis_state(self) -> None:
         """Build per-axis scaffolding. Calibration comes from
@@ -353,6 +364,7 @@ class DarwinController(BravoController):
                 )
 
         requests: list[motion.MoveRequest] = []
+        slowdown = 1.0  # how much the head speed limit stretched the slowest move
         for m in moves:
             state = self._axes[m.axis]
             limits = self._limits(m.axis)
@@ -361,6 +373,12 @@ class DarwinController(BravoController):
                 else min(100.0, m.velocity * 100.0 / limits.velocity)
             accel_pct = 100.0 if (m.acceleration <= 0 or limits.acceleration <= 0) \
                 else min(100.0, m.acceleration * 100.0 / limits.acceleration)
+            if m.axis in HEAD_TRAVEL_AXES:
+                # Head speed limit: only ever slows a move down.
+                cap = self._head_speed_limit_pct
+                slowdown = max(slowdown, velocity_pct / cap, accel_pct / cap)
+                velocity_pct = min(velocity_pct, cap)
+                accel_pct = min(accel_pct, cap)
 
             # Normalize every move to MOVE_TO (absolute) semantics, computing
             # an absolute target + direction-from-current. The MOVE_BY
@@ -403,6 +421,9 @@ class DarwinController(BravoController):
                 "acceleration_pct": accel_pct,
             }
 
+        # A slowed move takes longer; stretch the caller's timeout to match so
+        # the limit never turns a normal move into a timeout.
+        timeout_ms = int(timeout_ms * slowdown)
         motion.move_multi(
             self._engine, requests, wait=wait, timeout_ms=timeout_ms
         )

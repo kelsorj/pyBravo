@@ -38,7 +38,7 @@ from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, Web
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from pybravo import labware_editor
 from pybravo import liquid_classes as liquid_classes_store
@@ -882,6 +882,7 @@ class ProfileUpdateRequest(BaseModel):
     z_safe_position: float | None = None
     prompt_home_w: bool | None = None
     run_medium_speed: bool | None = None
+    head_speed_limit_pct: float | None = Field(default=None, ge=1.0, le=100.0)
     always_safe_z: bool | None = None
     ignore_plate_sensor: bool | None = None
     enable_tips_off_tip_touch: bool | None = None
@@ -3769,6 +3770,7 @@ async def get_profile():
             "z_safe_position": prof.safety.z_safe_position,
             "always_move_to_safe_z": prof.safety.always_move_to_safe_z,
             "run_medium_speed": prof.safety.run_medium_speed,
+            "head_speed_limit_pct": prof.safety.head_speed_limit_pct,
             "prompt_home_w": prof.safety.prompt_home_w,
             "ignore_plate_sensor": prof.safety.ignore_plate_sensor,
             "enable_tips_off_tip_touch": prof.safety.enable_tips_off_tip_touch,
@@ -3795,6 +3797,9 @@ async def update_profile(req: ProfileUpdateRequest):
         prof.safety.always_move_to_safe_z = req.always_safe_z
     if req.run_medium_speed is not None:
         prof.safety.run_medium_speed = req.run_medium_speed
+    if req.head_speed_limit_pct is not None:
+        prof.safety.head_speed_limit_pct = req.head_speed_limit_pct
+        bravo.apply_head_speed_limit()
     if req.prompt_home_w is not None:
         prof.safety.prompt_home_w = req.prompt_home_w
     if req.ignore_plate_sensor is not None:

@@ -306,6 +306,13 @@ class Bravo:
         on_safety_stop = getattr(self._controller, "on_safety_stop", None)
         if callable(on_safety_stop):
             on_safety_stop(self._on_safety_stop)
+        self.apply_head_speed_limit()
+
+    def apply_head_speed_limit(self) -> None:
+        """Push the profile's head speed limit (X, Y, Z) to the controller."""
+        set_limit = getattr(self._controller, "set_head_speed_limit", None)
+        if callable(set_limit):
+            set_limit(self._profile.safety.head_speed_limit_pct)
 
     def _on_safety_stop(self, reason: str) -> None:
         """The controller reported a safety stop: stop every autofill pump.
