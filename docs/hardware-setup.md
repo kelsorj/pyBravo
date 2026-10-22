@@ -801,6 +801,23 @@ running pumps again. pyBravo does not yet send a module re-initialization.
 In workflows, use the **Pump Reagent**, **Stop Pumps** and **Read Level** steps
 (see [Workflows → Accessories](workflows.md#accessories)).
 
+#### Autofill: still to do
+
+Known gaps, none of them a safety problem today:
+
+- **An unacknowledged stop is not verified on hardware.** The
+  `stop_uncertain` handling is covered by tests against a simulated bus only:
+  no way was found to make the module stop acknowledging (a safety stop does
+  not affect the pump module).
+- **`stop_uncertain` is not shown in the Accessories panel.** It is reported in
+  `GET /api/accessories` (`runtime.stop_uncertain`), and new runs are refused
+  while it is set, but the panel does not warn the operator yet.
+- **Minimum pump speed.** At 25 % the pump did not turn (measured 2026-10-22),
+  while the soft start and the Empty run-down both use 20 % as their low end.
+  Measure the lowest speed that turns reliably and use it as the floor.
+- **Drafter defaults.** Workflows drafted from a protocol document still get
+  50 % for Empty; the designer already defaults Empty to 75 %.
+
 ### Safety-stop recovery
 
 Crossing the light curtain or pressing the E-stop latches the instrument's
