@@ -18,7 +18,6 @@ import struct
 import subprocess
 import sys
 import time
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -49,6 +48,7 @@ from pybravo.bravo import Bravo
 from pybravo.deck.labware import build_labware_catalog, normalize_labware_definitions
 from pybravo.head_mode import suggested_head_mode
 from pybravo.logging_config import configure_logging
+from pybravo.profile.profile import config_fingerprint
 from pybravo.protocol.errors import BravoError
 from pybravo.tips import (
     create_tip_definition,
@@ -3619,18 +3619,19 @@ async def list_profiles():
     }
 
 
-_PROFILE_ORIGIN_CACHE: dict[Path, tuple[float, str]] = {}
+_PROFILE_ORIGIN_CACHE: dict[Path, tuple[tuple[int, int], str]] = {}
 
 
 def _profile_origin(path: Path) -> str:
     """Where a profile came from: 'registry_import', 'registry_import_modified'
-    (imported, then saved again here) or 'local'."""
+    (imported, then its settings changed here) or 'local'."""
     try:
-        mtime = path.stat().st_mtime
+        st = path.stat()
     except OSError:
         return "local"
+    stamp = (st.st_mtime_ns, st.st_size)
     cached = _PROFILE_ORIGIN_CACHE.get(path)
-    if cached and cached[0] == mtime:
+    if cached and cached[0] == stamp:
         return cached[1]
     origin = "local"
     try:
@@ -3639,15 +3640,14 @@ def _profile_origin(path: Path) -> str:
         meta = (data.get("extra") or {}).get("origin") or {}
         if meta.get("kind"):
             origin = str(meta["kind"])
-        imported_at = meta.get("imported_at")
-        if origin == "registry_import" and imported_at:
-            # Every save rewrites the file, so a write well after the import is a local edit.
-            imported_ts = datetime.fromisoformat(str(imported_at)).timestamp()
-            if mtime > imported_ts + 5:
-                origin = "registry_import_modified"
+        baseline = meta.get("config_sha256")
+        # Compare the settings with the import baseline; file times say nothing
+        # about edits (copies, checkouts and no-op saves all touch them).
+        if origin == "registry_import" and baseline and config_fingerprint(data) != baseline:
+            origin = "registry_import_modified"
     except Exception:
         logger.debug("Could not read origin of profile %s", path, exc_info=True)
-    _PROFILE_ORIGIN_CACHE[path] = (mtime, origin)
+    _PROFILE_ORIGIN_CACHE[path] = (stamp, origin)
     return origin
 
 

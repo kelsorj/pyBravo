@@ -18,9 +18,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 from pybravo.deck.teachpoints import Teachpoints
 from pybravo.motion.axes import AxisConfig, get_default_axis_config
-from pybravo.profile.profile import BravoProfile
+from pybravo.profile.profile import BravoProfile, config_fingerprint
 from pybravo.tips import (
     get_tip_capacity_ul,
     get_tip_id_for_capacity,
@@ -441,6 +443,12 @@ def reg_to_profile(text: str) -> tuple[BravoProfile, list[str]]:
     _apply_locations(profile, sections)
     _apply_teachpoints(profile, sections)
     _apply_external_robot_access(profile, sections)
+
+    # Baseline for telling a later edit apart from the imported settings. Taken
+    # from the YAML form, which is what the profile list reads back.
+    profile.extra["origin"]["config_sha256"] = config_fingerprint(
+        yaml.safe_load(yaml.dump(profile._to_dict(), sort_keys=False))
+    )
 
     return profile, warnings
 

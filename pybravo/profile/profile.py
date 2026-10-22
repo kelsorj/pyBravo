@@ -6,6 +6,9 @@ YAML serialisation.
 
 from __future__ import annotations
 
+import copy
+import hashlib
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -584,3 +587,20 @@ class BravoProfile:
         if "extra" in data:
             profile.extra = data["extra"]
         return profile
+
+
+def config_fingerprint(data: dict[str, Any]) -> str:
+    """Hash of a profile's settings as loaded from YAML, ignoring its name and
+    ``extra.origin``.
+
+    The data is normalised through :class:`BravoProfile` first, so a save with no
+    changes, a rename or a copy keeps the fingerprint, and any real setting
+    change alters it."""
+    normalized = BravoProfile._from_dict(copy.deepcopy(data))._to_dict()
+    normalized.pop("name", None)
+    extra = dict(normalized.pop("extra", None) or {})
+    extra.pop("origin", None)
+    if extra:
+        normalized["extra"] = extra
+    blob = json.dumps(normalized, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
