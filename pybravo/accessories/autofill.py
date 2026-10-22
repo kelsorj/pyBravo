@@ -314,6 +314,18 @@ class AutofillStation:
         self._stop(schedule_retry=True)
         logger.info("Autofill pumps stopped")
 
+    def stop_run(self, run_token: int) -> bool:
+        """Stop the pumps only if run ``run_token`` is still the active run.
+
+        For supervisors and hold loops, so one that outlived its run can never
+        stop a later one. Returns whether a stop was sent.
+        """
+        with self._lock:
+            if not self._running or self._run_token != run_token:
+                return False
+            self.stop_pumps()
+            return True
+
     def stop_for_cleanup(self) -> None:
         """Stop on cleanup (close, abort, disconnect, a failed workflow); never raises.
 

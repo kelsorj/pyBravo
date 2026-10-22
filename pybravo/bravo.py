@@ -504,14 +504,30 @@ class Bravo:
         """
         message = f"{what} at location {location} ended: {exc}"
         logger.error("%s; pumps stopped", message)
-        still_running = driver.is_running and (own_run is None or driver.run_token == own_run)
-        if still_running:
-            try:
-                driver.stop_pumps()
-            except Exception:
-                logger.exception("Could not stop autofill pumps after: %s", message)
+        try:
+            if own_run is None:
+                if driver.is_running:
+                    driver.stop_pumps()
+            else:
+                driver.stop_run(own_run)
+        except Exception:
+            logger.exception("Could not stop autofill pumps after: %s", message)
         driver.record_fault(message)
         return message
+
+    @staticmethod
+    def _stop_cancelled_run(driver: Any, location: int, what: str, own_run: int) -> None:
+        """A supervisor or hold loop was cancelled: stop its run if still active.
+
+        Without this a cancelled hold would leave its pumps running until the
+        watchdog deadline with no level or overflow protection.
+        """
+        try:
+            if driver.stop_run(own_run):
+                logger.warning("%s at location %d cancelled; its pumps were stopped", what, location)
+        except Exception:
+            logger.exception("Could not stop autofill pumps after %s at location %d was cancelled",
+                             what, location)
 
     # Workflow steps (accessory/PumpReagent, StopPumps, ReadLevel). Async like
     # the other step methods so the workflow executor can await them. They
@@ -610,17 +626,25 @@ class Bravo:
         own_run = driver.run_token
         faults_before = driver.fault_count
 
+        def still_ours() -> bool:
+            # A supervisor watches only the run it started: after Stop Pumps
+            # and a new Fill/Empty, its old threshold must not stop that run.
+            return driver.is_running and driver.run_token == own_run
+
         async def supervise() -> None:
             # The driver's watchdog ends the run at pump_on_time_s; this only
             # ends it earlier when the weigh pad says the job is done. Any
             # failure (a level that cannot be read, a module error) fails
             # closed: the run is stopped and the fault recorded.
             try:
-                while driver.is_running:
+                while still_ours():
                     if use_weigh_station and reached_stop(level()):
-                        driver.stop_pumps()
+                        driver.stop_run(own_run)
                         break
                     await asyncio.sleep(0.25)
+            except asyncio.CancelledError:
+                self._stop_cancelled_run(driver, location, "Pump Reagent supervision", own_run)
+                raise
             except Exception as exc:
                 raise RuntimeError(
                     self._fail_pump_run(driver, location, "Pump Reagent supervision", exc, own_run=own_run)
@@ -697,6 +721,9 @@ class Bravo:
         async def regulate() -> None:
             try:
                 await _regulate()
+            except asyncio.CancelledError:
+                self._stop_cancelled_run(driver, location, "Hold level", own_run)
+                raise
             except Exception as exc:
                 # Fail closed: a hold that cannot read the level (or talk to
                 # the module) cannot guard against overflow, so it never
