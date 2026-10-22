@@ -98,6 +98,11 @@ class SafetyConfig:
     # eject via W.
     cartridge_shuck_g_mm: float = 4.0
     cartridge_shuck_zg_mm: float = 20.0
+    # Upper bound for head travel (X, Y, Z) as a percentage of each axis's
+    # maximum velocity and acceleration; 100 = no limit. Only ever slows a move
+    # down. W (liquid handling), the gripper axes, homing and the force-
+    # controlled tip press keep their own speeds.
+    head_speed_limit_pct: float = 100.0
 
 
 @dataclass
@@ -402,6 +407,7 @@ class BravoProfile:
                 "pin_tool_tip_type": self.safety.pin_tool_tip_type,
                 "cartridge_shuck_g_mm": self.safety.cartridge_shuck_g_mm,
                 "cartridge_shuck_zg_mm": self.safety.cartridge_shuck_zg_mm,
+                "head_speed_limit_pct": self.safety.head_speed_limit_pct,
             },
             "vision": {
                 "enabled": self.vision.enabled,

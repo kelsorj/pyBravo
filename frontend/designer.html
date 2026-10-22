@@ -750,6 +750,12 @@ body {
                     <div class="task-chip" data-type="read_barcode">Barcode</div>
                     <div class="task-chip" data-type="scan_stack_height">Stack Height</div>
                 </div>
+                <div class="task-group-label">Accessories</div>
+                <div class="task-chips">
+                    <div class="task-chip" data-type="pump_reagent" title="Autofill station: fill or empty the reservoir at a location">Pump Reagent</div>
+                    <div class="task-chip" data-type="stop_pumps" title="Autofill station: stop all pumps">Stop Pumps</div>
+                    <div class="task-chip" data-type="read_level" title="Autofill station: read the weigh-pad level (%)">Read Level</div>
+                </div>
                 <div class="task-group-label">Flow Control</div>
                 <div class="task-chips">
                     <div class="task-chip flow" data-type="if_else">If / Else</div>
@@ -939,6 +945,7 @@ body {
         </div>
         <div class="modal-footer" style="gap: 8px;">
             <button class="toolbar-btn" id="task-prompt-abort" style="font-size: 11px;">Abort</button>
+            <button class="toolbar-btn" id="task-prompt-recover" style="font-size: 11px; display: none;" title="Re-enable the axes after the safety stop is cleared. Moves nothing.">Recover</button>
             <button class="toolbar-btn" id="task-prompt-ignore" style="font-size: 11px;">Ignore</button>
             <button class="toolbar-btn primary" id="task-prompt-retry" style="font-size: 11px;">Retry</button>
         </div>
@@ -2672,6 +2679,7 @@ const NODE_COLORS = {
     tips:     { color: '#1a4a2a', bgcolor: '#122e1a' },
     plate:    { color: '#3a2a12', bgcolor: '#2e2010' },
     sensor:   { color: '#1a3a3a', bgcolor: '#0e2e2e' },
+    accessory: { color: '#123a5a', bgcolor: '#0c2a44' },
     flow:     { color: '#4a3a12', bgcolor: '#3a2a0a' },
     logic:    { color: '#4a3a12', bgcolor: '#3a2a0a' },
     system:   { color: '#2a2a3a', bgcolor: '#1a1a28' },
@@ -2689,6 +2697,7 @@ const NODE_COLORS_LIGHT = {
     tips:     { color: '#123f23', bgcolor: '#123f23' },
     plate:    { color: '#5a2e07', bgcolor: '#5a2e07' },
     sensor:   { color: '#0c3a44', bgcolor: '#0c3a44' },
+    accessory: { color: '#0f3d63', bgcolor: '#0f3d63' },
     flow:     { color: '#6b3c00', bgcolor: '#6b3c00' },
     logic:    { color: '#6b3c00', bgcolor: '#6b3c00' },
     system:   { color: '#1c2634', bgcolor: '#1c2634' },
@@ -3273,6 +3282,18 @@ function registerNodeTypes() {
             }
             if (this.properties.volume) parts.push(`${this.properties.volume}\u03BCL`);
             if (this.properties.cycles) parts.push(`\u00D7${this.properties.cycles}`);
+            if (this.type === 'accessory/PumpReagent') {
+                const rm = this.properties.reservoir_mode;
+                if (rm === 'hold') {
+                    const fromTarget = this.properties.time_from_target ? ' at target' : '';
+                    parts.push(`Hold ${this.properties.target_level_pct}% ${this.properties.pump_on_time_s}s${fromTarget}`);
+                } else {
+                    const mode = rm === 'empty' ? 'Empty' : 'Fill';
+                    parts.push(`${mode}${this.properties.run_second_pump ? '+2nd' : ''} ${this.properties.pump_on_time_s}s`);
+                }
+                if (this.properties.allow_concurrent) parts.push('concurrent');
+                if (Number(this.properties.how_often) > 1) parts.push(`every ${this.properties.how_often}`);
+            }
             if (this.properties.expected_count && Number(this.properties.expected_count) > 0) {
                 parts.push(`expect ${this.properties.expected_count} plates`);
             }
@@ -3372,6 +3393,33 @@ function registerNodeTypes() {
     // integer triggers the validation + retry/ignore/abort modal on mismatch.
     makeTaskNode('Scan Stack Height', 'sensor', 'sensor', { location: 1, expected_count: 0, store_as: '' }, [['height', 'number']]);
 
+    // Accessories — autofill station (pump module + weigh pad) at a deck
+    // location. Pump Reagent fills or empties the reservoir: typically fill,
+    // Mix at that location like at a plate, then empty. allow_concurrent
+    // lets the next steps run while it pumps (e.g. refresh during a Mix);
+    // run_second_pump runs the other pump too (fill + drain = flowing).
+    // how_often=N acts on the first pass and every Nth one in a loop. With
+    // use_weigh_station, Fill acts only below action_threshold_pct and stops
+    // at stop_threshold_pct (Empty: above / down to). Hold level keeps
+    // liquid flowing for pump_on_time_s at target_level_pct: inflow at
+    // pump_speed_pct, the weigh pad steers the drain. The server stops the
+    // pumps after pump_on_time_s, on Stop and when the workflow ends.
+    makeTaskNode('Pump Reagent', 'accessory', 'accessory', {
+        location: 1, reservoir_mode: 'fill',
+        pump_speed_pct: 50, pump_on_time_s: 5, how_often: 1,
+        allow_concurrent: false,
+        run_second_pump: false, second_pump_speed_pct: 50,
+        use_weigh_station: false, action_threshold_pct: 50, stop_threshold_pct: 50,
+        target_level_pct: 75,
+        // Hold only: count pump_on_time_s from when the level reaches the
+        // target (filling + priming excluded), allowing max_reach_time_s.
+        // With allow_concurrent the step returns once the target is reached
+        // and holds alongside the next steps (e.g. Mix in flowing water).
+        time_from_target: false, max_reach_time_s: 120,
+    });
+    makeTaskNode('Stop Pumps', 'accessory', 'accessory', { location: 1 });
+    makeTaskNode('Read Level', 'accessory', 'accessory', { location: 1, store_as: '' }, [['level', 'number']]);
+
     // System
     makeTaskNode('Initialize', 'system', 'system', {});
     makeTaskNode('Home', 'system', 'system', { axes: 'X,Y,Z,W,G,Zg' });
@@ -3394,6 +3442,9 @@ const CHIP_TO_NODE_TYPE = {
     relid: 'plate/Relid',
     read_barcode: 'sensor/ReadBarcode',
     scan_stack_height: 'sensor/ScanStackHeight',
+    pump_reagent: 'accessory/PumpReagent',
+    stop_pumps: 'accessory/StopPumps',
+    read_level: 'accessory/ReadLevel',
     initialize: 'system/Initialize',
     home: 'system/Home',
     dock_gripper: 'system/DockGripper',
@@ -4610,6 +4661,29 @@ function renderPropertiesPanel(node) {
                 select.appendChild(opt);
             }
             select.addEventListener('change', () => { node.properties[key] = select.value; node.setDirtyCanvas(true); });
+            field.appendChild(select);
+        } else if (key === 'reservoir_mode') {
+            // Pump Reagent: which pump does the job.
+            const select = document.createElement('select');
+            select.style.cssText = 'width: 100%; padding: 4px 8px; font-size: 11px; font-family: var(--sans); background: var(--bg-input); border: 1px solid var(--border); border-radius: 4px; color: var(--text); outline: none;';
+            for (const [optValue, optLabel] of [['fill', 'Fill'], ['empty', 'Empty'], ['hold', 'Hold level']]) {
+                const opt = document.createElement('option');
+                opt.value = optValue; opt.textContent = optLabel;
+                if (optValue === value) opt.selected = true;
+                select.appendChild(opt);
+            }
+            select.addEventListener('change', () => {
+                // Empty defaults to 75 %, Fill and Hold to 50 %; a speed the
+                // user already changed is kept.
+                const defaults = { fill: 50, empty: 75, hold: 50 };
+                const previous = node.properties[key];
+                node.properties[key] = select.value;
+                if (node.properties.pump_speed_pct === defaults[previous]) {
+                    node.properties.pump_speed_pct = defaults[select.value];
+                }
+                node.setDirtyCanvas(true);
+                renderPropertiesPanel(node);
+            });
             field.appendChild(select);
         } else if (key === 'pipette_technique') {
             const select = document.createElement('select');
@@ -7191,6 +7265,10 @@ function handleWorkflowEvent(data) {
             });
             timelineRecord(null, timeline._lastNodeId, `barcode @${data.location}: ${data.barcode || '(empty)'}`);
             break;
+        case 'workflow:autofill_level':
+            // Weigh-pad level of an autofill station, shown as liquid in its tray.
+            designerState.robotScene?.setReservoirLevel(data.location, data.level_pct);
+            break;
         case 'workflow:error':
             progress.textContent = `Error: ${data.error || 'Unknown'}`;
             fill.style.width = '0%';
@@ -7536,10 +7614,40 @@ function updateTaskPromptModalFromState(taskStatus) {
     retryBtn.style.display = choices.includes('retry') ? '' : 'none';
     ignoreBtn.style.display = choices.includes('ignore') ? '' : 'none';
     abortBtn.style.display = choices.includes('abort') ? '' : 'none';
+    const recoverBtn = document.getElementById('task-prompt-recover');
+    if (recoverBtn) {
+        recoverBtn.style.display = choices.includes('recover') ? '' : 'none';
+        recoverBtn.disabled = taskPromptState.actionPending;
+    }
     retryBtn.disabled = taskPromptState.actionPending;
     ignoreBtn.disabled = taskPromptState.actionPending;
     abortBtn.disabled = taskPromptState.actionPending;
     overlay.classList.remove('hidden');
+}
+
+// Safety stop: re-enable the axes once the light curtain / E-stop is cleared.
+// Moves nothing. The prompt stays open so the operator can then Retry or Abort.
+async function recoverFromTaskPrompt() {
+    const detailsEl = document.getElementById('task-prompt-details');
+    const recoverBtn = document.getElementById('task-prompt-recover');
+    if (recoverBtn) recoverBtn.disabled = true;
+    try {
+        const res = await fetch(`${API_BASE}/api/recover`, { method: 'POST' });
+        let body = null;
+        try { body = await res.json(); } catch (e) { body = null; }
+        let text;
+        if (!res.ok) {
+            text = `Recover failed: ${body?.detail || res.status}. Clear the light curtain / release the E-stop and try again.`;
+        } else {
+            const axes = Object.entries(body?.axes || {}).map(([axis, s]) => `${axis}: ${s}`).join(', ');
+            text = body?.status === 'recovered'
+                ? `Recovered (${axes}). Nothing moved. Retry the step, or Abort, then retract Z and Home All.`
+                : `Recovery incomplete (${axes}). Do not continue; check the instrument.`;
+        }
+        if (detailsEl) detailsEl.textContent = text;
+    } finally {
+        if (recoverBtn) recoverBtn.disabled = false;
+    }
 }
 
 async function submitTaskPromptAction(endpoint, pendingText) {
@@ -7555,6 +7663,9 @@ async function submitTaskPromptAction(endpoint, pendingText) {
             taskPromptState.actionPending = false;
             taskPromptState.pendingDetails = '';
             updateTaskPromptModalFromState(taskPromptState.lastTaskStatus);
+            // A refused Retry/Ignore says why (e.g. Recover first after a safety stop).
+            const detailsEl = document.getElementById('task-prompt-details');
+            if (res?.reason && detailsEl) detailsEl.textContent = `Not accepted: ${res.reason}`;
             return;
         }
         // Eagerly hide the overlay and reset state. The backend has accepted
@@ -7609,6 +7720,9 @@ document.getElementById('task-prompt-ignore')?.addEventListener('click', () => {
 });
 document.getElementById('task-prompt-abort')?.addEventListener('click', () => {
     submitTaskPromptAction('/api/abort', 'Aborting the workflow...');
+});
+document.getElementById('task-prompt-recover')?.addEventListener('click', () => {
+    recoverFromTaskPrompt();
 });
 
 // Auto-save to localStorage

@@ -591,6 +591,12 @@
         }
         .accessory-type-panel { display: none; }
         .accessory-type-panel.active { display: block; }
+        .autofill-chart { position: relative; }
+        .autofill-chart canvas { display: block; width: 100%; height: 170px; }
+        .autofill-chart-legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 10px; color: var(--text-dim); margin-bottom: 4px; }
+        .autofill-chart-legend .swatch { display: inline-block; width: 12px; height: 2px; vertical-align: middle; margin-right: 4px; }
+        .autofill-chart-tip { position: absolute; pointer-events: none; font-size: 10px; padding: 4px 6px; border-radius: 4px;
+            background: var(--bg-card, #222); border: 1px solid var(--border); color: var(--text); white-space: nowrap; display: none; }
 
         .process-selector-card {
             border: 1px solid var(--border);
@@ -1062,6 +1068,7 @@
             <button class="btn" id="btn-init">Initialize</button>
             <button class="btn" id="btn-home">Home All</button>
             <button class="btn btn-danger" id="btn-abort">Abort</button>
+            <button class="btn" id="btn-recover" title="After a safety stop (light curtain / E-stop): clear it, then press Recover to re-enable the axes. Nothing moves; retract Z and Home All afterwards.">Recover</button>
             <button class="btn btn-danger" id="btn-quit" title="Kill the backend server">Quit</button>
         </div>
     </div>
@@ -1318,6 +1325,7 @@
                 <div class="accessory-toolbar">
                     <button class="btn btn-sm" id="btn-accessory-add-barcode">Add Barcode</button>
                     <button class="btn btn-sm" id="btn-accessory-add-teleshake">Add Teleshake</button>
+                    <button class="btn btn-sm" id="btn-accessory-add-autofill">Add Autofill</button>
                     <button class="btn btn-sm btn-danger" id="btn-accessory-remove">Remove</button>
                 </div>
                 <div class="accessory-list" id="accessory-list"></div>
@@ -1329,6 +1337,7 @@
                         <select id="prof-accessory-type" style="flex:1">
                             <option value="barcode_reader">Barcode Reader</option>
                             <option value="teleshake">Teleshake</option>
+                            <option value="autofill">Autofill Station</option>
                         </select>
                     </div>
                     <div class="form-row"><label>Location</label>
@@ -1339,7 +1348,7 @@
                             <option value="7">7</option><option value="8">8</option><option value="9">9</option>
                         </select>
                     </div>
-                    <div class="form-row"><label>COM port</label><input type="text" id="prof-accessory-port" value="COM4" style="width:90px"></div>
+                    <div class="form-row" id="prof-accessory-port-row"><label>COM port</label><input type="text" id="prof-accessory-port" value="COM4" style="width:90px"></div>
                     <div class="checkbox-row"><input type="checkbox" id="prof-accessory-holds-labware" checked><label for="prof-accessory-holds-labware">Can hold labware at this location</label></div>
 
                     <div class="accessory-type-panel" id="accessory-panel-barcode">
@@ -1378,8 +1387,63 @@
                         </div>
                     </div>
 
+                    <div class="accessory-type-panel" id="accessory-panel-autofill">
+                        <hr style="margin:8px 0;border-color:var(--border)">
+                        <div class="text-xs text-dim">Pump module and weigh pad on the instrument's accessory bus (no COM port).</div>
+                        <div class="section-title mt-8">Weigh station</div>
+                        <div class="form-row"><label>Weigh module</label><input type="number" id="prof-accessory-autofill-weigh-module" value="1" min="1" max="8" style="width:60px"></div>
+                        <div class="form-row"><label>Tare</label><input type="number" id="prof-accessory-autofill-tare" value="0" min="0" max="65535" style="width:90px"><button class="btn btn-sm" id="btn-accessory-autofill-set-tare" title="Use the current reading as 0 %">Set tare</button></div>
+                        <div class="form-row"><label>Range</label><input type="number" id="prof-accessory-autofill-range" value="0" min="0" max="65535" style="width:90px"><button class="btn btn-sm" id="btn-accessory-autofill-set-range" title="Use the current reading as 100 %">Set range</button></div>
+                        <div class="form-row"><label>Reading</label><span class="value" id="accessory-autofill-reading">-</span><span class="text-xs text-dim">AD</span></div>
+                        <div class="form-row"><label>Level</label><span class="value" id="accessory-autofill-level">-</span><span class="text-xs text-dim">%</span></div>
+                        <div class="btn-group">
+                            <button class="btn btn-sm" id="btn-accessory-autofill-read">Read</button>
+                            <div class="checkbox-row"><input type="checkbox" id="accessory-autofill-live"><label for="accessory-autofill-live">Live</label></div>
+                        </div>
+
+                        <div class="section-title mt-8">Pumps</div>
+                        <div class="form-row"><label>Pump module</label><input type="number" id="prof-accessory-autofill-module" value="1" min="1" max="8" style="width:60px"></div>
+                        <div class="form-row"><label>Fill</label>
+                            <select id="prof-accessory-autofill-fill-pump" style="width:80px"><option value="1">Pump 1</option><option value="2">Pump 2</option></select>
+                            <select id="prof-accessory-autofill-fill-direction" style="width:90px"><option value="forward">Forward</option><option value="reverse">Reverse</option></select>
+                            <input type="number" id="prof-accessory-autofill-fill-speed" value="50" min="0" max="100" style="width:60px"><span class="text-xs text-dim">%</span>
+                        </div>
+                        <div class="form-row"><label>Empty</label>
+                            <select id="prof-accessory-autofill-empty-pump" style="width:80px"><option value="1">Pump 1</option><option value="2">Pump 2</option></select>
+                            <select id="prof-accessory-autofill-empty-direction" style="width:90px"><option value="forward">Forward</option><option value="reverse">Reverse</option></select>
+                            <input type="number" id="prof-accessory-autofill-empty-speed" value="50" min="0" max="100" style="width:60px"><span class="text-xs text-dim">%</span>
+                        </div>
+                        <div class="form-row"><label>Run time</label><input type="number" id="accessory-autofill-duration" value="5" min="1" max="600" step="1" style="width:70px"><span class="text-xs text-dim">s (1-600)</span></div>
+                        <div class="form-row"><label>Run</label>
+                            <div class="checkbox-row"><input type="checkbox" id="accessory-autofill-run-fill" checked><label for="accessory-autofill-run-fill">Fill</label></div>
+                            <div class="checkbox-row"><input type="checkbox" id="accessory-autofill-run-empty" checked><label for="accessory-autofill-run-empty">Empty</label></div>
+                        </div>
+                        <div class="form-row"><label>Hold level</label>
+                            <input type="number" id="accessory-autofill-hold-target" value="75" min="0" max="99" style="width:60px"><span class="text-xs text-dim">% at inflow</span>
+                            <input type="number" id="accessory-autofill-hold-inflow" value="50" min="0" max="100" style="width:60px"><span class="text-xs text-dim">%</span>
+                            <label class="text-xs text-dim" title="Count the run time only from when the hoses are primed and the level is at the target (reaching it may take up to 120 s)."><input type="checkbox" id="accessory-autofill-hold-from-target"> time from target</label>
+                            <button class="btn btn-sm" id="btn-accessory-autofill-hold" title="Fill and drain together for the run time; the weigh pad steers the drain to hold the level. Stops at 100 %.">Hold</button>
+                        </div>
+                        <div class="btn-group mt-8">
+                            <button class="btn btn-sm btn-primary" id="btn-accessory-autofill-run">Run pumps</button>
+                            <button class="btn btn-sm btn-danger" id="btn-accessory-autofill-stop">Stop pumps</button>
+                            <span class="value text-xs" id="accessory-autofill-status">-</span>
+                        </div>
+                        <div class="autofill-chart mt-8">
+                            <div class="autofill-chart-legend" id="accessory-autofill-chart-legend"></div>
+                            <canvas id="accessory-autofill-chart" height="170" aria-label="Fill level and pump speeds over the last 120 seconds" role="img"></canvas>
+                            <div class="text-xs text-dim" id="accessory-autofill-chart-note">Last 120 s · updates while Live or pumps run</div>
+                        </div>
+                    </div>
+
                     <hr style="margin:8px 0;border-color:var(--border)">
-                    <div class="form-row"><label>Model</label><input type="text" id="prof-accessory-model-path" placeholder="/static/accessories/TeleshakeSimple.gltf" style="flex:1"></div>
+                    <div class="form-row"><label>Model</label>
+                        <select id="prof-accessory-model-choice" style="flex:1">
+                            <option value="none">Standard position</option>
+                            <option value="__custom__">Custom path…</option>
+                        </select>
+                    </div>
+                    <div class="form-row" id="prof-accessory-model-path-row" style="display:none"><label></label><input type="text" id="prof-accessory-model-path" placeholder="/static/accessories/MyModel.gltf" style="flex:1"></div>
                     <div class="form-row"><label>Z hint</label><input type="number" id="prof-accessory-z-hint" step="0.1" value="0"><span class="text-xs text-dim">mm</span></div>
                 </div>
                 <template id="deck-location-options">
@@ -2222,6 +2286,7 @@
         </div>
         <div class="modal-footer">
             <button class="btn" id="task-prompt-abort">Abort</button>
+            <button class="btn" id="task-prompt-recover" style="display:none" title="Re-enable the axes after the safety stop is cleared. Moves nothing.">Recover</button>
             <button class="btn" id="task-prompt-ignore">Ignore</button>
             <button class="btn btn-primary" id="task-prompt-retry">Retry</button>
         </div>

@@ -369,7 +369,13 @@ Cannot recover: safety interlock still active (SAFETY_STATUS bit 0 set). Clear t
 ```
 
 **Fix.** Physically clear the condition — release the E-stop, remove whatever
-is breaking the light curtain, close the enclosure — and then retry.
+is breaking the light curtain, close the enclosure — then press **Recover**
+(`POST /api/recover`) to re-enable the axes, and only then Retry, or Abort and
+retract Z and home. Retry is refused until Recover has succeeded. The full
+procedure is in [safety-stop recovery](hardware-setup.md#safety-stop-recovery).
+
+A task step that the safety stop interrupted shows a *stopped by the safety
+interlock* prompt with Recover, Retry and Abort, and no Ignore.
 
 > **Do not attempt to bypass a safety interlock in software.** It is the only
 > thing standing between a moving head and whatever is in the work envelope.
@@ -397,7 +403,27 @@ choices map to `POST /api/retry`, `POST /api/ignore`, and `POST /api/abort`:
 - **Retry** re-attempts the step.
 - **Ignore** skips it and continues. Read the prompt before choosing this —
   ignoring a plate-in-gripper warning means homing the gripper onto a plate.
-- **Abort** stops the task.
+- **Abort** stops the task. During a workflow it also ends the workflow with an
+  error; no later step runs.
+
+### Autofill: `module reported status 0x0B` (or another status)
+
+**Cause.** The pump module answered a command with an error status, or did not
+answer, while pumps were running. This was seen after a safety stop of the
+instrument: from then on the module answered every command with `0x0B`.
+
+**What the server does.** It ends the run, stops polling the module, sends the
+stop at most twice, keeps the accessory bus quiet for a few seconds so the
+module's own timeout stops the pumps, shows the error as `last_error` in the
+Accessories panel, and fails a running workflow. If no stop was acknowledged it
+also sets `stop_uncertain`, refuses new runs and sends the stop once more after
+the quiet time. See
+[autofill module errors](hardware-setup.md#autofill-module-errors-fail-closed).
+
+**Fix.** Check that the pumps stopped and the tray did not overflow. If the
+module keeps reporting the error, power-cycle it (or re-initialize it from the
+instrument) before pumping again; reconnecting or re-enabling the axes does not
+clear it.
 
 ### `Motor enable timeout`, or an axis is limp
 

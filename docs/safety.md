@@ -121,10 +121,18 @@ that can break a machine.
 ## Emergency stop
 
 Know your instrument's physical emergency stop before you begin. In software,
-`POST /api/abort` stops the running task and `POST /api/workflows/stop` aborts a
-running workflow, but **software abort is not a substitute for the physical
-emergency stop.** A hung process, a dropped network connection, or a crashed
-browser tab cannot stop a moving axis. The hardware stop can.
+`POST /api/abort` stops the running task (and a running workflow) and
+`POST /api/workflows/stop` aborts a running workflow, but **software abort is
+not a substitute for the physical emergency stop.** A hung process, a dropped
+network connection, or a crashed browser tab cannot stop a moving axis. The
+hardware stop can.
+
+After a light-curtain trip or an E-stop, the step that was moving fails with a
+safety stop and cannot be ignored. Clear the cause, press **Recover**
+(re-enables the axes, moves nothing), then Retry the step or Abort, retract Z and
+home. A workflow whose step was aborted ends with an error and starts no
+further steps, and its autofill pumps are stopped. See
+[safety-stop recovery](hardware-setup.md#safety-stop-recovery).
 
 ## Reporting a safety problem
 

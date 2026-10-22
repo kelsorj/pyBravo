@@ -159,7 +159,7 @@ async def test_simulate_designer_workflow_passes_runtime_snapshot_into_executor(
         async def execute(self):
             return None
 
-        def abort(self):
+        def abort(self, reason=""):
             return None
 
     def fake_ensure_future(coro):
@@ -188,6 +188,8 @@ async def test_simulate_designer_workflow_passes_runtime_snapshot_into_executor(
         assert scheduled, "simulation coroutine was not scheduled"
     finally:
         server._bravo = previous_bravo
+        # The scheduled run never executes, so it never clears the executor.
+        server._active_workflow_executor = None
         for coro in scheduled:
             coro.close()
 
@@ -211,19 +213,22 @@ async def test_bravo_error_handler_returns_json_response():
 async def test_task_error_action_endpoints_report_not_accepted_when_no_prompt_is_waiting():
     bravo = Bravo(mode="simulation")
     previous_bravo = server._bravo
+    previous_executor = server._active_workflow_executor
 
     try:
         server._bravo = bravo
+        server._active_workflow_executor = None
 
         retry_response = await server.retry()
         ignore_response = await server.ignore_error()
         abort_response = await server.abort()
 
-        assert retry_response == {"status": "retried", "accepted": False}
-        assert ignore_response == {"status": "ignored", "accepted": False}
-        assert abort_response == {"status": "aborted", "accepted": False}
+        assert retry_response == {"status": "retried", "accepted": False, "reason": None}
+        assert ignore_response == {"status": "ignored", "accepted": False, "reason": None}
+        assert abort_response == {"status": "aborted", "accepted": False, "workflow_stopped": False}
     finally:
         server._bravo = previous_bravo
+        server._active_workflow_executor = previous_executor
 
 
 def test_darwin_controller_builds_positions_from_bridge(monkeypatch):

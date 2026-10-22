@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Callable
 
 from pybravo.accessories.barcode_reader import BarcodeReader
 from pybravo.accessories.barcode_reader import config_for_device as barcode_config_for_device
@@ -18,9 +18,20 @@ class AccessoryManager:
     Drivers are created lazily so selecting a profile does not open COM ports.
     """
 
-    def __init__(self, profile: BravoProfile) -> None:
+    def __init__(
+        self,
+        profile: BravoProfile,
+        serial_sender_provider: Callable[[], Callable[[bytes], bytes]] | None = None,
+        bind_serial_sender: Callable[[], Callable[[], Callable[[bytes], bytes]]] | None = None,
+    ) -> None:
         self._profile = profile
         self._drivers: dict[str, Any] = {}
+        # Accessory-bus modules (autofill) talk through the instrument
+        # connection, which the manager does not own; the caller supplies it.
+        self._serial_sender_provider = serial_sender_provider
+        # Optional: returns a provider tied to the transport in use when a
+        # driver is built, so the driver keeps that transport for its lifetime.
+        self._bind_serial_sender = bind_serial_sender
 
     @property
     def devices(self) -> list[AccessoryDeviceConfig]:
@@ -97,4 +108,35 @@ class AccessoryManager:
                     default_direction=str(settings.get("default_direction") or "NWSE"),
                 )
             )
+        if device.type == "autofill":
+            from pybravo.accessories.autofill import (
+                MAX_RUN_S,
+                AutofillConfig,
+                AutofillStation,
+                PumpSettings,
+            )
+
+            if self._serial_sender_provider is None:
+                raise ValueError("Autofill needs an instrument connection to reach the accessory bus")
+            s = dict(device.settings or {})
+            config = AutofillConfig(
+                fill=PumpSettings(
+                    module=int(s.get("fill_module", 1)),
+                    pump=int(s.get("fill_pump", 1)),
+                    direction=str(s.get("fill_direction", "forward")).lower(),
+                    speed_pct=float(s.get("fill_speed_pct", 50)),
+                ),
+                empty=PumpSettings(
+                    module=int(s.get("empty_module", 1)),
+                    pump=int(s.get("empty_pump", 2)),
+                    direction=str(s.get("empty_direction", "reverse")).lower(),
+                    speed_pct=float(s.get("empty_speed_pct", 50)),
+                ),
+                weigh_module=int(s.get("weigh_module", 1)),
+                tare=int(s.get("tare", 0)),
+                range=int(s.get("range", 0)),
+                max_run_s=min(float(s.get("max_run_s", MAX_RUN_S)), MAX_RUN_S),
+            )
+            provider = self._bind_serial_sender() if self._bind_serial_sender else self._serial_sender_provider
+            return AutofillStation(config, provider)
         raise ValueError(f"Unknown accessory type: {device.type!r}")

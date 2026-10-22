@@ -39,7 +39,7 @@ from pybravo.head_mode import (
 )
 from pybravo.profile.profile import BravoProfile
 from pybravo.protocol.commands import CommandID, LightCommandData
-from pybravo.state_machine.engine import ErrorAction, StateMachineTask, TaskStatus
+from pybravo.state_machine.engine import ErrorAction, StateMachineTask, TaskStatus, is_safety_stop
 from pybravo.tip_offsets import ResolvedTipOffsets
 from pybravo.tips import get_tip_length_mm, is_cartridge_tip
 from pybravo.types import (
@@ -266,6 +266,9 @@ SHUCK_ZG_RETURN_FRACTION = 2.0 / 3.0
 # the press stroke, not the distance to the consumable: the head starts this far
 # above the seated position and stalls somewhere inside it.
 PRESS_TRAVEL_MM = 25.0
+# A Tips On task retracts Z after a failed press; once a retract itself has
+# failed this often, later press failures in the same task skip it.
+_MAX_FAILED_PRESS_RETRACTS = 1
 
 
 def _axis_speed(profile, axis: Axis, level: SpeedLevel) -> tuple[float, float]:
@@ -4294,6 +4297,7 @@ class TipsOnTask(StateMachineTask):
         self._live_status: dict[str, object] = {}
         self._deck = deck
         self._operator_prompt: dict[str, Any] | None = None
+        self._retract_failures = 0
 
     def status_payload(self) -> dict:
         payload = dict(self._live_status)
@@ -4525,8 +4529,24 @@ class TipsOnTask(StateMachineTask):
                             final_z, short_by, z, z - tolerance, z + tolerance,
                         )
         except Exception as exc:
-            await self._recover_to_safe_z_after_press_failure()
+            if is_safety_stop(exc):
+                # The interlock is latched and the axes are disabled: a retract
+                # cannot run (on hardware it only waited out the 30 s move
+                # timeout, once per Retry) and nothing may move until the
+                # operator has cleared the stop and pressed Recover. The engine
+                # shows the safety-stop prompt (no Ignore: no tips were seated).
+                logger.error(
+                    "Tips On press at location %d was stopped by the safety interlock; "
+                    "not retracting Z. Clear the stop and press Recover.",
+                    self._tip_location,
+                )
+                raise
+            retracted = await self._recover_to_safe_z_after_press_failure()
             message = self._tips_on_failure_message(exc)
+            if not retracted:
+                message = message.replace(" The head was retracted to safe Z.", "") + (
+                    "\nZ could NOT be retracted to safe Z: retract it and home before continuing."
+                )
             self._operator_prompt = {
                 "kind": "tips_on_no_resistance",
                 "title": "Tips On failed",
@@ -4557,7 +4577,17 @@ class TipsOnTask(StateMachineTask):
             wait=True,
         )
 
-    async def _recover_to_safe_z_after_press_failure(self) -> None:
+    async def _recover_to_safe_z_after_press_failure(self) -> bool:
+        """Retract Z after a failed press. Returns True when the retract ran."""
+        if self._retract_failures >= _MAX_FAILED_PRESS_RETRACTS:
+            # A retract that already failed (e.g. waited out the move timeout)
+            # will not succeed by repeating it on every Retry.
+            logger.error(
+                "Tips On press failed; not retracting Z again after %d failed retract(s). "
+                "Abort, then retract Z and home.",
+                self._retract_failures,
+            )
+            return False
         try:
             logger.warning(
                 "Tips On press failed; retracting Z to safe position %.3f at current X/Y...",
@@ -4568,7 +4598,10 @@ class TipsOnTask(StateMachineTask):
                 wait=True,
             )
         except Exception as retract_exc:
+            self._retract_failures += 1
             logger.error("Could not retract Z after Tips On failure: %s", retract_exc)
+            return False
+        return True
 
     @staticmethod
     def _tips_on_failure_message(exc: Exception) -> str:

@@ -173,21 +173,38 @@ Response: `{"status": "homed", "axes": ["X", "Y", ...]}`
 
 ### POST `/api/abort`
 
-Signals the task engine to abort the currently running operation.
+Signals the task engine to abort the currently running operation, stops every
+autofill pump, and ends a running workflow with an error (no later node runs).
 
-Response: `{"status": "aborted", "accepted": <bool>}`
+Response: `{"status": "aborted", "accepted": <bool>, "workflow_stopped": <bool>}`
 
 ### POST `/api/retry`
 
-Retries the current failed state-machine step.
+Retries the current failed state-machine step. After a safety stop (light
+curtain / E-stop) Retry is refused until `POST /api/recover` has succeeded, and
+is allowed at most twice per task.
 
-Response: `{"status": "retried", "accepted": <bool>}`
+Response: `{"status": "retried", "accepted": <bool>, "reason": <string|null>}` —
+`reason` says why a Retry was refused.
 
 ### POST `/api/ignore`
 
-Ignores the current task error and continues to the next step.
+Ignores the current task error and continues to the next step. Refused for a
+step stopped by the safety interlock.
 
-Response: `{"status": "ignored", "accepted": <bool>}`
+Response: `{"status": "ignored", "accepted": <bool>, "reason": <string|null>}`
+
+### POST `/api/recover`
+
+After a safety stop: checks that the safety interlock reads clear, then
+re-enables the axes the controller disabled. **Moves nothing.** Returns 409
+while a task step is still executing, while the interlock is still latched, or
+when its state cannot be read (nothing is re-enabled then); 400 when the
+controller has no safety-stop recovery. Afterwards Retry the interrupted step,
+or Abort and then retract Z and home. See
+[safety-stop recovery](hardware-setup.md#safety-stop-recovery).
+
+Response: `{"status": "recovered" | "incomplete", "axes": {"X": "ok", "Z": "enabled", ...}}`
 
 ---
 

@@ -831,8 +831,16 @@ function resolveStaticModelUrl(modelPath, cacheKey) {
     return `/static/${encoded}?v=${cacheKey}`;
 }
 
+// model.path values: a glTF path, or "none" for a standard deck position.
+// Unset keeps the old behaviour: the Teleshake model for a Teleshake, a
+// standard position for everything else. A model with a node named "liquid"
+// shows the autofill weigh-pad level (see scripts/build_autofill_tray_model.py).
+const ACCESSORY_MODEL_NONE = 'none';
+const AUTOFILL_TRAY_MODEL = '/static/accessories/AutofillStation.gltf';
+
 function accessoryModelPath(device) {
     const configured = String(device?.model?.path || '').trim();
+    if (configured === ACCESSORY_MODEL_NONE) return '';
     if (configured) return configured;
     return device?.type === 'teleshake' ? DEFAULT_TELESHAKE_MODEL_PATH : '';
 }
@@ -851,7 +859,7 @@ function enabledAccessoriesAtLocation(location) {
 function updateDeckPadVisibility() {
     for (const [loc, meshes] of deckSlotPadMeshes.entries()) {
         const replacesPad = enabledAccessoriesAtLocation(loc).some(item => (
-            item.type === 'teleshake' || Boolean(accessoryModelPath(item))
+            Boolean(accessoryModelPath(item))
         ));
         for (const mesh of meshes) {
             mesh.visible = !replacesPad;
@@ -1784,6 +1792,7 @@ function normalizeAccessoryModel(model, device) {
 }
 
 function buildFallbackAccessoryMesh(device) {
+    if (device?.type === 'autofill') return buildAutofillStationMesh(device);
     if (device?.type !== 'teleshake') return null;
     const group = new THREE.Group();
     const base = new THREE.Mesh(
@@ -1821,6 +1830,103 @@ function buildFallbackAccessoryMesh(device) {
     return group;
 }
 
+// Autofill station: a pale tub with an inset tray on a dark weigh pad, hose
+// fittings on one short side. Drawn procedurally; the liquid inside follows
+// the weigh-pad level (tare = empty, range = full).
+const AUTOFILL_MATERIALS = {
+    pad: new THREE.MeshStandardMaterial({ color: 0x3b4048, roughness: 0.6, metalness: 0.25 }),
+    tub: new THREE.MeshStandardMaterial({ color: 0xe3ebef, roughness: 0.55, metalness: 0.02 }),
+    tray: new THREE.MeshStandardMaterial({ color: 0xd6e2e9, roughness: 0.5, metalness: 0.02 }),
+    fitting: new THREE.MeshStandardMaterial({ color: 0xe9dfc4, roughness: 0.7, metalness: 0.0 }),
+    liquid: new THREE.MeshStandardMaterial({
+        color: 0x2f8fe8, roughness: 0.15, metalness: 0.0, transparent: true, opacity: 0.6,
+    }),
+};
+const AUTOFILL_GEOMETRY = {
+    padH: 0.010,
+    tubL: 0.132, tubW: 0.092, tubH: 0.034, wall: 0.006,
+    trayL: 0.114, trayW: 0.076, trayH: 0.024, trayWall: 0.003,
+};
+const autofillLiquidMeshes = new Map(); // device id -> liquid mesh
+const autofillLevels = new Map(); // device id -> last level in %
+
+function addOpenBox(group, material, length, width, height, wall, baseZ) {
+    const parts = [
+        [length, width, wall, 0, 0, baseZ + wall / 2], // floor
+        [length, wall, height, 0, (width - wall) / 2, baseZ + height / 2],
+        [length, wall, height, 0, -(width - wall) / 2, baseZ + height / 2],
+        [wall, width - 2 * wall, height, (length - wall) / 2, 0, baseZ + height / 2],
+        [wall, width - 2 * wall, height, -(length - wall) / 2, 0, baseZ + height / 2],
+    ];
+    for (const [x, y, z, px, py, pz] of parts) {
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(x, y, z), material);
+        mesh.position.set(px, py, pz);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        group.add(mesh);
+    }
+}
+
+function buildAutofillStationMesh(device) {
+    const g = AUTOFILL_GEOMETRY;
+    const group = new THREE.Group();
+
+    const pad = new THREE.Mesh(new THREE.BoxGeometry(g.tubL - 0.004, g.tubW - 0.004, g.padH), AUTOFILL_MATERIALS.pad);
+    pad.position.z = g.padH / 2;
+    pad.castShadow = true;
+    pad.receiveShadow = true;
+    group.add(pad);
+
+    addOpenBox(group, AUTOFILL_MATERIALS.tub, g.tubL, g.tubW, g.tubH, g.wall, g.padH);
+    const trayBaseZ = g.padH + g.tubH - g.trayH;
+    addOpenBox(group, AUTOFILL_MATERIALS.tray, g.trayL, g.trayW, g.trayH, g.trayWall, trayBaseZ);
+
+    // Hose fittings leave through the back wall (+Y, toward deck row 1-3),
+    // near the right-hand corner.
+    for (const x of [0.030, 0.052]) {
+        const fitting = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.012, 16), AUTOFILL_MATERIALS.fitting);
+        fitting.position.set(x, g.tubW / 2 + 0.006, g.padH + g.tubH * 0.55);
+        group.add(fitting);
+    }
+
+    const liquid = new THREE.Mesh(
+        new THREE.BoxGeometry(g.trayL - 2 * g.trayWall, g.trayW - 2 * g.trayWall, 1),
+        AUTOFILL_MATERIALS.liquid,
+    );
+    liquid.userData.floorZ = trayBaseZ + g.trayWall;
+    liquid.userData.depth = g.trayH - g.trayWall - 0.002;
+    group.add(liquid);
+    autofillLiquidMeshes.set(device?.id, liquid);
+    applyAutofillLevel(device?.id);
+
+    // Labware placed here is the tray itself, so do not lift it onto the tub.
+    group.userData.accessoryHeightM = 0;
+    group.userData.autofillProcedural = true;
+    return group;
+}
+
+function applyAutofillLevel(deviceId) {
+    const liquid = autofillLiquidMeshes.get(deviceId);
+    if (!liquid) return;
+    const level = autofillLevels.get(deviceId);
+    const fraction = Number.isFinite(level) ? Math.min(1, Math.max(0, level / 100)) : 0;
+    liquid.visible = fraction > 0.005;
+    if (liquid.userData.gltfLiquid) {
+        // glTF "liquid" node: modelled full, bottom at its origin, +Y up.
+        liquid.scale.y = Math.max(0.001, fraction);
+        return;
+    }
+    const height = Math.max(0.0005, liquid.userData.depth * fraction);
+    liquid.scale.z = height;
+    liquid.position.z = liquid.userData.floorZ + height / 2;
+}
+
+function setAutofillVisualLevel(deviceId, levelPct) {
+    if (!deviceId) return;
+    autofillLevels.set(deviceId, levelPct);
+    applyAutofillLevel(deviceId);
+}
+
 async function buildAccessoryMesh(device) {
     const url = resolveAccessoryModelUrl(device);
     if (!url) return null;
@@ -1837,13 +1943,25 @@ async function buildAccessoryMesh(device) {
                 const clone = SkeletonUtils.clone(source);
                 wrapper.add(clone);
                 wrapper.userData.accessoryHeightM = normalizeAccessoryModel(clone, device);
+                // Labware at an autofill station is the tray itself: do not lift it onto the model.
+                if (device?.type === 'autofill') wrapper.userData.accessoryHeightM = 0;
                 wrapper.rotation.z = accessoryDeckYaw(device);
                 resolve(wrapper);
             }, undefined, () => resolve(buildFallbackAccessoryMesh(device)));
         }));
     }
     const template = await accessoryTemplateCache.get(cacheKey);
-    return template ? template.clone(true) : null;
+    if (!template) return null;
+    // The procedural fallback is built per device and already registered.
+    if (template.userData.autofillProcedural) return template;
+    const instance = template.clone(true);
+    const liquid = instance.getObjectByName('liquid');
+    if (liquid && device?.id) {
+        liquid.userData.gltfLiquid = true;
+        autofillLiquidMeshes.set(device.id, liquid);
+        applyAutofillLevel(device.id);
+    }
+    return instance;
 }
 
 async function refreshAccessoryScene() {
@@ -3040,6 +3158,7 @@ function updateTaskPromptModal() {
     const retryBtn = document.getElementById('task-prompt-retry');
     const ignoreBtn = document.getElementById('task-prompt-ignore');
     const abortBtn = document.getElementById('task-prompt-abort');
+    const recoverBtn = document.getElementById('task-prompt-recover');
     if (!overlay || !titleEl || !messageEl || !detailsEl || !retryBtn || !ignoreBtn || !abortBtn) return;
 
     const prompt = state.taskStatus?.operator_prompt;
@@ -3058,6 +3177,7 @@ function updateTaskPromptModal() {
         retryBtn.disabled = false;
         ignoreBtn.disabled = false;
         abortBtn.disabled = false;
+        if (recoverBtn) recoverBtn.disabled = false;
         return;
     }
 
@@ -3084,10 +3204,31 @@ function updateTaskPromptModal() {
     retryBtn.style.display = choices.includes('retry') ? '' : 'none';
     ignoreBtn.style.display = choices.includes('ignore') ? '' : 'none';
     abortBtn.style.display = choices.includes('abort') ? '' : 'none';
+    if (recoverBtn) recoverBtn.style.display = choices.includes('recover') ? '' : 'none';
     retryBtn.disabled = state.taskPromptActionPending;
     ignoreBtn.disabled = state.taskPromptActionPending;
     abortBtn.disabled = state.taskPromptActionPending;
+    if (recoverBtn) recoverBtn.disabled = state.taskPromptActionPending;
     overlay.classList.add('open');
+}
+
+// Safety stop (light curtain / E-stop): re-enable the axes once the stop is
+// cleared. Moves nothing; afterwards Retry the step, or Abort, then retract Z
+// and Home All.
+async function recoverAfterSafetyStop() {
+    log('Recover: checking the safety interlock and re-enabling the axes...', 'info');
+    const res = await apiCall('/api/recover', 'POST');
+    if (!res) {
+        log('Recover failed. Clear the light curtain / release the E-stop and try again.', 'error');
+        return false;
+    }
+    const axes = Object.entries(res.axes || {}).map(([axis, s]) => `${axis}: ${s}`).join(', ');
+    if (res.status === 'recovered') {
+        log(`Recovered after the safety stop (${axes}). Nothing moved: Retry the step, or Abort, then retract Z and Home All.`, 'success');
+        return true;
+    }
+    log(`Recovery incomplete (${axes}). Do not continue; check the instrument.`, 'error');
+    return false;
 }
 
 async function submitTaskPromptAction(endpoint, ignoredMessage, level = 'info') {
@@ -3108,7 +3249,8 @@ async function submitTaskPromptAction(endpoint, ignoredMessage, level = 'info') 
         state.taskPromptActionPending = false;
         state.taskPromptPendingDetails = '';
         updateTaskPromptModal();
-        log(ignoredMessage, 'info');
+        // A refused Retry/Ignore says why (e.g. Recover first after a safety stop).
+        log(res.reason ? `Not accepted: ${res.reason}` : ignoredMessage, res.reason ? 'error' : 'info');
         return;
     }
     log(actionDescription.acceptedMessage, level);
@@ -3669,6 +3811,20 @@ document.getElementById('task-prompt-abort')?.addEventListener('click', async ()
         'That operator prompt is no longer waiting for input.',
         'error',
     );
+});
+
+document.getElementById('task-prompt-recover')?.addEventListener('click', async () => {
+    const btn = document.getElementById('task-prompt-recover');
+    if (btn) btn.disabled = true;
+    try {
+        await recoverAfterSafetyStop();
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+});
+
+document.getElementById('btn-recover')?.addEventListener('click', async () => {
+    await recoverAfterSafetyStop();
 });
 
 // ══════════════════════════════════════════════════════════════════════
@@ -4480,6 +4636,21 @@ bindProcessNumericInputs();
 const ACCESSORY_TYPE_LABELS = {
     barcode_reader: 'Barcode Reader',
     teleshake: 'Teleshake',
+    autofill: 'Autofill Station',
+};
+
+const AUTOFILL_DEFAULT_SETTINGS = {
+    weigh_module: 1,
+    tare: 0,
+    range: 0,
+    fill_module: 1,
+    fill_pump: 1,
+    fill_direction: 'forward',
+    fill_speed_pct: 50,
+    empty_module: 1,
+    empty_pump: 2,
+    empty_direction: 'reverse',
+    empty_speed_pct: 50,
 };
 
 function accessoryTypeLabel(type) {
@@ -4529,11 +4700,19 @@ function defaultAccessory(type) {
         enabled: true,
         location: 0,
         holds_labware: true,
-        connection: { kind: 'serial', port: isBarcode ? 'COM5' : 'COM4' },
+        connection: type === 'autofill'
+            ? { kind: 'accessory_bus' }
+            : { kind: 'serial', port: isBarcode ? 'COM5' : 'COM4' },
         settings: isBarcode
             ? { device_type: 'ms3', side: 'east' }
-            : { default_rpm: 100, default_direction: 'NWSE', temperature_enabled: false },
-        model: { path: type === 'teleshake' ? DEFAULT_TELESHAKE_MODEL_PATH : '' },
+            : type === 'autofill'
+                ? { ...AUTOFILL_DEFAULT_SETTINGS }
+                : { default_rpm: 100, default_direction: 'NWSE', temperature_enabled: false },
+        model: {
+            path: type === 'teleshake'
+                ? DEFAULT_TELESHAKE_MODEL_PATH
+                : (type === 'autofill' ? AUTOFILL_TRAY_MODEL : ''),
+        },
         teachpoint_hint: {},
     }, state.accessoryDevices.length);
 }
@@ -4545,8 +4724,15 @@ function normalizeAccessoryDevice(raw, index = 0) {
     if (raw?.port && !connection.port) connection.port = raw.port;
     if (raw?.device_type && !settings.device_type) settings.device_type = raw.device_type;
     if (raw?.side && !settings.side) settings.side = raw.side;
+    if (type === 'autofill') {
+        connection.kind = 'accessory_bus';
+        delete connection.port;
+        for (const [key, value] of Object.entries(AUTOFILL_DEFAULT_SETTINGS)) {
+            if (settings[key] === undefined || settings[key] === null || settings[key] === '') settings[key] = value;
+        }
+    }
     if (!connection.kind) connection.kind = 'serial';
-    if (!connection.port) connection.port = type === 'barcode_reader' ? 'COM5' : 'COM4';
+    if (!connection.port && type !== 'autofill') connection.port = type === 'barcode_reader' ? 'COM5' : 'COM4';
     if (type === 'barcode_reader') {
         if (!settings.device_type) settings.device_type = 'ms3';
         if (!settings.side) settings.side = 'east';
@@ -4653,10 +4839,61 @@ function renderAccessoryList() {
     scheduleDeckVisualRefresh();
 }
 
+// Accessory 3D model, chosen from a list: a standard deck position, a built-in
+// visual such as the autofill tray, a glTF model from frontend/accessories, or
+// a custom path.
+let accessoryModelOptions = [];
+
+async function loadAccessoryModelOptions() {
+    const res = await apiCall('/api/accessories/models', 'GET');
+    accessoryModelOptions = Array.isArray(res?.models) ? res.models : [];
+    populateAccessoryModelChoice(selectedAccessory());
+}
+
+function populateAccessoryModelChoice(device) {
+    const select = document.getElementById('prof-accessory-model-choice');
+    if (!select) return;
+    const known = accessoryModelOptions;
+    select.replaceChildren(
+        new Option('Standard position', ACCESSORY_MODEL_NONE),
+        ...known.map(model => new Option(model.name, model.path)),
+        new Option('Custom path…', '__custom__'),
+    );
+    const path = accessoryModelPath(device);
+    select.value = !path ? ACCESSORY_MODEL_NONE : (known.some(model => model.path === path) ? path : '__custom__');
+    setInput('prof-accessory-model-path', select.value === '__custom__' ? path : '');
+    updateAccessoryModelPathRow();
+}
+
+function updateAccessoryModelPathRow() {
+    const custom = document.getElementById('prof-accessory-model-choice')?.value === '__custom__';
+    const row = document.getElementById('prof-accessory-model-path-row');
+    if (row) row.style.display = custom ? '' : 'none';
+}
+
+function readAccessoryModelChoice() {
+    const choice = document.getElementById('prof-accessory-model-choice')?.value || ACCESSORY_MODEL_NONE;
+    if (choice === '__custom__') return (document.getElementById('prof-accessory-model-path')?.value || '').trim();
+    return choice;
+}
+
+document.getElementById('prof-accessory-model-choice')?.addEventListener('change', () => {
+    updateAccessoryModelPathRow();
+    // Not re-rendering here: picking "Custom path…" must keep the empty path
+    // field open until a path is typed.
+    saveAccessoryEditorToState();
+    scheduleDeckVisualRefresh();
+});
+void loadAccessoryModelOptions();
+
 function updateAccessoryTypePanels(type) {
     document.querySelectorAll('.accessory-type-panel').forEach(panel => panel.classList.remove('active'));
-    const panel = document.getElementById(type === 'teleshake' ? 'accessory-panel-teleshake' : 'accessory-panel-barcode');
+    const panelIds = { teleshake: 'accessory-panel-teleshake', autofill: 'accessory-panel-autofill' };
+    const panel = document.getElementById(panelIds[type] || 'accessory-panel-barcode');
     panel?.classList.add('active');
+    const portRow = document.getElementById('prof-accessory-port-row');
+    if (portRow) portRow.style.display = type === 'autofill' ? 'none' : '';
+    if (type !== 'autofill') setAutofillLive(false);
 }
 
 function populateAccessoryEditor(device) {
@@ -4673,7 +4910,7 @@ function populateAccessoryEditor(device) {
     if (locSel) locSel.value = String(device.location || 0);
     setInput('prof-accessory-port', device.connection?.port || (device.type === 'barcode_reader' ? 'COM5' : 'COM4'));
     setCheck('prof-accessory-holds-labware', device.holds_labware !== false);
-    setInput('prof-accessory-model-path', accessoryModelPath(device));
+    populateAccessoryModelChoice(device);
     setInput('prof-accessory-z-hint', device.teachpoint_hint?.z_delta_mm ?? 0);
 
     const scannerType = document.getElementById('prof-accessory-barcode-device-type');
@@ -4684,6 +4921,17 @@ function populateAccessoryEditor(device) {
     const direction = document.getElementById('prof-accessory-teleshake-direction');
     if (direction) direction.value = device.settings?.default_direction || 'NWSE';
     setCheck('prof-accessory-teleshake-temperature', Boolean(device.settings?.temperature_enabled));
+    const af = { ...AUTOFILL_DEFAULT_SETTINGS, ...(device.type === 'autofill' ? device.settings : {}) };
+    setInput('prof-accessory-autofill-weigh-module', af.weigh_module);
+    setInput('prof-accessory-autofill-tare', af.tare);
+    setInput('prof-accessory-autofill-range', af.range);
+    setInput('prof-accessory-autofill-module', af.fill_module);
+    setInput('prof-accessory-autofill-fill-pump', af.fill_pump);
+    setInput('prof-accessory-autofill-fill-direction', af.fill_direction);
+    setInput('prof-accessory-autofill-fill-speed', af.fill_speed_pct);
+    setInput('prof-accessory-autofill-empty-pump', af.empty_pump);
+    setInput('prof-accessory-autofill-empty-direction', af.empty_direction);
+    setInput('prof-accessory-autofill-empty-speed', af.empty_speed_pct);
     updateAccessoryTypePanels(device.type);
 }
 
@@ -4700,8 +4948,25 @@ function readAccessoryEditor() {
         settings.default_rpm = parseInt(document.getElementById('prof-accessory-teleshake-rpm')?.value || '100', 10);
         settings.default_direction = document.getElementById('prof-accessory-teleshake-direction')?.value || 'NWSE';
         settings.temperature_enabled = document.getElementById('prof-accessory-teleshake-temperature')?.checked ?? false;
+    } else if (type === 'autofill') {
+        const num = (id, fallback) => {
+            const value = parseFloat(document.getElementById(id)?.value ?? '');
+            return Number.isFinite(value) ? value : fallback;
+        };
+        const pumpModule = num('prof-accessory-autofill-module', 1);
+        settings.weigh_module = num('prof-accessory-autofill-weigh-module', 1);
+        settings.tare = num('prof-accessory-autofill-tare', 0);
+        settings.range = num('prof-accessory-autofill-range', 0);
+        settings.fill_module = pumpModule;
+        settings.fill_pump = num('prof-accessory-autofill-fill-pump', 1);
+        settings.fill_direction = document.getElementById('prof-accessory-autofill-fill-direction')?.value || 'forward';
+        settings.fill_speed_pct = num('prof-accessory-autofill-fill-speed', 50);
+        settings.empty_module = pumpModule;
+        settings.empty_pump = num('prof-accessory-autofill-empty-pump', 2);
+        settings.empty_direction = document.getElementById('prof-accessory-autofill-empty-direction')?.value || 'reverse';
+        settings.empty_speed_pct = num('prof-accessory-autofill-empty-speed', 50);
     }
-    const modelPath = (document.getElementById('prof-accessory-model-path')?.value || '').trim();
+    const modelPath = readAccessoryModelChoice();
     const zHint = parseFloat(document.getElementById('prof-accessory-z-hint')?.value || '0');
     return normalizeAccessoryDevice({
         ...current,
@@ -4711,10 +4976,12 @@ function readAccessoryEditor() {
         enabled: document.getElementById('prof-accessory-enabled')?.checked ?? true,
         location: parseInt(document.getElementById('prof-accessory-location')?.value || '0', 10),
         holds_labware: document.getElementById('prof-accessory-holds-labware')?.checked ?? true,
-        connection: {
-            kind: 'serial',
-            port: (document.getElementById('prof-accessory-port')?.value || (type === 'barcode_reader' ? 'COM5' : 'COM4')).trim(),
-        },
+        connection: type === 'autofill'
+            ? { kind: 'accessory_bus' }
+            : {
+                kind: 'serial',
+                port: (document.getElementById('prof-accessory-port')?.value || (type === 'barcode_reader' ? 'COM5' : 'COM4')).trim(),
+            },
         settings,
         model: modelPath ? { path: modelPath } : {},
         teachpoint_hint: Number.isFinite(zHint) && zHint !== 0 ? { z_delta_mm: zHint, requires_validation: true } : {},
@@ -4782,6 +5049,408 @@ async function runSelectedTeleshakeAction(action) {
     } else {
         setTeleshakeStatus('error');
     }
+}
+
+// ── Autofill station (pump module + weigh pad on the accessory bus) ──
+
+let autofillLiveTimer = null;
+let autofillStatusTimer = null;
+let autofillLastReading = null;
+
+function setAutofillStatus(text) {
+    const el = document.getElementById('accessory-autofill-status');
+    if (el) el.textContent = text || '-';
+}
+
+function selectedAutofill() {
+    const device = selectedAccessory();
+    return device && device.type === 'autofill' ? device : null;
+}
+
+function renderAutofillReading(reading) {
+    autofillLastReading = reading;
+    const readingEl = document.getElementById('accessory-autofill-reading');
+    const levelEl = document.getElementById('accessory-autofill-level');
+    if (readingEl) readingEl.textContent = reading == null ? '-' : String(reading);
+    // Tare and range are host-side calibration, so the level follows the
+    // fields on screen without saving the profile first.
+    const tare = parseFloat(document.getElementById('prof-accessory-autofill-tare')?.value || '0');
+    const range = parseFloat(document.getElementById('prof-accessory-autofill-range')?.value || '0');
+    const level = reading == null || range === tare ? null : ((reading - tare) * 100) / (range - tare);
+    if (levelEl) levelEl.textContent = level == null ? '-' : level.toFixed(2);
+    if (level != null) {
+        setAutofillVisualLevel(selectedAutofill()?.id, level);
+        recordAutofillSample(level);
+    }
+}
+
+async function readAutofillWeight() {
+    const device = selectedAutofill();
+    if (!device) return null;
+    const res = await apiCall(`/api/accessories/${encodeURIComponent(device.id)}/autofill/level`, 'GET');
+    if (!res) {
+        setAutofillLive(false);
+        return null;
+    }
+    renderAutofillReading(res.reading);
+    return res.reading;
+}
+
+function setAutofillLive(on) {
+    const box = document.getElementById('accessory-autofill-live');
+    if (box) box.checked = Boolean(on);
+    if (autofillLiveTimer) {
+        window.clearInterval(autofillLiveTimer);
+        autofillLiveTimer = null;
+    }
+    if (on) {
+        void readAutofillWeight();
+        autofillLiveTimer = window.setInterval(() => { void readAutofillWeight(); }, 500);
+    }
+}
+
+function watchAutofillRun(accessoryId) {
+    if (autofillStatusTimer) window.clearInterval(autofillStatusTimer);
+    autofillStatusTimer = window.setInterval(async () => {
+        const res = await apiCall('/api/accessories', 'GET');
+        const runtime = res?.devices?.find(item => item.id === accessoryId)?.runtime;
+        if (!runtime || !runtime.is_running) {
+            window.clearInterval(autofillStatusTimer);
+            autofillStatusTimer = null;
+            autofillHoldAccessoryId = null;
+            autofillLastSpeeds = {};
+            autofillLastTarget = null;
+            if (runtime?.last_error) {
+                // The run was ended by a module error (fail closed). Leave the
+                // bus alone: no weight read here, and Live polling off.
+                setAutofillLive(false);
+                setAutofillStatus(`stopped by an error: ${runtime.last_error}`);
+                log(`Autofill stopped by an error: ${runtime.last_error}. Check the pumps; a power-cycle of the pump module may be needed.`, 'error');
+                return;
+            }
+            setAutofillStatus('stopped');
+            void readAutofillWeight(); // settle the level shown after the stop
+            return;
+        }
+        const left = runtime.seconds_remaining;
+        const timeText = left == null ? '' : `, ${left.toFixed(1)} s left`;
+        const hold = runtime.hold;
+        autofillHoldAccessoryId = hold ? accessoryId : null;
+        // Speeds actually commanded to the pumps right now.
+        const speeds = runtime.pump_speeds || {};
+        autofillLastSpeeds = speeds;
+        autofillLastTarget = hold ? (hold.step_target_pct ?? hold.target_level_pct) : null;
+        const speedText = ['fill', 'empty']
+            .filter(role => speeds[role] != null)
+            .map(role => `${role} ${Math.round(speeds[role])} %`)
+            .join(' · ');
+        const limited = hold && hold.inflow_limit_pct != null
+            ? ` · inflow limited to ${Math.round(hold.inflow_limit_pct)} % (drain can't keep up)` : '';
+        const stepping = hold && hold.step_target_pct != null && hold.step_target_pct !== hold.target_level_pct
+            ? ` (step ${Math.round(hold.step_target_pct)} %)` : '';
+        const what = !hold ? 'running'
+            : hold.phase === 'reaching' ? `reaching ${hold.target_level_pct} % (priming, time not counted yet)${limited}`
+            : `holding ${hold.target_level_pct} %${stepping}${limited}`;
+        // A hold that counts from the target reports its own time left.
+        const holdTime = hold && hold.hold_seconds_remaining != null
+            ? `, ${hold.hold_seconds_remaining.toFixed(1)} s left` : (hold && hold.phase === 'reaching' ? '' : timeText);
+        setAutofillStatus(`${what}${speedText ? ` · ${speedText}` : ''}${holdTime}`);
+        // Follow the liquid in the 3D view while pumping, even without Live.
+        if (!autofillLiveTimer) void readAutofillWeight();
+    }, 500);
+}
+
+async function runSelectedAutofill() {
+    const device = selectedAutofill();
+    if (!device) {
+        log('Select an Autofill Station accessory first', 'error');
+        return;
+    }
+    if (!device.enabled) {
+        log('Enable the Autofill Station before running its pumps', 'error');
+        return;
+    }
+    const fill = document.getElementById('accessory-autofill-run-fill')?.checked ?? false;
+    const empty = document.getElementById('accessory-autofill-run-empty')?.checked ?? false;
+    if (!fill && !empty) {
+        log('Select Fill, Empty or both', 'error');
+        return;
+    }
+    const duration = parseFloat(document.getElementById('accessory-autofill-duration')?.value || '0');
+    if (!(duration > 0 && duration <= 600)) {
+        log('Pump run time must be from 1 to 600 s', 'error');
+        return;
+    }
+    setAutofillStatus('starting...');
+    // Saving the profile rebuilds the accessory drivers, which also stops any
+    // pump already running, so the run always starts from a known state.
+    if (!await syncAccessoriesToBackend()) {
+        setAutofillStatus('sync failed');
+        return;
+    }
+    const current = selectedAutofill() || device;
+    const res = await apiCall(`/api/accessories/${encodeURIComponent(current.id)}/autofill/run`, 'POST', {
+        duration_s: duration,
+        fill,
+        empty,
+    });
+    if (!res) {
+        setAutofillStatus('error');
+        return;
+    }
+    log(`Autofill pumps running for ${duration} s`, 'success');
+    watchAutofillRun(current.id);
+}
+
+async function holdSelectedAutofill() {
+    const device = selectedAutofill();
+    if (!device) {
+        log('Select an Autofill Station accessory first', 'error');
+        return;
+    }
+    const duration = parseFloat(document.getElementById('accessory-autofill-duration')?.value || '0');
+    const target = parseFloat(document.getElementById('accessory-autofill-hold-target')?.value || '');
+    const inflow = parseFloat(document.getElementById('accessory-autofill-hold-inflow')?.value || '');
+    if (!(duration > 0 && duration <= 600) || !Number.isFinite(target) || !Number.isFinite(inflow)) {
+        log('Set the run time (1-600 s), target level and inflow first', 'error');
+        return;
+    }
+    setAutofillStatus('starting hold...');
+    if (!await syncAccessoriesToBackend()) {
+        setAutofillStatus('sync failed');
+        return;
+    }
+    const current = selectedAutofill() || device;
+    const fromTarget = !!document.getElementById('accessory-autofill-hold-from-target')?.checked;
+    const res = await apiCall(`/api/accessories/${encodeURIComponent(current.id)}/autofill/hold`, 'POST', {
+        target_level_pct: target, inflow_pct: inflow, duration_s: duration, time_from_target: fromTarget,
+    });
+    if (!res) {
+        setAutofillStatus('error');
+        return;
+    }
+    log(`Holding ${target} % at ${inflow} % inflow for ${duration} s${fromTarget ? ' from reaching the target' : ''}`, 'success');
+    autofillHoldAccessoryId = current.id;
+    setAutofillLive(true);
+    watchAutofillRun(current.id);
+}
+
+// ── Autofill live chart: level and pump speeds over the last 120 s ──
+// One 0-100 % axis carries both, since level and pump speed are both percent.
+// Series colours: categorical slots 1-3 of the validated chart palette, in order.
+const AUTOFILL_CHART_WINDOW_S = 120;
+const AUTOFILL_SERIES = [
+    { key: 'level', label: 'Level', light: '#2a78d6', dark: '#3987e5' },
+    { key: 'fill', label: 'Fill pump', light: '#eb6834', dark: '#d95926' },
+    { key: 'empty', label: 'Empty pump', light: '#1baf7a', dark: '#199e70' },
+];
+const autofillSamples = []; // { t, level, fill, empty, target }
+let autofillLastSpeeds = {};
+let autofillLastTarget = null;
+let autofillChartHoverX = null;
+
+function autofillChartColors() {
+    const dark = (document.documentElement.dataset.theme || 'dark') !== 'light';
+    const css = getComputedStyle(document.documentElement);
+    return {
+        dark,
+        text: css.getPropertyValue('--text-dim').trim() || (dark ? '#c3c2b7' : '#52514e'),
+        grid: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+        target: dark ? '#c3c2b7' : '#52514e',
+        surface: css.getPropertyValue('--bg-panel').trim() || (dark ? '#1a1a19' : '#fcfcfb'),
+    };
+}
+
+function recordAutofillSample(levelPct) {
+    const now = performance.now() / 1000;
+    autofillSamples.push({
+        t: now,
+        level: levelPct,
+        fill: autofillLastSpeeds.fill ?? null,
+        empty: autofillLastSpeeds.empty ?? null,
+        target: autofillLastTarget,
+    });
+    while (autofillSamples.length && now - autofillSamples[0].t > AUTOFILL_CHART_WINDOW_S) autofillSamples.shift();
+    drawAutofillChart();
+}
+
+function renderAutofillChartLegend() {
+    const el = document.getElementById('accessory-autofill-chart-legend');
+    if (!el || el.childElementCount) return;
+    const colors = autofillChartColors();
+    for (const s of AUTOFILL_SERIES) {
+        const item = document.createElement('span');
+        const sw = document.createElement('span');
+        sw.className = 'swatch';
+        sw.style.background = colors.dark ? s.dark : s.light;
+        item.append(sw, s.label);
+        el.appendChild(item);
+    }
+    const item = document.createElement('span');
+    const sw = document.createElement('span');
+    sw.className = 'swatch';
+    sw.style.background = `repeating-linear-gradient(90deg, ${colors.target} 0 3px, transparent 3px 5px)`;
+    item.append(sw, 'Hold target');
+    el.appendChild(item);
+}
+
+function drawAutofillChart() {
+    const canvas = document.getElementById('accessory-autofill-chart');
+    if (!canvas || !canvas.offsetParent) return; // panel hidden
+    renderAutofillChartLegend();
+    const dpr = window.devicePixelRatio || 1;
+    const cssW = canvas.clientWidth;
+    const cssH = canvas.clientHeight;
+    if (canvas.width !== Math.round(cssW * dpr)) canvas.width = Math.round(cssW * dpr);
+    if (canvas.height !== Math.round(cssH * dpr)) canvas.height = Math.round(cssH * dpr);
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+    const colors = autofillChartColors();
+    const pad = { l: 30, r: 40, t: 6, b: 16 };
+    const w = cssW - pad.l - pad.r;
+    const h = cssH - pad.t - pad.b;
+    const now = performance.now() / 1000;
+    const x = t => pad.l + w * (1 - (now - t) / AUTOFILL_CHART_WINDOW_S);
+    const y = v => pad.t + h * (1 - Math.max(0, Math.min(110, v)) / 110);
+
+    // Recessive grid and axis labels.
+    ctx.font = '10px sans-serif';
+    ctx.fillStyle = colors.text;
+    ctx.strokeStyle = colors.grid;
+    ctx.lineWidth = 1;
+    for (const v of [0, 25, 50, 75, 100]) {
+        ctx.beginPath();
+        ctx.moveTo(pad.l, y(v) + 0.5);
+        ctx.lineTo(pad.l + w, y(v) + 0.5);
+        ctx.stroke();
+        ctx.textAlign = 'right';
+        ctx.fillText(`${v}%`, pad.l - 4, y(v) + 3);
+    }
+    ctx.textAlign = 'center';
+    for (const s of [120, 90, 60, 30, 0]) ctx.fillText(s ? `-${s}s` : 'now', pad.l + w * (1 - s / AUTOFILL_CHART_WINDOW_S), cssH - 3);
+
+    const line = (key, color, dashed = false) => {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.setLineDash(dashed ? [4, 3] : []);
+        ctx.beginPath();
+        let drawing = false;
+        for (const p of autofillSamples) {
+            const v = p[key];
+            if (v == null || !Number.isFinite(v)) { drawing = false; continue; }
+            if (drawing) ctx.lineTo(x(p.t), y(v));
+            else { ctx.moveTo(x(p.t), y(v)); drawing = true; }
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+    };
+    line('target', colors.target, true);
+    const ends = [];
+    for (const s of AUTOFILL_SERIES) {
+        const color = colors.dark ? s.dark : s.light;
+        line(s.key, color);
+        const last = [...autofillSamples].reverse().find(p => p[s.key] != null);
+        if (last) ends.push({ y: y(last[s.key]), text: `${Math.round(last[s.key])}%`, color });
+    }
+    // Direct end labels: a coloured dot beside text in text colour, nudged apart.
+    ends.sort((a, b) => a.y - b.y);
+    for (let i = 1; i < ends.length; i++) ends[i].y = Math.max(ends[i].y, ends[i - 1].y + 11);
+    ctx.textAlign = 'left';
+    for (const e of ends) {
+        ctx.fillStyle = e.color;
+        ctx.beginPath();
+        ctx.arc(pad.l + w + 6, e.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = colors.text;
+        ctx.fillText(e.text, pad.l + w + 12, e.y + 3);
+    }
+
+    // Hover crosshair + tooltip.
+    const tip = document.getElementById('accessory-autofill-chart-tip');
+    if (autofillChartHoverX == null || !autofillSamples.length) {
+        if (tip) tip.style.display = 'none';
+        return;
+    }
+    const tHover = now - (1 - (autofillChartHoverX - pad.l) / w) * AUTOFILL_CHART_WINDOW_S;
+    const nearest = autofillSamples.reduce((a, b) => (Math.abs(b.t - tHover) < Math.abs(a.t - tHover) ? b : a));
+    const hx = x(nearest.t);
+    ctx.strokeStyle = colors.text;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(hx + 0.5, pad.t);
+    ctx.lineTo(hx + 0.5, pad.t + h);
+    ctx.stroke();
+    if (tip) {
+        const fmt = v => (v == null ? '–' : `${Math.round(v * 10) / 10} %`);
+        tip.textContent = `${Math.round(now - nearest.t)} s ago · level ${fmt(nearest.level)} · fill ${fmt(nearest.fill)} · empty ${fmt(nearest.empty)}`
+            + (nearest.target != null ? ` · target ${nearest.target} %` : '');
+        tip.style.display = 'block';
+        tip.style.left = `${Math.min(Math.max(0, hx - 80), cssW - 220)}px`;
+        tip.style.top = '18px';
+    }
+}
+
+(() => {
+    const canvas = document.getElementById('accessory-autofill-chart');
+    if (!canvas) return;
+    const tip = document.createElement('div');
+    tip.id = 'accessory-autofill-chart-tip';
+    tip.className = 'autofill-chart-tip';
+    canvas.parentElement.appendChild(tip);
+    canvas.addEventListener('mousemove', (event) => {
+        autofillChartHoverX = event.offsetX;
+        drawAutofillChart();
+    });
+    canvas.addEventListener('mouseleave', () => {
+        autofillChartHoverX = null;
+        drawAutofillChart();
+    });
+    // Keep the time axis sliding even between samples.
+    window.setInterval(() => { if (autofillSamples.length) drawAutofillChart(); }, 1000);
+})();
+
+// While a Hold level runs, edits to its target and inflow go straight to the
+// running regulator; the pumps ramp to the new values.
+let autofillHoldAccessoryId = null;
+
+async function pushAutofillHoldChange() {
+    if (!autofillHoldAccessoryId) return;
+    const target = parseFloat(document.getElementById('accessory-autofill-hold-target')?.value || '');
+    const inflow = parseFloat(document.getElementById('accessory-autofill-hold-inflow')?.value || '');
+    if (!Number.isFinite(target) || !Number.isFinite(inflow)) return;
+    const res = await apiCall(
+        `/api/accessories/${encodeURIComponent(autofillHoldAccessoryId)}/autofill/hold/update`, 'POST',
+        { target_level_pct: target, inflow_pct: inflow },
+    );
+    if (res) log(`Hold changed: ${res.target_level_pct} % at ${res.inflow_pct} % inflow`, 'info');
+}
+
+// Send once the operator has settled on a value, not on every arrow click.
+let autofillHoldChangeTimer = null;
+for (const id of ['accessory-autofill-hold-target', 'accessory-autofill-hold-inflow']) {
+    document.getElementById(id)?.addEventListener('input', () => {
+        if (autofillHoldChangeTimer) window.clearTimeout(autofillHoldChangeTimer);
+        autofillHoldChangeTimer = window.setTimeout(() => { void pushAutofillHoldChange(); }, 400);
+    });
+}
+
+async function stopSelectedAutofill() {
+    const device = selectedAutofill();
+    if (!device) return;
+    setAutofillStatus('stopping...');
+    const res = await apiCall(`/api/accessories/${encodeURIComponent(device.id)}/autofill/stop`, 'POST');
+    setAutofillStatus(res ? 'stopped' : 'stop failed!');
+    if (res) log('Autofill pumps stopped', 'success');
+}
+
+async function captureAutofillCalibration(field) {
+    const reading = await readAutofillWeight();
+    if (reading == null) return;
+    setInput(field === 'tare' ? 'prof-accessory-autofill-tare' : 'prof-accessory-autofill-range', reading);
+    renderAutofillReading(reading);
+    saveAccessoryEditorToState();
+    log(`Autofill ${field} set to ${reading}; Save Settings to keep it in the profile`, 'info');
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -4980,6 +5649,35 @@ document.getElementById('btn-accessory-remove')?.addEventListener('click', async
     log(`Could not remove "${label}": ${state.lastApiError || 'save failed'}`, 'error');
 });
 
+document.getElementById('btn-accessory-add-autofill')?.addEventListener('click', async () => {
+    saveAccessoryEditorToState();
+    const device = defaultAccessory('autofill');
+    const previous = state.accessoryDevices;
+    state.accessoryDevices = [...state.accessoryDevices, device];
+    state.selectedAccessoryId = device.id;
+    renderAccessoryList();
+
+    if (!await syncAccessoriesToBackend()) {
+        state.accessoryDevices = previous;
+        state.selectedAccessoryId = previous[0]?.id || '';
+        renderAccessoryList();
+        log(`Could not add accessory: ${state.lastApiError || 'save failed'}`, 'error');
+    }
+});
+
+document.getElementById('btn-accessory-autofill-read')?.addEventListener('click', () => { void readAutofillWeight(); });
+document.getElementById('accessory-autofill-live')?.addEventListener('change', (event) => {
+    setAutofillLive(event.target.checked);
+});
+document.getElementById('btn-accessory-autofill-set-tare')?.addEventListener('click', () => { void captureAutofillCalibration('tare'); });
+document.getElementById('btn-accessory-autofill-set-range')?.addEventListener('click', () => { void captureAutofillCalibration('range'); });
+for (const id of ['prof-accessory-autofill-tare', 'prof-accessory-autofill-range']) {
+    document.getElementById(id)?.addEventListener('input', () => renderAutofillReading(autofillLastReading));
+}
+document.getElementById('btn-accessory-autofill-run')?.addEventListener('click', () => { void runSelectedAutofill(); });
+document.getElementById('btn-accessory-autofill-stop')?.addEventListener('click', () => { void stopSelectedAutofill(); });
+document.getElementById('btn-accessory-autofill-hold')?.addEventListener('click', () => { void holdSelectedAutofill(); });
+
 document.getElementById('btn-accessory-teleshake-start')?.addEventListener('click', async () => {
     await runSelectedTeleshakeAction('start');
 });
@@ -5001,6 +5699,16 @@ document.getElementById('btn-accessory-teleshake-stop')?.addEventListener('click
     'prof-accessory-teleshake-rpm',
     'prof-accessory-teleshake-direction',
     'prof-accessory-teleshake-temperature',
+    'prof-accessory-autofill-weigh-module',
+    'prof-accessory-autofill-tare',
+    'prof-accessory-autofill-range',
+    'prof-accessory-autofill-module',
+    'prof-accessory-autofill-fill-pump',
+    'prof-accessory-autofill-fill-direction',
+    'prof-accessory-autofill-fill-speed',
+    'prof-accessory-autofill-empty-pump',
+    'prof-accessory-autofill-empty-direction',
+    'prof-accessory-autofill-empty-speed',
     'prof-accessory-model-path',
     'prof-accessory-z-hint',
 ].forEach((id) => {

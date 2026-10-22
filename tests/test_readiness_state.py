@@ -105,8 +105,8 @@ async def test_disconnect_clears_readiness():
 
 def test_expected_axes_follow_the_machine():
     """A gripperless machine must not wait forever for G/Zg to be homed."""
-    profile = BravoProfile.default()
-    b = Bravo(profile=profile, mode="simulation")
+    b = Bravo(profile=BravoProfile.default(), mode="simulation")
+    profile = b.profile  # a mode override works on its own copy of the profile
     b.connect()
     try:
         expected = set(b._axes_expected_home())

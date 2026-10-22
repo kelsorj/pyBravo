@@ -38,7 +38,7 @@ from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, Web
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from pybravo import labware_editor
 from pybravo import liquid_classes as liquid_classes_store
@@ -882,6 +882,7 @@ class ProfileUpdateRequest(BaseModel):
     z_safe_position: float | None = None
     prompt_home_w: bool | None = None
     run_medium_speed: bool | None = None
+    head_speed_limit_pct: float | None = Field(default=None, ge=1.0, le=100.0)
     always_safe_z: bool | None = None
     ignore_plate_sensor: bool | None = None
     enable_tips_off_tip_touch: bool | None = None
@@ -935,6 +936,14 @@ class ExecuteCommandRequest(BaseModel):
 class TeleshakeActionRequest(BaseModel):
     rpm: int | None = None
     direction: str | None = None
+
+
+class AutofillRunRequest(BaseModel):
+    duration_s: float
+    fill: bool = True
+    empty: bool = True
+    fill_speed_pct: float | None = None
+    empty_speed_pct: float | None = None
 
 
 class LiquidClassRequest(BaseModel):
@@ -1147,18 +1156,38 @@ async def home():
 
 @app.post("/api/abort", **_route_meta("Connection", "Abort the active task", "Signals the task engine to abort the currently running operation after a fault or user stop request."))
 async def abort():
-    accepted = get_bravo().abort()
-    return {"status": "aborted", "accepted": bool(accepted)}
+    bravo = get_bravo()
+    accepted = bravo.abort()
+    # An operator Abort also ends a running workflow, so it can never carry
+    # on to the next node (a pump step, say) after the task it interrupted.
+    workflow_stopped = False
+    if _active_workflow_executor is not None:
+        _active_workflow_executor.abort("Workflow aborted by the operator")
+        workflow_stopped = True
+    return {"status": "aborted", "accepted": bool(accepted) or workflow_stopped,
+            "workflow_stopped": workflow_stopped}
 
-@app.post("/api/retry", **_route_meta("Connection", "Retry the last failed task step", "Instructs the task engine to retry the current failed state-machine step."))
+@app.post("/api/retry", **_route_meta("Connection", "Retry the last failed task step", "Instructs the task engine to retry the current failed state-machine step. After a safety stop, Retry is accepted only after Recover, and only a limited number of times."))
 async def retry():
-    accepted = get_bravo().retry()
-    return {"status": "retried", "accepted": bool(accepted)}
+    bravo = get_bravo()
+    accepted = bravo.retry()
+    return {"status": "retried", "accepted": bool(accepted), "reason": bravo._engine.last_refusal}
 
-@app.post("/api/ignore", **_route_meta("Connection", "Ignore the current task error and continue", "Tells the task engine to ignore the current error and continue to the next step, similar to continuing past a diagnostics fault."))
+@app.post("/api/ignore", **_route_meta("Connection", "Ignore the current task error and continue", "Tells the task engine to ignore the current error and continue to the next step, similar to continuing past a diagnostics fault. Refused for a step stopped by the safety interlock."))
 async def ignore_error():
-    accepted = get_bravo().ignore()
-    return {"status": "ignored", "accepted": bool(accepted)}
+    bravo = get_bravo()
+    accepted = bravo.ignore()
+    return {"status": "ignored", "accepted": bool(accepted), "reason": bravo._engine.last_refusal}
+
+@app.post("/api/recover", **_route_meta("Connection", "Recover after a safety stop", "After a light-curtain trip or E-stop: checks that the safety interlock is clear, then re-enables the axes the controller disabled. Moves nothing. Refused while a task step is still executing. Afterwards retract Z and Home All (or Retry the step the safety stop interrupted)."))
+async def recover_after_safety_stop():
+    from pybravo.bravo import RecoverRefused
+
+    bravo = get_bravo()
+    try:
+        return await asyncio.to_thread(bravo.recover)
+    except RecoverRefused as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
 
 # -- REST endpoints: Motion --
@@ -1740,6 +1769,101 @@ async def stop_teleshake(accessory_id: str):
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
         logger.warning("Teleshake stop failed for %s: %s", accessory_id, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+_ACCESSORY_MODEL_DIR = Path(__file__).resolve().parents[2] / "frontend" / "accessories"
+
+
+@app.get("/api/accessories/models", **_route_meta("State", "List accessory 3D models", "Lists the glTF models in frontend/accessories that an accessory can use for its deck visual."))
+async def list_accessory_models():
+    models = []
+    if _ACCESSORY_MODEL_DIR.is_dir():
+        for path in sorted(_ACCESSORY_MODEL_DIR.iterdir()):
+            if path.is_file() and path.suffix.lower() in (".gltf", ".glb"):
+                models.append({"name": path.stem, "path": f"/static/accessories/{path.name}"})
+    return {"models": models}
+
+
+@app.get("/api/accessories/{accessory_id}/autofill/level", **_route_meta("State", "Read an autofill weigh pad", "Reads the raw weigh-pad A/D value and the fill level computed from the profile's tare and range."))
+async def read_autofill_level(accessory_id: str):
+    try:
+        return get_bravo().read_autofill_level(accessory_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.warning("Autofill weigh-pad read failed for %s: %s", accessory_id, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.post("/api/accessories/{accessory_id}/autofill/run", **_route_meta("State", "Run autofill pumps for a set time", "Starts the fill and/or empty pump and stops them after duration_s (at most 600 s). The pumps keep running until stopped, so the server always schedules the stop."))
+async def run_autofill_pumps(accessory_id: str, req: AutofillRunRequest):
+    try:
+        return get_bravo().run_autofill_pumps(
+            accessory_id,
+            duration_s=req.duration_s,
+            fill=req.fill,
+            empty=req.empty,
+            fill_speed_pct=req.fill_speed_pct,
+            empty_speed_pct=req.empty_speed_pct,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.warning("Autofill pump start failed for %s: %s", accessory_id, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+class AutofillHoldRequest(BaseModel):
+    target_level_pct: float
+    inflow_pct: float = 50.0
+    duration_s: float
+    time_from_target: bool = False
+    max_reach_time_s: float = 120.0
+
+
+@app.post("/api/accessories/{accessory_id}/autofill/hold", **_route_meta("State", "Hold the autofill level", "Runs fill and drain together for duration_s while the weigh pad steers the drain to hold target_level_pct at the given inflow. With time_from_target, duration_s counts from when the hoses are primed and the level is at the target (reaching it may take up to max_reach_time_s). Returns at once; the pumps stop after the hold, on Stop, or if the tray reaches 100 %."))
+async def hold_autofill_level(accessory_id: str, req: AutofillHoldRequest):
+    try:
+        bravo = get_bravo()
+        device = bravo._accessories.find_by_id(accessory_id)
+        if device is None or device.type != "autofill":
+            raise ValueError(f"Accessory {accessory_id!r} is not an autofill station")
+        return await bravo.pump_reagent(
+            int(device.location or 0), reservoir_mode="hold", pump_speed_pct=req.inflow_pct,
+            target_level_pct=req.target_level_pct, pump_on_time_s=req.duration_s, allow_concurrent=True,
+            time_from_target=req.time_from_target, max_reach_time_s=req.max_reach_time_s,
+            wait_for_target=False,  # the panel follows the phase in the status instead
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.warning("Autofill hold failed for %s: %s", accessory_id, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+class AutofillHoldUpdateRequest(BaseModel):
+    target_level_pct: float | None = None
+    inflow_pct: float | None = None
+
+
+@app.post("/api/accessories/{accessory_id}/autofill/hold/update", **_route_meta("State", "Change a running Hold level", "Changes the target level and/or inflow of a running Hold level; pump speeds ramp to the new values."))
+async def update_autofill_hold(accessory_id: str, req: AutofillHoldUpdateRequest):
+    try:
+        return get_bravo().update_autofill_hold(
+            accessory_id, target_level_pct=req.target_level_pct, inflow_pct=req.inflow_pct,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+@app.post("/api/accessories/{accessory_id}/autofill/stop", **_route_meta("State", "Stop autofill pumps", "Stops every pump on the autofill station's pump module."))
+async def stop_autofill_pumps(accessory_id: str):
+    try:
+        return get_bravo().stop_autofill_pumps(accessory_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.warning("Autofill pump stop failed for %s: %s", accessory_id, exc)
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
@@ -3646,6 +3770,7 @@ async def get_profile():
             "z_safe_position": prof.safety.z_safe_position,
             "always_move_to_safe_z": prof.safety.always_move_to_safe_z,
             "run_medium_speed": prof.safety.run_medium_speed,
+            "head_speed_limit_pct": prof.safety.head_speed_limit_pct,
             "prompt_home_w": prof.safety.prompt_home_w,
             "ignore_plate_sensor": prof.safety.ignore_plate_sensor,
             "enable_tips_off_tip_touch": prof.safety.enable_tips_off_tip_touch,
@@ -3672,6 +3797,9 @@ async def update_profile(req: ProfileUpdateRequest):
         prof.safety.always_move_to_safe_z = req.always_safe_z
     if req.run_medium_speed is not None:
         prof.safety.run_medium_speed = req.run_medium_speed
+    if req.head_speed_limit_pct is not None:
+        prof.safety.head_speed_limit_pct = req.head_speed_limit_pct
+        bravo.apply_head_speed_limit()
     if req.prompt_home_w is not None:
         prof.safety.prompt_home_w = req.prompt_home_w
     if req.ignore_plate_sensor is not None:
@@ -4639,8 +4767,16 @@ async def websocket_state(websocket: WebSocket):
         while True:
             bravo = get_bravo()
             if bravo.is_connected:
-                state = bravo.get_state()
-                await websocket.send_json(state)
+                # Off the event loop: on hardware a state read is dozens of
+                # wire round trips, and doing it inline stalled every other
+                # request (an accessory command took 1.5-2 s) while it ran.
+                try:
+                    state = await asyncio.to_thread(bravo.get_state)
+                except Exception:
+                    logger.debug("State snapshot failed; skipping this frame", exc_info=True)
+                    state = None
+                if state is not None:
+                    await websocket.send_json(state)
             sleep_s = 1 / 30
             if bravo.profile.connection.controller_type in {"darwin", "darwin_native", "agile", "agile_7612"}:
                 sleep_s = 0.2

@@ -79,6 +79,8 @@ const ASSET_BASE = '/model/pybravo_urdf/assets';
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
+const RESERVOIR_WALL_M = 0.004; // wall of a generated wash-station / reservoir tub
+
 function parseVec3(str) {
     if (!str) return [0, 0, 0];
     return str.trim().split(/\s+/).map(parseFloat);
@@ -210,6 +212,8 @@ export class RobotScene {
         this.labwareTemplateCache = new Map();
         this.tipTemplateCache = new Map();
         this.labwareRefreshToken = 0;
+        // Reservoir (autofill station) fill level per deck location, in %.
+        this.reservoirLevels = new Map();
 
         // Carry animation
         this.carryAnimation = { active: false, sourceLoc: null, offset: null };
@@ -951,6 +955,46 @@ export class RobotScene {
             if (isTop) this.deckLabwareMeshes.set(loc, entry);
             this.labwareRoot.add(entry.group);
         }
+        for (const loc of this.reservoirLevels.keys()) this._applyReservoirLevel(loc);
+    }
+
+    /** Show the liquid level (0-100 %) of the reservoir labware at a deck location. */
+    setReservoirLevel(location, levelPct) {
+        const loc = Number(location);
+        if (!Number.isFinite(loc)) return;
+        if (levelPct == null || !Number.isFinite(Number(levelPct))) this.reservoirLevels.delete(loc);
+        else this.reservoirLevels.set(loc, Number(levelPct));
+        this._applyReservoirLevel(loc);
+    }
+
+    _applyReservoirLevel(loc) {
+        const entry = this.deckLabwareMeshes.get(loc);
+        if (!entry) return;
+        let liquid = entry.group.getObjectByName('reservoir-liquid');
+        const level = this.reservoirLevels.get(loc);
+        if (level == null) {
+            if (liquid) liquid.visible = false;
+            return;
+        }
+        const detail = entry.detail || {};
+        const heightM = Math.max(0.006, Number(detail.height_mm || detail.height || 14.4) / 1000);
+        const depthM = Math.min(heightM - 0.002, Math.max(0.004, Number(detail.well_depth_mm || 0) / 1000 || heightM * 0.8));
+        if (!liquid) {
+            const lengthM = Math.max(0.01, Number(detail.length_mm || 127.76) / 1000);
+            const widthM = Math.max(0.01, Number(detail.width_mm || 85.48) / 1000);
+            liquid = new THREE.Mesh(
+                new THREE.BoxGeometry(lengthM - 2 * RESERVOIR_WALL_M - 0.001, widthM - 2 * RESERVOIR_WALL_M - 0.001, 1),
+                new THREE.MeshStandardMaterial({ color: 0x2f8fe8, roughness: 0.15, metalness: 0, transparent: true, opacity: 0.65 }),
+            );
+            liquid.name = 'reservoir-liquid';
+            liquid.renderOrder = 3;
+            entry.group.add(liquid);
+        }
+        const fraction = Math.min(1, Math.max(0, level / 100));
+        const fillM = Math.max(0.0005, depthM * fraction);
+        liquid.visible = fraction > 0.005;
+        liquid.scale.z = fillM;
+        liquid.position.z = heightM - depthM + fillM / 2;
     }
 
     async _buildLabwareMesh(detail) {
@@ -1038,13 +1082,38 @@ export class RobotScene {
             if (baseClass === 'tip_trash' || kind === 'tip_trash') return 0xa6adb8;
             return 0xe4e6eb;
         })();
-        const geometry = new THREE.BoxGeometry(lengthM, widthM, heightM);
         const material = new THREE.MeshStandardMaterial({ color, roughness: 0.82, metalness: 0.03 });
+        const wrapper = new THREE.Group();
+        const kind = String(detail?.kind || detail?.base_class || '').toLowerCase();
+        if (kind === 'wash_station' || kind === 'reservoir') {
+            // An open, translucent tub, so the liquid level inside shows from any angle.
+            material.transparent = true;
+            material.opacity = 0.45;
+            material.depthWrite = false;
+            const depthM = Math.min(heightM - 0.002, Math.max(0.004, Number(detail?.well_depth_mm || 0) / 1000 || heightM * 0.8));
+            const floorM = heightM - depthM;
+            const w = RESERVOIR_WALL_M;
+            const parts = [
+                [lengthM, widthM, floorM, 0, 0, floorM / 2],
+                [lengthM, w, heightM, 0, (widthM - w) / 2, heightM / 2],
+                [lengthM, w, heightM, 0, -(widthM - w) / 2, heightM / 2],
+                [w, widthM - 2 * w, heightM, (lengthM - w) / 2, 0, heightM / 2],
+                [w, widthM - 2 * w, heightM, -(lengthM - w) / 2, 0, heightM / 2],
+            ];
+            for (const [x, y, z, px, py, pz] of parts) {
+                const part = new THREE.Mesh(new THREE.BoxGeometry(x, y, Math.max(0.0005, z)), material);
+                part.position.set(px, py, pz);
+                part.castShadow = true;
+                part.receiveShadow = true;
+                wrapper.add(part);
+            }
+            return wrapper;
+        }
+        const geometry = new THREE.BoxGeometry(lengthM, widthM, heightM);
         const mesh = new THREE.Mesh(geometry, material);
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         mesh.position.z = heightM / 2;
-        const wrapper = new THREE.Group();
         wrapper.add(mesh);
         return wrapper;
     }

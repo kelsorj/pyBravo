@@ -19,9 +19,14 @@ from typing import Any, Callable
 import structlog
 
 from pybravo.deck.labware import Labware
+from pybravo.state_machine.engine import SAFETY_STOP_HELP, is_safety_stop, watch_aborted_tasks
 from pybravo.tips import get_tip_length_mm
 
 logger = structlog.get_logger(__name__)
+
+# Background pollers sleep for real even when tests stub asyncio.sleep to speed
+# up UI pacing; a stubbed sleep would turn them into a busy loop.
+_real_sleep = asyncio.sleep
 
 
 # Sentinel for missing var lookups so callers can distinguish "key exists
@@ -35,6 +40,12 @@ class OperatorCancelled(Exception):
     prompt_user() modal with Cancel. Propagates up through _run_user_script
     to the standard script-error pause so the operator gets the usual
     Retry / Edit & Retry / Abort choices."""
+
+
+class WorkflowStepFailed(RuntimeError):
+    """A node did not complete: its task failed or was aborted, the operator
+    stopped the workflow, or an accessory (autofill) fault was reported.
+    Ends the run with ``workflow:error``; no later node runs."""
 
 
 # Accident-prevention allow-list for user-authored workflow scripts. This is
@@ -183,6 +194,9 @@ NODE_TYPE_MAP: dict[str, str] = {
     "plate/Relid": "relid_plate",
     "sensor/ReadBarcode": "read_barcode",
     "sensor/ScanStackHeight": "scan_stack_height",
+    "accessory/PumpReagent": "pump_reagent",
+    "accessory/StopPumps": "autofill_stop_pumps",
+    "accessory/ReadLevel": "autofill_read_level",
     "system/Initialize": "initialize",
     "system/Home": "home",
     "system/DockGripper": "dock_gripper",
@@ -328,6 +342,14 @@ def _build_task_params(node_type: str, properties: dict[str, Any]) -> dict[str, 
             params["blowout"] = float(properties["blowout"])
         if node_type == "liquid/Mix" and properties.get("cycles"):
             params["mix_cycles"] = int(properties["cycles"])
+        # Height above the well bottom. The designer has always saved it, but
+        # it was not passed on, so every step ran at the 1.0 mm default.
+        if properties.get("distance_from_bottom") not in (None, ""):
+            distance = float(properties["distance_from_bottom"])
+            if node_type == "liquid/Mix":
+                params["aspirate_distance"] = distance
+            else:
+                params["distance_from_bottom"] = distance
 
     elif node_type == "tips/TipsOn":
         params["location"] = int(properties.get("location", 1))
@@ -381,6 +403,22 @@ def _build_task_params(node_type: str, properties: dict[str, Any]) -> dict[str, 
                 except (TypeError, ValueError):
                     pass
 
+    elif node_type in ("accessory/PumpReagent", "accessory/StopPumps", "accessory/ReadLevel"):
+        params["location"] = int(properties.get("location", 1))
+        if node_type == "accessory/PumpReagent":
+            params["reservoir_mode"] = str(properties.get("reservoir_mode", "fill"))
+            params["pump_speed_pct"] = float(properties.get("pump_speed_pct", 50))
+            params["pump_on_time_s"] = float(properties.get("pump_on_time_s", 5))
+            params["allow_concurrent"] = bool(properties.get("allow_concurrent", False))
+            params["run_second_pump"] = bool(properties.get("run_second_pump", False))
+            params["second_pump_speed_pct"] = float(properties.get("second_pump_speed_pct", 50))
+            params["use_weigh_station"] = bool(properties.get("use_weigh_station", False))
+            params["action_threshold_pct"] = float(properties.get("action_threshold_pct", 50))
+            params["stop_threshold_pct"] = float(properties.get("stop_threshold_pct", 50))
+            params["target_level_pct"] = float(properties.get("target_level_pct", 75))
+            params["time_from_target"] = bool(properties.get("time_from_target", False))
+            params["max_reach_time_s"] = float(properties.get("max_reach_time_s", 120))
+
     elif node_type == "system/Home":
         axes_str = properties.get("axes", "X,Y,Z,W,G,Zg")
         params["axes"] = [a.strip() for a in axes_str.split(",") if a.strip()]
@@ -426,6 +464,13 @@ class WorkflowExecutor:
                 }
         self._on_event = on_event
         self._aborted = False
+        # Why the run must end with workflow:error (operator stop, accessory
+        # fault). Set together with _aborted; the first reason wins.
+        self._failure: str | None = None
+        self._autofill_faults_at_start = 0
+        self._script_paused = False  # True while a Script error waits for the operator
+        self._node_visits: dict[int, int] = {}  # node_id -> times reached (Pump Reagent "how often")
+        self._level_reporters: set[asyncio.Future] = set()  # autofill level publishers
         self._data_bus: dict[int, Any] = {}  # node_id -> output data value
         self._current_node_id: int | None = None
         self._tipbox_removed_cells: dict[str, set[str]] = {}
@@ -805,9 +850,117 @@ class WorkflowExecutor:
         except Exception as exc:
             logger.warning("Could not seed tip occupancy at location %d: %s", loc, exc)
 
-    def abort(self) -> None:
-        """Request abort of the running workflow."""
+    def abort(self, reason: str = "Workflow stopped by the operator") -> None:
+        """Request abort of the running workflow; it then ends with workflow:error.
+
+        The walk stops at the next node; autofill pumps (and hold loops) are
+        stopped now, because they run until told otherwise and a Run Pumps step
+        may be waiting on them. A task paused on its error prompt, or a Script
+        error pause, is answered with Abort so the run does not hang on it.
+        """
         self._aborted = True
+        if self._failure is None:
+            self._failure = reason
+        self._stop_pumps_quietly()
+        engine = getattr(self.bravo, "_engine", None)
+        if engine is not None and getattr(engine, "awaiting_error_action", False):
+            try:
+                engine.abort()
+            except Exception:
+                logger.exception("Could not abort the paused task")
+        if self._script_paused:
+            self.resolve_script_error("abort")
+
+    def _new_autofill_fault(self) -> str | None:
+        """A description of any autofill fault reported since the run started, else None."""
+        count_faults = getattr(self.bravo, "autofill_fault_count", None)
+        if not callable(count_faults):
+            return None
+        try:
+            if count_faults() <= self._autofill_faults_at_start:
+                return None
+            errors = self.bravo.autofill_errors()
+        except Exception as exc:
+            return f"Autofill status could not be read: {exc}"
+        detail = "; ".join(f"{acc}: {err}" for acc, err in errors.items()) or "unknown error"
+        return f"Autofill fault, pumps stopped: {detail}"
+
+    async def _watch_autofill_faults(self) -> None:
+        """Fail the run as soon as an autofill station reports a fault.
+
+        Pump runs continue alongside later nodes (concurrent Pump Reagent, Hold
+        level), so their faults are not raised by any node; this watcher ends
+        the run instead. A step already moving finishes; nothing after it runs.
+        """
+        while not self._aborted:
+            fault = self._new_autofill_fault()
+            if fault is not None:
+                logger.error("Ending the workflow: %s", fault)
+                self.abort(fault)
+                return
+            await _real_sleep(0.25)
+
+    @staticmethod
+    def _describe_aborted_task(task: Any, node_type: str) -> str:
+        name = getattr(task, "name", node_type)
+        error = getattr(task, "error", None)
+        if error is None:
+            return f"{name} was aborted"
+        text = f"{name} was aborted after step '{error.step_name}' failed: {error.message}"
+        if is_safety_stop(getattr(error, "original_exception", None)):
+            text += (
+                f". {SAFETY_STOP_HELP} Then retract Z and Home All before running the "
+                "workflow again."
+            )
+        return text
+
+    def _raise_if_failed(self) -> None:
+        fault = self._new_autofill_fault()
+        if fault is not None and not self._aborted:
+            self.abort(fault)
+        if self._aborted:
+            raise WorkflowStepFailed(self._failure or "Workflow stopped before it finished")
+
+    def _start_level_reporter(self, location: int) -> None:
+        """Publish the autofill level at ``location`` while its pumps run.
+
+        Emits ``workflow:autofill_level`` events so the designer can show the
+        liquid rising and falling. Runs alongside the Pump Reagent step and, for
+        a concurrent one, after it, until the pumps stop.
+        """
+        is_running = getattr(self.bravo, "autofill_is_running", None)
+        if not callable(is_running):
+            return
+
+        async def report() -> None:
+            first = True
+            while True:
+                try:
+                    running = is_running(location)
+                    level = (await self.bravo.autofill_read_level(location)).get("level_pct")
+                except Exception:
+                    return
+                if level is not None:
+                    await self._emit({"type": "workflow:autofill_level", "location": location,
+                                      "level_pct": round(float(level), 1)})
+                # The first pass may run before the step starts the pumps;
+                # after that, the reading taken once they stop is the last one.
+                if not running and not first:
+                    return
+                first = False
+                await _real_sleep(0.3)
+
+        task = asyncio.ensure_future(report())
+        self._level_reporters.add(task)
+        task.add_done_callback(self._level_reporters.discard)
+
+    def _stop_pumps_quietly(self) -> None:
+        stop_all = getattr(self.bravo, "stop_all_pumps", None)
+        if callable(stop_all):
+            try:
+                stop_all()
+            except Exception:
+                logger.exception("Could not stop autofill pumps")
 
     def resolve_script_error(self, action: str, new_source: str = "") -> bool:
         """Resolve a pending script-error pause.
@@ -819,6 +972,8 @@ class WorkflowExecutor:
         """
         if self._script_pause_event.is_set():
             return False  # nothing pending
+        if self._aborted and action != "abort":
+            return False  # the run is ending; only Abort may answer
         self._script_action = action
         self._script_action_new_source = new_source
         self._script_pause_event.set()
@@ -984,6 +1139,12 @@ class WorkflowExecutor:
         # the state-machine engine's on_step callback on top produces the
         # "moves repeating 2x" artifact in the 3D viewport.
         engine = self.bravo._engine
+        # Restored when the run ends, so manual commands afterwards keep the
+        # facade's error handler (and with it the operator prompts).
+        get_handlers = getattr(engine, "get_handlers", None)
+        prev_error_handler, prev_step_handler_outer, _ = (
+            get_handlers() if callable(get_handlers) else (None, None, None)
+        )
         self._step_event_loop = asyncio.get_event_loop()
         def _on_step(task_name: str, step_name: str) -> None:
             """Synchronous callback from the state-machine engine — runs in
@@ -1078,12 +1239,31 @@ class WorkflowExecutor:
         # Give the WebSocket client a moment to connect and receive events
         await asyncio.sleep(0.3)
 
+        # Faults from before this run (e.g. a manual run that failed earlier)
+        # do not count; any new one ends the run.
+        count_faults = getattr(self.bravo, "autofill_fault_count", None)
+        if callable(count_faults):
+            try:
+                self._autofill_faults_at_start = int(count_faults())
+            except Exception:
+                logger.exception("Could not read the autofill fault count")
+        fault_watch = asyncio.ensure_future(self._watch_autofill_faults())
+
         try:
             await self._walk(start["id"], 0)  # slot 0 = flow output
+            # The walk returns early once the run is stopped (operator stop,
+            # an aborted step, an accessory fault); that is never a clean
+            # completion.
+            self._raise_if_failed()
         except Exception as exc:
+            # Pumps first, before anything that awaits the UI.
+            self._aborted = True
+            self._stop_pumps_quietly()
+            logger.error("Workflow ended with an error: %s", exc)
             await self._emit({
                 "type": "workflow:error",
                 "error": str(exc),
+                "node_id": self._current_node_id,
                 "vars": _safe_json_snapshot(self._vars),
             })
             # Workflow ended in an unhandled error — leave the lights
@@ -1092,10 +1272,13 @@ class WorkflowExecutor:
             self._set_workflow_light("error")
             return
         finally:
-            # Remove step + error handlers so they don't fire for
-            # non-workflow tasks.
-            engine.set_step_handler(None)
-            engine.set_error_handler(None)
+            fault_watch.cancel()
+            # Put back the handlers the engine had before the run, so they
+            # don't fire for non-workflow tasks.
+            engine.set_step_handler(prev_step_handler_outer)
+            engine.set_error_handler(prev_error_handler)
+            # No pump outlives the workflow, however it ended.
+            self._stop_pumps_quietly()
 
         # Clean completion — green idle so the operator can tell the run
         # is done from across the room.
@@ -1193,6 +1376,8 @@ class WorkflowExecutor:
         """Follow the flow connection from a node's output slot."""
         if self._aborted:
             return
+        # Never start another node after an accessory fault.
+        self._raise_if_failed()
 
         next_node = self._follow_flow(from_node_id, from_slot)
         if not next_node:
@@ -1315,7 +1500,14 @@ class WorkflowExecutor:
                 # frontend's node_complete handler auto-dismisses modals.
                 # The script_error handler already highlights the node red.
                 # Wait for operator response (comes via resolve_script_error).
-                await self._script_pause_event.wait()
+                # A stopped workflow answers it with Abort (see abort()).
+                self._script_paused = True
+                try:
+                    if self._aborted:
+                        self.resolve_script_error("abort")
+                    await self._script_pause_event.wait()
+                finally:
+                    self._script_paused = False
 
                 action = self._script_action
                 if action == "abort":
@@ -1430,12 +1622,26 @@ class WorkflowExecutor:
         # ── Task nodes ────────────────────────────────────────────────
         method_name = NODE_TYPE_MAP.get(node_type)
         result: Any = None
+        if node_type == "accessory/PumpReagent":
+            # "How often": act on the first pass, then on every Nth (in a loop).
+            visit = self._node_visits.get(node_id, 0)
+            self._node_visits[node_id] = visit + 1
+            how_often = max(1, int(properties.get("how_often", 1) or 1))
+            if visit % how_often != 0:
+                method_name = None
+            else:
+                self._start_level_reporter(int(properties.get("location", 1)))
+        aborted_tasks: list = []
         if method_name:
             params = _build_task_params(node_type, properties)
             try:
                 method = getattr(self.bravo, method_name, None)
                 if method:
-                    result = await method(**params)
+                    # Bravo methods return normally when their task is
+                    # aborted (most return None), so collect aborted tasks
+                    # to tell an aborted node from a completed one.
+                    with watch_aborted_tasks() as aborted_tasks:
+                        result = await method(**params)
                     # Store data output for sensor nodes
                     if node_type == "sensor/ReadBarcode" and result:
                         barcode = str(result.get("barcode") or "")
@@ -1504,6 +1710,13 @@ class WorkflowExecutor:
                         if store_as:
                             self._vars[store_as] = height_val
                             await self._emit_vars_update()
+                    elif node_type == "accessory/ReadLevel" and result:
+                        level_val = result.get("level_pct")
+                        self._data_bus[node_id] = level_val
+                        store_as = str(properties.get("store_as", "") or "").strip()
+                        if store_as:
+                            self._vars[store_as] = level_val
+                            await self._emit_vars_update()
                 else:
                     logger.warning("Unknown bravo method", method=method_name)
             except Exception as exc:
@@ -1530,22 +1743,34 @@ class WorkflowExecutor:
                     self._aborted = True
                     raise
 
-            # In execute mode, also honor a clean ABORTED status returned
-            # from the Bravo wrapper (some methods swallow abort and return
-            # normally with a {status: "aborted"} dict). Stop the workflow.
-            if (
+            # A task the operator aborted returns normally: the engine marks
+            # it ABORTED and the Bravo method then returns (None, or a
+            # {status: "aborted"} dict). Either way the node did NOT complete
+            # and nothing after it may run as if it had -- the next node may
+            # be a pump. Fail the node and end the workflow with an error.
+            failure: str | None = None
+            if aborted_tasks:
+                failure = self._describe_aborted_task(aborted_tasks[-1], node_type)
+            elif (
                 not self._preview_animation
                 and isinstance(result, dict)
-                and result.get("status") == "aborted"
+                and result.get("status") in ("aborted", "failed")
             ):
-                logger.warning("Task reported aborted status; halting workflow: %s", result.get("message"))
+                failure = str(result.get("message") or f"{node_type} {result.get('status')}")
+            if failure is not None:
+                logger.error("Workflow node %s (%s) did not complete: %s", node_id, node_type, failure)
+                self._aborted = True
+                if self._failure is None:
+                    self._failure = failure
                 await self._emit({
                     "type": "workflow:task_aborted",
                     "node_id": node_id,
-                    "error": str(result.get("message") or "aborted"),
+                    "error": failure,
                 })
-                self._aborted = True
-                return
+                raise WorkflowStepFailed(failure)
+
+        # A fault reported while this node ran (e.g. the pump module) ends the run here.
+        self._raise_if_failed()
 
         await self._emit({"type": "workflow:node_complete", "node_id": node_id, "status": "ok"})
 
