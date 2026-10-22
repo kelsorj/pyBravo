@@ -741,10 +741,13 @@ in place before running pumps.
 lets the pump turn without lifting anything (a dry supply then never primes),
 and lets a full drain line keep siphoning the tray after the pump has stopped.
 
-**The module answers `0x0A` until the instrument is initialized.** After a power
-cycle, weigh-pad reads and pump commands fail with status `0x0A` until the
-instrument has been initialized once (Initialize homes the axes). After that the
-module keeps working across reconnects.
+**The module can answer `0x0A` to every command.** Seen twice on 2026-10-22
+after power cycles: pump status (`AF`) and weigh-pad reads (`B3`) all returned
+status `0x0A`, and the detect command (`AB 00`) got no reply. The cause is not
+known yet. Once it cleared after the pump module was restarted, the
+instrument was reconnected and a full Initialize (all axes homed) ran; another
+time neither a module restart, Initialize nor Home All cleared it. pyBravo
+refuses to pump while the module reports an error, so nothing runs blind.
 
 **A safety stop also stops the pumps.** A light-curtain trip or E-stop disables
 the axes but not the accessory bus: the pump module keeps running and keeps
@@ -817,6 +820,8 @@ Known gaps, none of them a safety problem today:
   Measure the lowest speed that turns reliably and use it as the floor.
 - **Drafter defaults.** Workflows drafted from a protocol document still get
   50 % for Empty; the designer already defaults Empty to 75 %.
+- **Module status `0x0A`.** Find out what puts the module into this state and
+  what clears it (see above), and document the recovery.
 
 ### Safety-stop recovery
 
