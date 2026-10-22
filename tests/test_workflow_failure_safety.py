@@ -596,6 +596,14 @@ def test_the_bus_quiet_time_ends():
     station._quiet_until = time.monotonic()  # pretend FAULT_QUIET_S has passed
     bus.faulted_at = None
     assert station.read_level()["reading"] == bus.weight
+    # Neither stop was acknowledged, so no run starts until the retry (sent when
+    # the quiet time ends) gets one through.
+    assert station.stop_uncertain
+    with pytest.raises(AutofillError, match="not acknowledged"):
+        station.run_pumps(0.1)
+    station._cancel_stop_retry()
+    station._retry_stop()
+    assert not station.stop_uncertain
     station.run_pumps(0.1)
     assert station.last_error is None, "a successful start clears the error"
     assert FAULT_QUIET_S >= 2.0

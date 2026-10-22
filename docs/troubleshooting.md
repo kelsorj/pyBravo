@@ -415,7 +415,9 @@ instrument: from then on the module answered every command with `0x0B`.
 **What the server does.** It ends the run, stops polling the module, sends the
 stop at most twice, keeps the accessory bus quiet for a few seconds so the
 module's own timeout stops the pumps, shows the error as `last_error` in the
-Accessories panel, and fails a running workflow. See
+Accessories panel, and fails a running workflow. If no stop was acknowledged it
+also sets `stop_uncertain`, refuses new runs and sends the stop once more after
+the quiet time. See
 [autofill module errors](hardware-setup.md#autofill-module-errors-fail-closed).
 
 **Fix.** Check that the pumps stopped and the tray did not overflow. If the

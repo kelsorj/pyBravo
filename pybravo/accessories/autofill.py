@@ -32,6 +32,17 @@ run token, so the keepalive and any hold loop let go), the stop is sent at
 most twice, the error is kept in :attr:`AutofillStation.last_error`, and the
 bus is then left quiet for ``FAULT_QUIET_S`` so the module's own timeout can
 stop the pumps even if it ignored the stop.
+
+**An unacknowledged stop is not forgotten.** When no stop of a run is
+acknowledged, the driver keeps it as :attr:`AutofillStation.stop_uncertain`:
+no new run starts, and the stop is sent once more when the quiet time ends,
+even if the driver has been closed meanwhile. Cleanup (``close``,
+``Bravo.stop_all_pumps``) never breaks the quiet time; an explicit
+:meth:`AutofillStation.stop_pumps` is always sent.
+
+Each driver keeps the transport (instrument link or simulator) it was built on,
+so switching the profile's ``controller_type`` cannot send a running pump's
+stop to the wrong place.
 """
 
 from __future__ import annotations
@@ -130,6 +141,9 @@ class AutofillStation:
         self._last_error: str | None = None
         self._fault_count = 0  # runs ended by a fault (module error, failed supervision)
         self._quiet_until = 0.0  # monotonic time until which the bus is left alone
+        # Set when no stop of a run was acknowledged: the pumps may still be on.
+        self._stop_uncertain = False
+        self._stop_retry: threading.Timer | None = None
 
     @property
     def config(self) -> AutofillConfig:
@@ -171,6 +185,20 @@ class AutofillStation:
     @property
     def is_running(self) -> bool:
         return self._running
+
+    @property
+    def stop_uncertain(self) -> bool:
+        """True when a run ended without any acknowledged stop.
+
+        The pumps may still be on (the module's own timeout should stop them
+        once polling ceases). No new run starts until a stop is acknowledged.
+        """
+        return self._stop_uncertain
+
+    @property
+    def needs_stop(self) -> bool:
+        """A run is active or its stop was never acknowledged; cleanup must stop it."""
+        return self._running or self._stop_uncertain
 
     @property
     def seconds_remaining(self) -> float | None:
@@ -226,6 +254,11 @@ class AutofillStation:
 
         with self._lock:
             self._check_not_quiet("start pumps")
+            if self._stop_uncertain:
+                raise AutofillError(
+                    "Autofill start pumps refused: the last stop was not acknowledged, so the pumps "
+                    "may still be running. Check them and stop the pumps first."
+                )
             if self._running:
                 self.stop_pumps()
             self._run_token += 1
@@ -273,33 +306,107 @@ class AutofillStation:
         """Stop every pump on the module. Sent twice, as the stop is not acknowledged by state.
 
         Both stops are sent even if the first fails; the first error is then raised.
+        When neither is acknowledged the run is left as :attr:`stop_uncertain`:
+        no new run starts, cleanup still stops it, and the stop is sent once
+        more when the quiet time ends. This explicit stop is always sent, even
+        while the bus is quiet.
+        """
+        self._stop(schedule_retry=True)
+        logger.info("Autofill pumps stopped")
+
+    def stop_for_cleanup(self) -> None:
+        """Stop on cleanup (close, abort, disconnect, a failed workflow); never raises.
+
+        A running pump is stopped at once. A run whose stop was never
+        acknowledged is stopped at once only when the bus is not quiet; while
+        it is quiet, the bus stays silent (so the module's own timeout can act)
+        and the scheduled retry sends the stop when the quiet time ends.
         """
         with self._lock:
-            was_running = self._running
+            if self._running or (self._stop_uncertain and self._quiet_remaining() <= 0):
+                self._stop_quietly()
+            elif self._stop_uncertain:
+                self._schedule_stop_retry(self._quiet_remaining())
+
+    def close(self) -> None:
+        # A pending stop retry is kept: it holds its own transport and must
+        # still run after the driver is discarded.
+        self.stop_for_cleanup()
+
+    # -- Internals --
+
+    def _stop(self, *, schedule_retry: bool) -> None:
+        with self._lock:
+            needed = self.needs_stop
             self._run_token += 1
             self._running = False
             self._stop_at = None
             first_error: Exception | None = None
+            acknowledged = False
             for label in ("stop pumps", "stop pumps (repeat)"):
                 try:
                     self._send(build_stop_pumps(), label)
+                    acknowledged = True
                 except Exception as exc:
                     if first_error is None:
                         first_error = exc
+            if acknowledged:
+                self._stop_uncertain = False
+                self._cancel_stop_retry()
+            elif needed:
+                self._mark_stop_uncertain(schedule_retry=schedule_retry)
             if first_error is not None:
                 self._last_error = str(first_error)
-                if was_running:
+                if needed:
                     # Same as any module error during a run: leave the bus quiet.
                     self._fault_count += 1
                     self._quiet_until = time.monotonic() + FAULT_QUIET_S
                 raise first_error
-        logger.info("Autofill pumps stopped")
 
-    def close(self) -> None:
-        if self._running:
-            self._stop_quietly()
+    def _mark_stop_uncertain(self, *, schedule_retry: bool) -> None:
+        """No stop was acknowledged: keep the run marked and send one more stop later."""
+        self._stop_uncertain = True
+        logger.error(
+            "Autofill stop not acknowledged; the pumps may still be running. New runs are refused "
+            "until a stop is acknowledged.",
+        )
+        if schedule_retry:
+            # After the quiet time, so the bus has been silent long enough for
+            # the module's own timeout, and this stop cannot count as polling.
+            self._schedule_stop_retry(FAULT_QUIET_S)
 
-    # -- Internals --
+    def _schedule_stop_retry(self, delay_s: float) -> None:
+        if self._stop_retry is not None:
+            return
+        self._stop_retry = threading.Timer(max(0.0, delay_s), self._retry_stop)
+        self._stop_retry.daemon = True
+        self._stop_retry.start()
+
+    def _quiet_remaining(self) -> float:
+        return self._quiet_until - time.monotonic()
+
+    def _retry_stop(self) -> None:
+        with self._lock:
+            self._stop_retry = None
+            if not self._stop_uncertain or self._running:
+                return
+            if self._quiet_remaining() > 0:
+                # Quiet time was extended (another failed stop): wait it out.
+                self._schedule_stop_retry(self._quiet_remaining())
+                return
+            try:
+                self._stop(schedule_retry=False)
+                logger.warning("Autofill stop acknowledged on retry; check that the pumps stopped")
+            except Exception as exc:
+                logger.error(
+                    "Autofill stop retry was not acknowledged either (%s). Check the pumps; stop "
+                    "them again or power-cycle the module.", exc,
+                )
+
+    def _cancel_stop_retry(self) -> None:
+        timer, self._stop_retry = self._stop_retry, None
+        if timer is not None:
+            timer.cancel()
 
     def _watchdog(self, token: int, duration_s: float) -> None:
         deadline = time.monotonic() + duration_s
@@ -317,8 +424,9 @@ class AutofillStation:
             try:
                 self.stop_pumps()
             except Exception as exc:
-                # Not repeated: a module answering with errors is left quiet
-                # so its own timeout stops the pumps (see stop_pumps).
+                # Not repeated now: a module answering with errors is left quiet
+                # so its own timeout stops the pumps; stop_pumps marks the run
+                # stop_uncertain and sends one more stop after the quiet time.
                 logger.error(
                     "Autofill watchdog could not stop the pumps (%s); the bus is left quiet so "
                     "the module's own timeout stops them. Check the pumps.", exc,
@@ -375,6 +483,8 @@ class AutofillStation:
                     logger.error("Autofill stop attempt %d after the module error failed: %s",
                                  attempt + 1, stop_exc)
             self._quiet_until = time.monotonic() + FAULT_QUIET_S
+            if not stopped:
+                self._mark_stop_uncertain(schedule_retry=True)
         if stopped:
             logger.warning("Autofill stop acknowledged after the module error; check that the pumps stopped")
         else:

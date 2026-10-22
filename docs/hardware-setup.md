@@ -743,6 +743,17 @@ all, the server:
 5. fails the running workflow, if there is one (`workflow:error`; no later
    step starts).
 
+If neither stop is acknowledged (and likewise when a manual **Stop pumps** or
+the end-of-run stop gets no acknowledgement), the station is marked
+`runtime.stop_uncertain`: the pumps may still be running. While it is marked,
+no new run starts, and the server sends the stop once more when the quiet time
+ends, even if the station was reconfigured or disconnected in the meantime.
+A **Stop pumps** that gets through clears the mark.
+
+Each station keeps the transport it was set up on (the instrument link or the
+simulator). Switching the profile's controller type while pumps run therefore
+still sends their stop to the instrument they are running on.
+
 A hold or weigh-station step that cannot read the level (a read error, or no
 tare/range calibration any more) is treated the same way: it stops the pumps
 and ends, and never keeps regulating without a level.

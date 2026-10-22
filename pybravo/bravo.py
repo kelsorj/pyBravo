@@ -187,7 +187,9 @@ class Bravo:
         self._simulated_accessory_bus = None
         self._pump_supervisors: set[asyncio.Future] = set()  # concurrent Pump Reagent steps
         self._hold_controllers: dict[str, Any] = {}  # accessory id -> running LevelHoldController
-        self._accessories = AccessoryManager(self._profile, self._accessory_serial_sender)
+        self._accessories = AccessoryManager(
+            self._profile, self._accessory_serial_sender, bind_serial_sender=self._bind_accessory_sender
+        )
 
     # -- Context manager --
 
@@ -335,6 +337,7 @@ class Bravo:
                         "loaded": driver is not None,
                         "is_open": bool(getattr(driver, "is_open", False)),
                         "is_running": bool(getattr(driver, "is_running", False)),
+                        "stop_uncertain": bool(getattr(driver, "stop_uncertain", False)),
                         "seconds_remaining": getattr(driver, "seconds_remaining", None),
                         "hold": self._hold_runtime(device.id),
                         "pump_speeds": getattr(driver, "pump_speeds", None) or None,
@@ -379,7 +382,21 @@ class Bravo:
 
     def _accessory_serial_sender(self):
         """Return the callable that reaches the instrument's accessory bus."""
-        if self._profile.connection.controller_type == "simulation":
+        return self._accessory_sender_for(self._profile.connection.controller_type == "simulation")
+
+    def _bind_accessory_sender(self):
+        """Sender provider for a new accessory driver, tied to the transport in use now.
+
+        The profile's ``controller_type`` can change while pumps run (the
+        profile editor sets it before the accessories are torn down). A driver
+        built on the instrument link keeps it, so its stop still reaches the
+        hardware instead of the simulator, and the other way round.
+        """
+        simulated = self._profile.connection.controller_type == "simulation"
+        return lambda: self._accessory_sender_for(simulated)
+
+    def _accessory_sender_for(self, simulated: bool):
+        if simulated:
             if self._simulated_accessory_bus is None:
                 from pybravo.accessories.autofill import SimulatedAutofillModule
                 self._simulated_accessory_bus = SimulatedAutofillModule()
@@ -439,17 +456,16 @@ class Bravo:
         """Best-effort stop of every autofill pump that this session started.
 
         Also ends every hold loop and pump supervisor, so none of them can act
-        on a later run. A run that a module error already ended is not stopped
-        again (the driver sent its stops and keeps the bus quiet).
+        on a later run. A run that a module error already ended with an
+        acknowledged stop is not stopped again (the bus stays quiet); one whose
+        stop was never acknowledged (``stop_uncertain``) is stopped once the
+        quiet time ends (see ``AutofillStation.stop_for_cleanup``).
         """
         from pybravo.accessories.autofill import AutofillStation
 
-        for accessory_id, driver in list(self._accessories._drivers.items()):
-            if isinstance(driver, AutofillStation) and driver.is_running:
-                try:
-                    driver.stop_pumps()
-                except Exception:
-                    logger.exception("Could not stop autofill pumps on %s", accessory_id)
+        for driver in list(self._accessories._drivers.values()):
+            if isinstance(driver, AutofillStation) and driver.needs_stop:
+                driver.stop_for_cleanup()
         for supervisor in list(self._pump_supervisors):
             supervisor.cancel()
         # A hold cancelled before its loop first ran never reaches its cleanup.
