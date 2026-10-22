@@ -527,6 +527,22 @@ class DarwinController(BravoController):
     # Safety / recovery
     # ------------------------------------------------------------------
 
+    def on_safety_stop(self, callback) -> None:
+        """Call ``callback(reason)`` when the master broadcasts a safety stop.
+
+        STOP_DISABLE (light curtain, E-stop) and SAFETY_NOTICE arrive as
+        RESERVED events whether or not a move is running. Registered on the
+        current engine, so call it after :meth:`open_tcp`. The callback runs on
+        the engine's receive thread.
+        """
+        from pybravo.protocol.gemini.enums import ReservedEvent
+
+        def forward(reserved, _packet) -> None:
+            if reserved in (ReservedEvent.STOP_DISABLE, ReservedEvent.SAFETY_NOTICE):
+                callback(reserved.name)
+
+        self._engine.on_reserved_event(forward)
+
     def recover(self, axes: list[Axis] | None = None) -> dict[Axis, str]:
         """Recover from a STOP_DISABLE / safety-trip event.
 

@@ -191,7 +191,13 @@ address the station by its deck `location`, like plate steps do.
 **Pump Reagent** fills or empties the reservoir:
 
 - **Pump.** `reservoir_mode` (Fill / Empty) picks the pump that does the job.
-  It runs at `pump_speed_pct` for up to `pump_on_time_s` (1–600 s).
+  It runs at `pump_speed_pct` for up to `pump_on_time_s` (1–600 s). The
+  designer defaults to 50 % for Fill and 75 % for Empty.
+- **Soft start and run-down.** A fill pump starts at 20 % and reaches its speed
+  after 3 s, as full hoses started at full speed splash out of the tray. Empty
+  slows down to 20 % over its last 3 s and, with the weigh station, over the
+  last 15 % above its stop threshold. A run shorter than 6 s ramps over half
+  its time.
 - **Second pump.** `run_second_pump` runs the other pump as well, at
   `second_pump_speed_pct`. Fill plus drain gives a flowing reservoir.
 - **Concurrent.** By default the step waits until the pumps stop. With
@@ -206,8 +212,9 @@ address the station by its deck `location`, like plate steps do.
   tray for `pump_on_time_s` while holding it at `target_level_pct`. The fill
   pump runs at `pump_speed_pct` and the weigh pad steers the drain pump. The
   working target ramps from the current level to the requested one, both
-  lines are primed at 100 % first (supply until the level rises, drain near
-  the target until the level falls), and the inflow is throttled when the
+  lines are primed first (the supply ramps up from 20 % toward 100 % until the
+  level rises, so full hoses do not splash; the drain runs at 100 % near the
+  target until the level falls), and the inflow is throttled when the
   drain cannot keep up. If the supply stops delivering while filling (air in
   the hose: the level stops rising with the drain closed), it is primed at
   100 % again. The pumps stop if the tray reaches 100 %. Hold always uses the

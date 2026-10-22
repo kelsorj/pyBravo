@@ -281,7 +281,8 @@ class AutofillStation:
             )
             watchdog.start()
         logger.info(
-            "Autofill pumps running for %.1f s (fill=%s, empty=%s)", duration_s, fill, empty
+            "Autofill pumps running for %.1f s (fill=%s, empty=%s, %s)",
+            duration_s, fill, empty, self._transport_name,
         )
 
     def set_pump_speed(self, role: str, speed_pct: float, *, run_token: int | None = None) -> None:
@@ -312,7 +313,12 @@ class AutofillStation:
         while the bus is quiet.
         """
         self._stop(schedule_retry=True)
-        logger.info("Autofill pumps stopped")
+        logger.info("Autofill pumps stopped (%s)", self._transport_name)
+
+    @property
+    def _transport_name(self) -> str:
+        simulated = getattr(self._sender_provider, "simulated", None)
+        return "via simulator" if simulated else "via instrument" if simulated is False else "transport unbound"
 
     def stop_run(self, run_token: int) -> bool:
         """Stop the pumps only if run ``run_token`` is still the active run.
@@ -555,6 +561,11 @@ INTEGRAL_UNWIND_GAIN = 3.0
 FILL_STALL_MIN_INFLOW_PCT = 20.0
 FILL_STALL_SLOPE_PCT_S = 0.3
 FILL_STALL_S = 4.0
+# Supply priming ramps up from FILL_PRIME_START_PCT instead of jumping to full
+# speed: with hoses that are already full, a full-speed start splashes out of
+# the tray, and the prime ends (level rises) long before the ramp tops out.
+FILL_PRIME_START_PCT = 20.0
+FILL_PRIME_RAMP_PCT_S = 25.0
 
 
 class LevelHoldController:
@@ -576,8 +587,9 @@ class LevelHoldController:
       ``prime_before_target_pct`` of the target the drain runs at full speed
       until the level clearly falls (at least ``prime_s``), as a drain line
       that ran dry does not pull at low speed.
-      Likewise the inflow starts at full speed until the level rises
-      (``prime_fill``), as the supply line drains back while idle.
+      Likewise the inflow ramps up toward full speed until the level rises
+      (``prime_fill``), as the supply line drains back while idle; it starts
+      low, so hoses that are already full do not splash out of the tray.
 
     Target and inflow can be changed while it runs (:meth:`set_target`,
     :meth:`set_inflow`).
@@ -609,8 +621,8 @@ class LevelHoldController:
         fill_prime_timeout_s: float = 20.0,
     ) -> None:
         # The supply line drains back to the source while idle and, like the
-        # drain, does not lift water at low speed: start the inflow at full
-        # speed until the level actually rises, then drop to the request.
+        # drain, does not lift water at low speed: ramp the inflow up toward
+        # full speed until the level actually rises, then drop to the request.
         self._fill_priming = prime_fill
         self._fill_prime_left = fill_prime_timeout_s
         self._fill_prime_timeout = fill_prime_timeout_s
@@ -630,7 +642,7 @@ class LevelHoldController:
         self.requested_target = target_pct
         self.target = target_pct  # working target; starts at the level on first update
         self.requested_inflow = inflow_pct
-        self.inflow = inflow_pct
+        self.inflow = min(inflow_pct, FILL_PRIME_START_PCT) if prime_fill else inflow_pct
         # The drain starts closed and only opens (ramping) when the level calls
         # for it, so a hold that begins below its target never drains first.
         self.drain = 0.0
@@ -691,7 +703,7 @@ class LevelHoldController:
                 self._fill_priming = False
                 self.inflow = min(self.inflow, goal)  # primed: straight to the request
             else:
-                self.inflow = 100.0
+                self.inflow = min(100.0, max(self.inflow, FILL_PRIME_START_PCT) + FILL_PRIME_RAMP_PCT_S * dt_s)
         if not self._fill_priming:
             # The inflow is the slow loop and the drain the fast one, so the
             # two never chase each other.
@@ -706,8 +718,7 @@ class LevelHoldController:
                 self._fill_priming = True
                 self._start_level = level_pct
                 self._fill_prime_left = self._fill_prime_timeout
-                self.fill_reprimes += 1
-                self.inflow = 100.0
+                self.fill_reprimes += 1  # the priming ramp continues from the current inflow
 
         # Drain: PI around "drain = inflow". Well below the target the
         # "drain = inflow" share fades out, so the drain stays closed while filling.

@@ -4672,7 +4672,18 @@ function renderPropertiesPanel(node) {
                 if (optValue === value) opt.selected = true;
                 select.appendChild(opt);
             }
-            select.addEventListener('change', () => { node.properties[key] = select.value; node.setDirtyCanvas(true); });
+            select.addEventListener('change', () => {
+                // Empty defaults to 75 %, Fill and Hold to 50 %; a speed the
+                // user already changed is kept.
+                const defaults = { fill: 50, empty: 75, hold: 50 };
+                const previous = node.properties[key];
+                node.properties[key] = select.value;
+                if (node.properties.pump_speed_pct === defaults[previous]) {
+                    node.properties.pump_speed_pct = defaults[select.value];
+                }
+                node.setDirtyCanvas(true);
+                renderPropertiesPanel(node);
+            });
             field.appendChild(select);
         } else if (key === 'pipette_technique') {
             const select = document.createElement('select');

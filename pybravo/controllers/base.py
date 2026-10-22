@@ -8,6 +8,7 @@ this interface, so a new backend only has to satisfy these methods.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from pybravo.protocol.commands import LightCommandData
@@ -77,6 +78,17 @@ class BravoController(ABC):
     @property
     @abstractmethod
     def is_connected(self) -> bool: ...
+
+    # -- Safety events --
+
+    def on_safety_stop(self, callback: Callable[[str], None]) -> None:  # noqa: B027 - optional hook
+        """Register ``callback(reason)`` for a safety stop the controller reports
+        by itself (light curtain, E-stop), whether or not a move is running.
+
+        The callback may run on the controller's receive thread: it must not
+        block or talk to the controller itself. Controllers that cannot report
+        such events do nothing.
+        """
 
     # -- Firmware --
 

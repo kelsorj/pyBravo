@@ -6,6 +6,7 @@ state machine, deck model, and profile into a single async API.
 
 import asyncio
 import logging
+import threading
 import time
 from pathlib import Path
 from typing import Any
@@ -90,6 +91,35 @@ HOLD_OVERFLOW_GUARD_PCT = 100.0
 # A hold that counts its time from the target starts the clock once the level
 # is this close to it (weigh-pad ripple is about +-0.7 %).
 HOLD_REACHED_TOLERANCE_PCT = 2.0
+# Pump Reagent ramps. With full hoses a fill pump started at full speed
+# splashes out of the tray, so the fill pump starts at PUMP_SOFT_START_PCT and
+# reaches its speed after PUMP_SOFT_START_S. Empty slows down to
+# PUMP_RUN_DOWN_PCT over its last PUMP_RUN_DOWN_S seconds and, by weight, over
+# the last PUMP_RUN_DOWN_BAND_PCT above its stop threshold.
+PUMP_SOFT_START_PCT = 20.0
+PUMP_SOFT_START_S = 3.0
+PUMP_RUN_DOWN_PCT = 20.0
+PUMP_RUN_DOWN_S = 3.0
+PUMP_RUN_DOWN_BAND_PCT = 15.0
+
+
+def _soft_start_speed(speed_pct: float, elapsed_s: float, run_s: float) -> float:
+    """Fill pump speed at the start of a run; a short run ramps over half its time."""
+    floor = min(PUMP_SOFT_START_PCT, speed_pct)
+    ramp_s = min(PUMP_SOFT_START_S, run_s / 2)
+    share = min(1.0, max(0.0, elapsed_s / ramp_s)) if ramp_s > 0 else 1.0
+    return floor + (speed_pct - floor) * share
+
+
+def _run_down_speed(speed_pct: float, remaining_s: float, run_s: float,
+                    above_stop_pct: float | None) -> float:
+    """Empty pump speed near the end of its run, by time and (optionally) by level."""
+    floor = min(PUMP_RUN_DOWN_PCT, speed_pct)
+    ramp_s = min(PUMP_RUN_DOWN_S, run_s / 2)
+    share = min(1.0, max(0.0, remaining_s / ramp_s)) if ramp_s > 0 else 1.0
+    if above_stop_pct is not None:
+        share = min(share, max(0.0, above_stop_pct / PUMP_RUN_DOWN_BAND_PCT))
+    return floor + (speed_pct - floor) * share
 
 
 class RecoverRefused(RuntimeError):
@@ -210,6 +240,20 @@ class Bravo:
     def connect(self) -> None:
         if self._controller is not None:
             self.disconnect()
+        else:
+            # Accessory drivers keep the transport they were built on (see
+            # _bind_accessory_sender). One built before connecting on the
+            # other transport (e.g. a level read in simulation, then a
+            # hardware connect) must not outlive into this connection. Same
+            # transport (the lazy simulation connect): leave them running.
+            simulated = self._profile.connection.controller_type == "simulation"
+            stale = [
+                driver for driver in self._accessories._drivers.values()
+                if getattr(getattr(driver, "_sender_provider", None), "simulated", simulated) != simulated
+            ]
+            if stale:
+                self.stop_all_pumps()
+                self._accessories.close_all()
 
         cfg = self._profile.connection
         if cfg.controller_type == "simulation":
@@ -254,6 +298,35 @@ class Bravo:
             raise ValueError(f"Unknown controller type: {cfg.controller_type}")
         logger.info("Connected via %s", cfg.controller_type)
         self._apply_profile_head_to_controller()
+        on_safety_stop = getattr(self._controller, "on_safety_stop", None)
+        if callable(on_safety_stop):
+            on_safety_stop(self._on_safety_stop)
+
+    def _on_safety_stop(self, reason: str) -> None:
+        """The controller reported a safety stop: stop every autofill pump.
+
+        A safety stop disables the axes but not the accessory bus, so pumps
+        would keep running (and a fill could overflow the tray) while the
+        operator recovers. Called on the controller's receive thread, which
+        must not wait on the bus, so the stop goes out from a thread of its own.
+        """
+        logger.warning("Safety stop (%s): stopping all autofill pumps", reason)
+        threading.Thread(
+            target=self._stop_pumps_after_safety_stop, args=(reason,),
+            name="autofill-safety-stop", daemon=True,
+        ).start()
+
+    def _stop_pumps_after_safety_stop(self, reason: str) -> None:
+        from pybravo.accessories.autofill import AutofillStation
+
+        for driver in list(self._accessories._drivers.values()):
+            if isinstance(driver, AutofillStation) and driver.needs_stop:
+                was_running = driver.is_running
+                driver.stop_for_cleanup()
+                if was_running:
+                    # A fault, so a workflow using these pumps fails instead of
+                    # carrying on without them after Recover.
+                    driver.record_fault(f"Pumps stopped by a safety stop ({reason})")
 
     def _apply_profile_head_to_controller(self) -> None:
         """Push the profile's head type onto the freshly-opened controller.
@@ -398,7 +471,12 @@ class Bravo:
         hardware instead of the simulator, and the other way round.
         """
         simulated = self._profile.connection.controller_type == "simulation"
-        return lambda: self._accessory_sender_for(simulated)
+
+        def provider():
+            return self._accessory_sender_for(simulated)
+
+        provider.simulated = simulated  # read by connect() to find drivers on the other transport
+        return provider
 
     def _accessory_sender_for(self, simulated: bool):
         if simulated:
@@ -629,18 +707,45 @@ class Bravo:
         speeds["fill_speed_pct" if filling else "empty_speed_pct"] = pump_speed_pct
         if run_second_pump:
             speeds["empty_speed_pct" if filling else "fill_speed_pct"] = second_pump_speed_pct
+        full_fill = speeds["fill_speed_pct"]
+        full_empty = speeds["empty_speed_pct"]
+
+        def ramped(elapsed_s: float, level_now: float | None) -> dict[str, float]:
+            """Speeds for this moment of the run: soft start and run-down."""
+            out: dict[str, float] = {}
+            if full_fill is not None:
+                out["fill"] = _soft_start_speed(full_fill, elapsed_s, pump_on_time_s)
+            if full_empty is not None:
+                out["empty"] = full_empty
+                if not filling:
+                    out["empty"] = _run_down_speed(
+                        full_empty, pump_on_time_s - elapsed_s, pump_on_time_s,
+                        level_now - stop_threshold_pct if level_now is not None else None,
+                    )
+            return out
+
+        first = ramped(0.0, result.get("start_level_pct"))
         try:
             driver.run_pumps(
                 pump_on_time_s,
                 fill=filling or run_second_pump,
                 empty=(not filling) or run_second_pump,
-                **speeds,
+                fill_speed_pct=first.get("fill"),
+                empty_speed_pct=first.get("empty"),
             )
         except AutofillError as exc:
             raise ValueError(str(exc)) from exc
+        started_at = time.monotonic()
 
         own_run = driver.run_token
         faults_before = driver.fault_count
+        commanded = dict(first)
+
+        def follow_ramp(level_now: float | None) -> None:
+            for role, speed in ramped(time.monotonic() - started_at, level_now).items():
+                if abs(speed - commanded.get(role, speed)) >= 1.0:
+                    driver.set_pump_speed(role, speed, run_token=own_run)
+                    commanded[role] = speed
 
         def still_ours() -> bool:
             # A supervisor watches only the run it started: after Stop Pumps
@@ -654,9 +759,11 @@ class Bravo:
             # closed: the run is stopped and the fault recorded.
             try:
                 while still_ours():
-                    if use_weigh_station and reached_stop(level()):
+                    level_now = level() if use_weigh_station else None
+                    if level_now is not None and reached_stop(level_now):
                         driver.stop_run(own_run)
                         break
+                    follow_ramp(level_now)
                     await asyncio.sleep(0.25)
             except asyncio.CancelledError:
                 self._stop_cancelled_run(driver, location, "Pump Reagent supervision", own_run)

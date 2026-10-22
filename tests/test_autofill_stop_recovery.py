@@ -221,6 +221,29 @@ async def test_profile_update_to_simulation_stops_the_hardware_run(monkeypatch):
     assert len(bus.sent) == sent_before
 
 
+def test_connecting_rebuilds_a_driver_made_before_the_connection(monkeypatch):
+    import pybravo.darwin.controller as darwin_controller
+
+    bus = RecordingBus()
+
+    class FakeDarwin(_HardwareController):
+        def __init__(self, **_kwargs):
+            super().__init__(bus)
+
+        def open_tcp(self, _address):
+            pass
+
+    monkeypatch.setattr(darwin_controller, "DarwinController", FakeDarwin)
+    bravo = _sim_bravo()
+    bravo.read_autofill_level("autofill")  # not connected yet: builds the driver on the simulator
+    bravo.profile.connection.controller_type = "darwin_native"
+    bravo.profile.connection.address = "192.0.2.1"
+    bravo.connect()
+
+    bravo.read_autofill_level("autofill")
+    assert bus.sent, "the level read went to the simulator, not the instrument"
+
+
 def test_switching_to_hardware_keeps_a_simulated_run_on_the_simulator():
     bravo = _sim_bravo()
     bravo.run_autofill_pumps("autofill", duration_s=30)

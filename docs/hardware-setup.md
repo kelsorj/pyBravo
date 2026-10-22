@@ -707,11 +707,13 @@ Control it from **Config → Accessories** or the API:
 
 **Hold level.** Fill and drain run together; the weigh pad steers the drain to
 keep the tray at the target while the fill pump runs at the requested inflow.
-Idle lines lose their prime, so a hold first runs the supply at 100 % until the
-level rises, and the drain at 100 % once the level is near the target until it
-clearly falls. If the supply stops delivering while filling (air reached the
-pump: the level stops rising with the drain closed for a few seconds), it is
-primed at 100 % again; the hold reports how often as `fill_reprimes`. The
+Idle lines lose their prime, so a hold first ramps the supply from 20 % toward
+100 % until the level rises (hoses that are still full deliver early and never
+see full speed, so they do not splash), and runs the drain at 100 % once the
+level is near the target until it clearly falls. If the supply stops delivering
+while filling (air reached the pump: the level stops rising with the drain
+closed for a few seconds), it is primed again the same way; the hold reports
+how often as `fill_reprimes`. The
 inflow is throttled when the drain cannot keep up, and the pumps stop if the
 tray reaches 100 %.
 
@@ -731,8 +733,26 @@ the lines in the state they will be in during a run.
 
 **A pump does not stop by itself.** The module keeps pumping until it receives
 a stop, so every run is timed by the server, and pumps are also stopped on
-`POST /api/abort`, on disconnect, and whenever accessories are reconfigured.
-Keep the reservoir and waste lines in place before running pumps.
+`POST /api/abort`, on disconnect, whenever accessories are reconfigured, and on
+a safety stop of the instrument (see below). Keep the reservoir and waste lines
+in place before running pumps.
+
+**Hoses.** Seat each hose fully in its pump head. A hose that is not clamped
+lets the pump turn without lifting anything (a dry supply then never primes),
+and lets a full drain line keep siphoning the tray after the pump has stopped.
+
+**The module answers `0x0A` until the instrument is initialized.** After a power
+cycle, weigh-pad reads and pump commands fail with status `0x0A` until the
+instrument has been initialized once (Initialize homes the axes). After that the
+module keeps working across reconnects.
+
+**A safety stop also stops the pumps.** A light-curtain trip or E-stop disables
+the axes but not the accessory bus: the pump module keeps running and keeps
+answering. pyBravo therefore stops every running autofill pump as soon as the
+controller reports the safety stop (Darwin-generation instruments: the
+`STOP_DISABLE` broadcast) and records a fault, so a running workflow fails
+instead of carrying on without its pumps after Recover. A trip while the axes
+are idle and disabled is not reported, and leaves the pumps alone.
 
 **The module also stops its pumps when it is not polled.** While pumps run the
 server polls the pump module's status about three times a second (`AF`); the

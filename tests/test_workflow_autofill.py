@@ -170,8 +170,10 @@ def test_hold_reaches_the_target_without_touching_the_inflow():
     # The drain can hold the level, so the inflow ends where it was asked to be;
     # it only eases off briefly while the level approaches the target.
     assert inflows[-1] == 50.0
-    assert min(inflows) >= 35.0
-    assert sum(1 for i in inflows if i < 48.0) < len(inflows) / 10
+    assert inflows[0] < 35.0  # soft start: full hoses would splash at full speed
+    after_start = inflows[6:]  # past the first 3 s
+    assert min(after_start) >= 35.0
+    assert sum(1 for i in after_start if i < 48.0) < len(after_start) / 10
 
 
 def test_hold_compensates_for_mismatched_pumps():
@@ -218,19 +220,31 @@ async def test_a_hold_starting_below_target_never_opens_the_drain_first(monkeypa
     await bravo.pump_reagent(STATION, reservoir_mode="hold", pump_speed_pct=50,
                              target_level_pct=60, pump_on_time_s=30, allow_concurrent=True)
     assert calls[0]["empty_speed_pct"] == 0.0
-    assert calls[0]["fill_speed_pct"] == 100.0  # priming the supply line
+    assert 0.0 < calls[0]["fill_speed_pct"] < 50.0  # priming the supply line starts low
     bravo.stop_all_pumps()
 
 
-def test_the_supply_is_primed_at_full_speed_until_the_level_rises():
+def test_the_supply_is_primed_ramping_to_full_speed_until_the_level_rises():
     """Measured 2026-10-06: after idling, 50 % inflow delivered nothing in 90 s,
-    while 100 % reached the tray after ~10 s."""
+    while 100 % reached the tray after ~10 s. Measured 2026-10-22: with full
+    hoses a full-speed start splashes out of the tray, so priming ramps up."""
     from pybravo.accessories.autofill import LevelHoldController
 
     controller = LevelHoldController(75.0, 50.0)
     inflows = [controller.update(0.0, 0.5)[0] for _ in range(10)]  # nothing arriving yet
-    assert inflows == [100.0] * 10
+    assert inflows[0] <= 35.0
+    assert all(b >= a for a, b in zip(inflows, inflows[1:]))
+    assert inflows[-1] == 100.0  # still nothing after ~3.5 s: full speed
     assert controller.update(2.0, 0.5)[0] == 50.0  # it arrives: straight to the request
+
+
+def test_priming_with_full_hoses_never_reaches_full_speed():
+    from pybravo.accessories.autofill import LevelHoldController
+
+    controller = LevelHoldController(75.0, 50.0)
+    first = controller.update(0.0, 0.5)[0]
+    second = controller.update(2.0, 0.5)[0]  # full hoses: the level rises at once
+    assert first <= 35.0 and second <= 50.0
 
 
 def test_a_supply_that_stops_delivering_is_primed_again():
@@ -433,7 +447,7 @@ async def test_a_stopped_hold_does_not_fight_the_next_step():
     bravo = _sim_bravo()
     await bravo.pump_reagent(STATION, reservoir_mode="hold", pump_speed_pct=100,
                              target_level_pct=60, pump_on_time_s=60, allow_concurrent=True)
-    await asyncio.sleep(3.0)
+    await asyncio.sleep(4.0)  # 3 s soft start, then full inflow
     filled = bravo.read_autofill_level("autofill")["level_pct"]
     await bravo.autofill_stop_pumps(STATION)
     result = await bravo.pump_reagent(STATION, reservoir_mode="empty", pump_speed_pct=100,
@@ -488,7 +502,59 @@ async def test_empty_mode_with_second_pump_runs_both_with_their_speeds(monkeypat
 
     (args, kwargs), = calls
     assert args == (0.2,)
-    assert kwargs == {"fill": True, "empty": True, "fill_speed_pct": 30, "empty_speed_pct": 80}
+    # The fill pump soft-starts at 20 %; the empty pump starts at its speed.
+    assert kwargs == {"fill": True, "empty": True, "fill_speed_pct": 20, "empty_speed_pct": 80}
+
+
+def test_soft_start_and_run_down_ramps():
+    from pybravo.bravo import _run_down_speed, _soft_start_speed
+
+    assert _soft_start_speed(100, 0.0, 30) == 20
+    assert _soft_start_speed(100, 1.5, 30) == 60
+    assert _soft_start_speed(100, 3.0, 30) == 100
+    assert _soft_start_speed(10, 0.0, 30) == 10  # never above the requested speed
+    assert _soft_start_speed(100, 0.5, 2) == 60  # a 2 s run ramps over 1 s
+
+    assert _run_down_speed(75, 20.0, 30, None) == 75
+    assert _run_down_speed(75, 1.5, 30, None) == pytest.approx(47.5)
+    assert _run_down_speed(75, 0.0, 30, None) == 20
+    # By weight: full speed more than 15 % above the stop threshold, 20 % at it.
+    assert _run_down_speed(75, 20.0, 30, 30.0) == 75
+    assert _run_down_speed(75, 20.0, 30, 7.5) == pytest.approx(47.5)
+    assert _run_down_speed(75, 20.0, 30, 0.0) == 20
+
+
+@pytest.mark.asyncio
+async def test_empty_by_weight_slows_down_near_the_stop_threshold(monkeypatch):
+    bravo = _sim_bravo()
+    driver = _driver(bravo)
+    await bravo.pump_reagent(STATION, reservoir_mode="fill", pump_speed_pct=100, pump_on_time_s=8)
+    speeds = []
+    real = driver.set_pump_speed
+    monkeypatch.setattr(driver, "set_pump_speed",
+                        lambda role, speed, **k: (speeds.append((role, speed)), real(role, speed, **k))[1])
+    result = await bravo.pump_reagent(STATION, reservoir_mode="empty", pump_speed_pct=75, pump_on_time_s=60,
+                                      use_weigh_station=True, action_threshold_pct=5, stop_threshold_pct=2)
+    empty = [s for role, s in speeds if role == "empty"]
+    assert empty and min(empty) < 40  # it slowed down before stopping
+    assert all(b <= a + 1e-9 for a, b in zip(empty, empty[1:]))  # only ever slower
+    assert result["end_level_pct"] <= 3.0
+
+
+@pytest.mark.asyncio
+async def test_fill_soft_starts(monkeypatch):
+    bravo = _sim_bravo()
+    driver = _driver(bravo)
+    starts, speeds = [], []
+    real_run, real_set = driver.run_pumps, driver.set_pump_speed
+    monkeypatch.setattr(driver, "run_pumps", lambda *a, **k: (starts.append(k), real_run(*a, **k))[1])
+    monkeypatch.setattr(driver, "set_pump_speed",
+                        lambda role, speed, **k: (speeds.append((role, speed)), real_set(role, speed, **k))[1])
+    await bravo.pump_reagent(STATION, reservoir_mode="fill", pump_speed_pct=80, pump_on_time_s=4)
+    assert starts[0]["fill_speed_pct"] == 20
+    fill = [s for role, s in speeds if role == "fill"]
+    assert fill and fill[-1] == pytest.approx(80, abs=1.0)
+    assert all(b >= a for a, b in zip(fill, fill[1:]))
 
 
 @pytest.mark.asyncio
