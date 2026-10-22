@@ -746,8 +746,17 @@ after power cycles: pump status (`AF`) and weigh-pad reads (`B3`) all returned
 status `0x0A`, and the detect command (`AB 00`) got no reply. The cause is not
 known yet. Once it cleared after the pump module was restarted, the
 instrument was reconnected and a full Initialize (all axes homed) ran; another
-time neither a module restart, Initialize nor Home All cleared it. pyBravo
-refuses to pump while the module reports an error, so nothing runs blind.
+time neither a module restart, Initialize nor Home All cleared it, and later
+every address (0-4) timed out. The bytes after the status repeated earlier
+traffic (an `ab` from a previous detect), so `0x0A` most likely means the
+module did not answer at all and the instrument returned a stale buffer: check
+the module's power and its cable to the instrument first. pyBravo refuses to
+pump while the module reports an error, so nothing runs blind.
+
+Verified on hardware in that state (2026-10-22): a start that got `0x0A` ended
+the run at once, both stops went unanswered, the station was marked
+`stop_uncertain`, the stop was retried after the 5 s quiet time, and the next
+start was refused before anything was sent.
 
 **A safety stop also stops the pumps.** A light-curtain trip or E-stop disables
 the axes but not the accessory bus: the pump module keeps running and keeps
@@ -808,10 +817,6 @@ In workflows, use the **Pump Reagent**, **Stop Pumps** and **Read Level** steps
 
 Known gaps, none of them a safety problem today:
 
-- **An unacknowledged stop is not verified on hardware.** The
-  `stop_uncertain` handling is covered by tests against a simulated bus only:
-  no way was found to make the module stop acknowledging (a safety stop does
-  not affect the pump module).
 - **`stop_uncertain` is not shown in the Accessories panel.** It is reported in
   `GET /api/accessories` (`runtime.stop_uncertain`), and new runs are refused
   while it is set, but the panel does not warn the operator yet.
