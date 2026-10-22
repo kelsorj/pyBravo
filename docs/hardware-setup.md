@@ -825,8 +825,12 @@ Known gaps, none of them a safety problem today:
   Measure the lowest speed that turns reliably and use it as the floor.
 - **Drafter defaults.** Workflows drafted from a protocol document still get
   50 % for Empty; the designer already defaults Empty to 75 %.
-- **Module status `0x0A`.** Find out what puts the module into this state and
-  what clears it (see above), and document the recovery.
+- **Module initialization.** After a power cycle the module stayed silent
+  (`0x0A` or no reply) to pyBravo through module restarts, Initialize and Home
+  All, but answered at once after the instrument's own software had connected
+  and initialized it (2026-10-22). pyBravo does not yet send that module
+  initialization; find out which commands it is and send them on connect or
+  Initialize, so pyBravo works from a cold start on its own.
 
 ### Safety-stop recovery
 
