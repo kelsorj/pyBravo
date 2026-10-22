@@ -203,6 +203,9 @@ def patch_liquid_class(liquid_class_id: str, payload: dict[str, Any]) -> dict[st
             continue
         merged = deepcopy(item)
         merged.update(deepcopy(payload))
+        # An imported class edited here no longer matches its source.
+        if item.get("origin") == "registry_import" and "origin" not in payload:
+            merged["origin"] = "registry_import_modified"
         merged = _normalize_liquid_class_payload(merged, liquid_class_id=liquid_class_id)
         _validate_liquid_class_uniqueness(store["liquid_classes"], merged, exclude_id=liquid_class_id)
         store["liquid_classes"][index] = merged
@@ -364,6 +367,8 @@ def _normalize_liquid_class_payload(payload: dict[str, Any], *, liquid_class_id:
         "equation": {
             "control_points": control_points,
         },
+        # "registry_import", "registry_import_modified", or "" for local classes.
+        "origin": str(payload.get("origin") or ""),
     }
 
 

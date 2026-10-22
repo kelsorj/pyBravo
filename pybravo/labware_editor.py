@@ -296,6 +296,9 @@ def patch_type(labware_type_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         if item.get("labware_type_id") != labware_type_id:
             continue
         _merge_type(item, payload)
+        # An imported definition edited here no longer matches its source.
+        if item.get("origin") == "registry_import" and "origin" not in payload:
+            item["origin"] = "registry_import_modified"
         save_store(store)
         return deepcopy(item)
     raise KeyError(labware_type_id)
@@ -513,6 +516,7 @@ def _editor_type_to_definition(item: dict[str, Any]) -> LabwareDefinition:
         tip_definition_id=str(item.get("tip_definition_id") or ""),
         supported_tip_ids=list(item.get("supported_tip_ids") or []),
         model_3d=str(model.get("url") or model.get("filename") or "") or None,
+        origin=str(item.get("origin") or ""),
     )
     return labware_module._apply_mirrored_motion_fields(definition)
 
@@ -630,6 +634,7 @@ def _definition_to_editor_type(definition: LabwareDefinition) -> dict[str, Any]:
         "labware_class_ids": [],
         "tip_definition_id": definition.tip_definition_id,
         "supported_tip_ids": list(definition.supported_tip_ids or []),
+        "origin": definition.origin,
         "image_2d": None,
         "model_3d": (
             {

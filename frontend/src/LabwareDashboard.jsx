@@ -16,6 +16,27 @@ function uniq(arr) {
   return Array.from(new Set(arr))
 }
 
+// Provenance colours, shared with the main UI and the liquid class editor.
+const ORIGINS = {
+  registry_import: { label: 'Imported', color: '#4ea1ff', title: 'Imported from a registry export, unchanged' },
+  registry_import_modified: { label: 'Imported, edited', color: '#f0a020', title: 'Imported from a registry export, then edited here' },
+  local: { label: 'Local', color: '#7bd88f', title: 'Created in pyBravo' },
+}
+
+function originOf(item) {
+  return ORIGINS[item?.origin] ? item.origin : 'local'
+}
+
+function OriginBadge({ origin }) {
+  const o = ORIGINS[origin] || ORIGINS.local
+  return (
+    <span title={o.title} style={{
+      display: 'inline-block', padding: '1px 6px', borderRadius: 6, fontSize: '0.75em', fontWeight: 'bold',
+      color: o.color, border: `1px solid ${o.color}`, marginLeft: 6, verticalAlign: 'middle',
+    }}>{o.label}</span>
+  )
+}
+
 function TabButton({ active, onClick, children }) {
   return (
     <button
@@ -274,6 +295,7 @@ function LabwareDashboard() {
 
   // Entries filtering (left list)
   const [wellsFilter, setWellsFilter] = useState('all') // 'all' | 6 | 24 | 48 | 96 | 384 | 1536
+  const [originFilter, setOriginFilter] = useState('all') // 'all' | key of ORIGINS
 
   // New entry form (minimal)
   const [newEntryName, setNewEntryName] = useState('')
@@ -341,10 +363,12 @@ function LabwareDashboard() {
   )
 
   const filteredLabwareTypes = useMemo(() => {
-    if (wellsFilter === 'all') return labwareTypes
     const w = Number(wellsFilter)
-    return labwareTypes.filter(t => Number(t?.wells) === w)
-  }, [labwareTypes, wellsFilter])
+    return labwareTypes.filter(t =>
+      (wellsFilter === 'all' || Number(t?.wells) === w)
+      && (originFilter === 'all' || originOf(t) === originFilter)
+    )
+  }, [labwareTypes, wellsFilter, originFilter])
 
   useEffect(() => {
     // If current selection is filtered out, select the first visible entry (or clear).
@@ -969,7 +993,7 @@ function LabwareDashboard() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
               <div style={{ color: '#fff', fontWeight: 'bold' }}>Labware Entries</div>
               <div style={{ color: '#888', fontSize: '0.9em' }}>
-                {wellsFilter === 'all' ? `${labwareTypes.length} total` : `${filteredLabwareTypes.length} of ${labwareTypes.length}`}
+                {wellsFilter === 'all' && originFilter === 'all' ? `${labwareTypes.length} total` : `${filteredLabwareTypes.length} of ${labwareTypes.length}`}
               </div>
             </div>
 
@@ -991,6 +1015,15 @@ function LabwareDashboard() {
                   <option value="all">All</option>
                   {wellsOptions.map(w => <option key={w} value={String(w)}>{w} wells</option>)}
                 </select>
+                <select value={originFilter} onChange={(e) => setOriginFilter(e.target.value)} style={input} disabled={busy}>
+                  <option value="all">All sources</option>
+                  {Object.entries(ORIGINS).map(([key, o]) => <option key={key} value={key}>{o.label}</option>)}
+                </select>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', fontSize: '0.8em' }}>
+                  {Object.entries(ORIGINS).map(([key, o]) => (
+                    <span key={key} title={o.title} style={{ color: o.color }}>● {o.label}</span>
+                  ))}
+                </div>
               </div>
 
               <div style={{ height: 520, overflow: 'auto', border: '1px solid #333', borderRadius: 10, padding: 8, background: '#111' }}>
@@ -998,12 +1031,14 @@ function LabwareDashboard() {
                   <div
                     key={t.labware_type_id}
                     onClick={() => setSelectedTypeId(t.labware_type_id)}
+                    title={ORIGINS[originOf(t)].title}
                     style={{
                       padding: '8px 10px',
                       borderRadius: 8,
                       cursor: 'pointer',
                       background: t.labware_type_id === selectedTypeId ? '#1677ff33' : 'transparent',
                       border: t.labware_type_id === selectedTypeId ? '1px solid #1677ff' : '1px solid transparent',
+                      borderLeft: `4px solid ${ORIGINS[originOf(t)].color}`,
                       color: '#fff'
                     }}
                   >
@@ -1027,7 +1062,7 @@ function LabwareDashboard() {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                   <div>
-                    <div style={{ color: '#fff', fontWeight: 'bold', fontSize: '1.2em' }}>{selectedType.name}</div>
+                    <div style={{ color: '#fff', fontWeight: 'bold', fontSize: '1.2em' }}>{selectedType.name}<OriginBadge origin={originOf(selectedType)} /></div>
                   </div>
                   <div style={{ display: 'flex', gap: 10 }}>
                     <SmallButton disabled={busy} onClick={renameEntry}>Rename</SmallButton>

@@ -89,6 +89,9 @@ class LabwareDefinition:
     # labware editor UI (LabwareDashboard.jsx), not here.
     can_mount: bool = False
     can_be_mounted: bool = False
+    # Provenance: "registry_import" for definitions taken from a registry
+    # export, empty for labware created or edited locally.
+    origin: str = ""
 
     @classmethod
     def from_mongo(cls, doc: dict[str, Any]) -> "LabwareDefinition":
@@ -920,6 +923,7 @@ def _apply_mirrored_motion_fields(definition: LabwareDefinition) -> LabwareDefin
             definition.disposable_tip_capacity_ul or mirrored.disposable_tip_capacity_ul
         ),
         model_3d=definition.model_3d or mirrored.model_3d,
+        origin=definition.origin,
     )
 
 

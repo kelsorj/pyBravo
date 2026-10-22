@@ -21,6 +21,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 # Load .env (project root) into os.environ before any handler reads a
 # key. Shell-exported variables win over .env — dotenv defaults to
 # override=False, which is what we want. Quiet no-op if python-dotenv
@@ -46,6 +48,7 @@ from pybravo.bravo import Bravo
 from pybravo.deck.labware import build_labware_catalog, normalize_labware_definitions
 from pybravo.head_mode import suggested_head_mode
 from pybravo.logging_config import configure_logging
+from pybravo.profile.profile import config_fingerprint
 from pybravo.protocol.errors import BravoError
 from pybravo.tips import (
     create_tip_definition,
@@ -3606,11 +3609,46 @@ async def list_profiles():
     """List available profile names (YAML files in profile directory) and current profile."""
     if _profile_dir is None or not _profile_dir.is_dir():
         return {"profiles": [], "current": None}
-    profiles = sorted(
-        p.stem for p in _profile_dir.glob("*.yaml") if p.is_file()
-    )
+    paths = sorted((p for p in _profile_dir.glob("*.yaml") if p.is_file()), key=lambda p: p.stem)
+    profiles = [p.stem for p in paths]
     current = _profile_path.stem if _profile_path is not None else None
-    return {"profiles": profiles, "current": current}
+    return {
+        "profiles": profiles,
+        "current": current,
+        "origins": {p.stem: _profile_origin(p) for p in paths},
+    }
+
+
+_PROFILE_ORIGIN_CACHE: dict[Path, tuple[tuple[int, int], str]] = {}
+
+
+def _profile_origin(path: Path) -> str:
+    """Where a profile came from: 'registry_import', 'registry_import_modified'
+    (imported, then its settings changed here) or 'local'."""
+    try:
+        st = path.stat()
+    except OSError:
+        return "local"
+    stamp = (st.st_mtime_ns, st.st_size)
+    cached = _PROFILE_ORIGIN_CACHE.get(path)
+    if cached and cached[0] == stamp:
+        return cached[1]
+    origin = "local"
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            data = yaml.safe_load(fh) or {}
+        meta = (data.get("extra") or {}).get("origin") or {}
+        if meta.get("kind"):
+            origin = str(meta["kind"])
+        baseline = meta.get("config_sha256")
+        # Compare the settings with the import baseline; file times say nothing
+        # about edits (copies, checkouts and no-op saves all touch them).
+        if origin == "registry_import" and baseline and config_fingerprint(data) != baseline:
+            origin = "registry_import_modified"
+    except Exception:
+        logger.debug("Could not read origin of profile %s", path, exc_info=True)
+    _PROFILE_ORIGIN_CACHE[path] = (stamp, origin)
+    return origin
 
 
 @app.get("/api/profile", **_route_meta("Profiles", "Get the active profile", PROFILE_DOC))

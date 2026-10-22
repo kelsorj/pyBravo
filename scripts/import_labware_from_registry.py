@@ -203,6 +203,7 @@ def reg_entry_to_labware(entry: dict[str, str]) -> dict[str, Any]:
         "model_3d": None,
         "can_mount": _to_bool(entry.get("CAN_MOUNT", "0")),
         "can_be_mounted": _to_bool(entry.get("CAN_BE_MOUNTED", "0")),
+        "origin": "registry_import",
     }
 
 

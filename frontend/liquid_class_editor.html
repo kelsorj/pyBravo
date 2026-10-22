@@ -36,12 +36,24 @@
         .eq-point { display:flex; justify-content:space-between; gap:8px; padding:4px 0; border-bottom:1px solid #ececec; }
         .eq-point button { padding:2px 6px; font-size:11px; }
         .context-bar { display:flex; justify-content:flex-end; margin-bottom:8px; min-height:16px; }
+        /* Provenance: where a liquid class came from. */
+        .row { border-left:4px solid transparent; }
+        .row.origin-registry_import { border-left-color:#1f6fd1; }
+        .row.origin-registry_import_modified { border-left-color:#c27400; }
+        .row.origin-local { border-left-color:#2e8b3e; }
+        .origin-legend { display:flex; gap:10px; flex-wrap:wrap; font-size:11px; margin:4px 0 6px; }
+        .origin-legend .registry_import { color:#1f6fd1; } .origin-legend .registry_import_modified { color:#c27400; } .origin-legend .local { color:#2e8b3e; }
     </style>
 </head>
 <body>
     <div class="app">
         <div class="panel">
             <div class="hint">Liquid Entries</div>
+            <div class="origin-legend">
+                <span class="registry_import" title="Imported from a registry export, unchanged">● Imported</span>
+                <span class="registry_import_modified" title="Imported from a registry export, then edited here">● Imported, edited</span>
+                <span class="local" title="Created in pyBravo">● Local</span>
+            </div>
             <div class="listbox" id="class-list"></div>
             <div class="btns">
                 <button id="new-class">New liquid entry…</button>
@@ -219,7 +231,8 @@
             const root = document.getElementById('class-list'); root.innerHTML = '';
             state.classes.forEach(item => {
                 const row = document.createElement('div');
-                row.className = `row${item.liquid_class_id === state.selectedClassId ? ' active' : ''}`;
+                const origin = ['registry_import', 'registry_import_modified'].includes(item.origin) ? item.origin : 'local';
+                row.className = `row origin-${origin}${item.liquid_class_id === state.selectedClassId ? ' active' : ''}`;
                 row.innerHTML = `${item.name}<small>${item.machine_id} · ${item.head_type} · ${item.tip_id || `${item.tip_capacity_ul} uL`}</small>`;
                 row.onclick = () => { state.selectedClassId = item.liquid_class_id; fillClass(item); renderClasses(); };
                 root.appendChild(row);

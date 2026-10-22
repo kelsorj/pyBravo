@@ -4482,6 +4482,18 @@ const ACCESSORY_TYPE_LABELS = {
     teleshake: 'Teleshake',
 };
 
+// Provenance: imported from a registry export, imported then edited here, or
+// created in pyBravo. Same colours as the labware and liquid class editors.
+const ORIGIN_INFO = {
+    registry_import: { label: 'Imported', color: '#4ea1ff', title: 'Imported from a registry export, unchanged' },
+    registry_import_modified: { label: 'Imported, edited', color: '#f0a020', title: 'Imported from a registry export, then edited here' },
+    local: { label: 'Local', color: '#7bd88f', title: 'Created in pyBravo' },
+};
+
+function originInfo(origin) {
+    return ORIGIN_INFO[origin] || ORIGIN_INFO.local;
+}
+
 function accessoryTypeLabel(type) {
     return ACCESSORY_TYPE_LABELS[type] || String(type || 'Accessory').replace(/_/g, ' ');
 }
@@ -4566,6 +4578,7 @@ function normalizeAccessoryDevice(raw, index = 0) {
         settings,
         model: { ...(raw?.model || {}) },
         teachpoint_hint: { ...(raw?.teachpoint_hint || {}) },
+        ...(raw?.origin ? { origin: raw.origin } : {}),
     };
 }
 
@@ -4620,6 +4633,9 @@ function renderAccessoryList() {
         row.type = 'button';
         row.className = `accessory-row${device.id === state.selectedAccessoryId ? ' selected' : ''}`;
         row.dataset.accessoryId = device.id;
+        const origin = originInfo(device.origin);
+        row.style.borderLeft = `4px solid ${origin.color}`;
+        row.title = origin.title;
 
         const enabled = document.createElement('span');
         enabled.textContent = device.enabled ? 'ON' : 'OFF';
@@ -4727,6 +4743,15 @@ function saveAccessoryEditorToState() {
     const oldId = state.selectedAccessoryId;
     const index = state.accessoryDevices.findIndex(item => item.id === oldId);
     if (index >= 0) {
+        // An imported accessory edited here no longer matches its source.
+        const before = state.accessoryDevices[index];
+        const stable = (value) => (value && typeof value === 'object' && !Array.isArray(value)
+            ? `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${stable(value[key])}`).join(',')}}`
+            : JSON.stringify(value));
+        const strip = ({ origin, ...rest }) => stable(rest);
+        if (before.origin === 'registry_import' && strip(before) !== strip(edited)) {
+            edited.origin = 'registry_import_modified';
+        }
         state.accessoryDevices[index] = edited;
         state.selectedAccessoryId = edited.id;
     }
@@ -4795,13 +4820,25 @@ async function loadProfile() {
     if (profilesRes && select) {
         const prev = select.value;
         select.options.length = 0;
+        const origins = profilesRes.origins || {};
         for (const name of (profilesRes.profiles || [])) {
-            select.add(new Option(name, name));
+            const option = new Option(name, name);
+            const origin = originInfo(origins[name]);
+            option.style.color = origin.color;
+            option.title = origin.title;
+            select.add(option);
         }
         const target = (prev && profilesRes.profiles.includes(prev)) ? prev : profilesRes.current;
         if (target) select.value = target;
+        const paintSelect = () => { select.style.color = originInfo(origins[select.value]).color; };
+        select.onchange = paintSelect;
+        paintSelect();
         const activeEl = document.getElementById('prof-active-name');
-        if (activeEl) activeEl.textContent = profilesRes.current || '—';
+        if (activeEl) {
+            const origin = originInfo(origins[profilesRes.current]);
+            activeEl.textContent = profilesRes.current ? `${profilesRes.current} (${origin.label})` : '—';
+            activeEl.style.color = origin.color;
+        }
         // Teaching writes into the active profile, so the teach dialog needs
         // its name to show the operator what they are about to modify.
         state.activeProfileName = profilesRes.current || '';

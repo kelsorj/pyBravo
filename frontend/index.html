@@ -1961,7 +1961,12 @@
                     <select id="prof-select" style="flex:1"></select>
                     <button class="btn btn-sm btn-primary" id="btn-load-profile">Load</button>
                 </div>
-                <div style="font-size:10px;color:var(--text-dimmer);margin-bottom:8px">Active: <span id="prof-active-name" style="color:var(--accent)">—</span></div>
+                <div style="font-size:10px;color:var(--text-dimmer);margin-bottom:4px">Active: <span id="prof-active-name" style="color:var(--accent)">—</span></div>
+                <div style="font-size:10px;margin-bottom:8px;display:flex;gap:10px;flex-wrap:wrap">
+                    <span style="color:#4ea1ff" title="Imported from a registry export, unchanged">● Imported</span>
+                    <span style="color:#f0a020" title="Imported from a registry export, then edited here">● Imported, edited</span>
+                    <span style="color:#7bd88f" title="Created in pyBravo">● Local</span>
+                </div>
                 <div class="btn-group mt-8">
                     <button class="btn btn-sm btn-primary" id="btn-update-profile">Save Settings</button>
                     <button class="btn btn-sm" id="btn-refresh-profiles">Refresh List</button>

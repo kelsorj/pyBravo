@@ -261,6 +261,7 @@ def reg_entry_to_liquid_class(
         "equation": {
             "control_points": _coefficients_to_control_points(coefficients, tip_capacity),
         },
+        "origin": "registry_import",
     }
 
 
