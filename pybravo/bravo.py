@@ -5,6 +5,7 @@ state machine, deck model, and profile into a single async API.
 """
 
 import asyncio
+import copy
 import logging
 import threading
 import time
@@ -186,7 +187,11 @@ class Bravo:
         if isinstance(profile, (str, Path)):
             self._profile = BravoProfile.load(profile)
         elif isinstance(profile, BravoProfile):
-            self._profile = profile
+            # With a mode override, work on a copy: the caller's profile may be
+            # the live instrument's (the designer's simulate builds a simulation
+            # Bravo from it), and switching that one to "simulation" would
+            # silently redirect the live accessories to the simulator.
+            self._profile = copy.deepcopy(profile) if mode else profile
         else:
             self._profile = BravoProfile.default()
 
