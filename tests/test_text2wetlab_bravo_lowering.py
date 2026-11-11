@@ -269,8 +269,19 @@ async def test_lowered_graph_stays_unreviewed_after_load_and_save(tmp_path, monk
         assert loaded["protocol_draft_status"] == "unreviewed"
         assert loaded["graph"]["nodes"][2]["properties"]["_protocol_step_id"] == "unreviewed-node-3"
         assert loaded["protocol_draft_issues"][0]["code"] == "PHYSICAL_DECK_INVENTORY_UNCONFIRMED"
-        for operation in ("simulate", "execute"):
-            assert (await client.post(f"/api/workflows/{saved['id']}/{operation}")).status_code == 409
+
+        async def assert_rehearsal_only():
+            # An unreviewed draft may enter the isolated simulator, never hardware.
+            denied = await client.post(f"/api/workflows/{saved['id']}/execute")
+            assert denied.status_code == 409
+            assert "unreviewed draft" in denied.json()["detail"]
+            # This synthetic draft names labware and a liquid class the real
+            # catalog does not have, so its rehearsal stops at preflight validation.
+            rehearsal = await client.post(f"/api/workflows/{saved['id']}/simulate")
+            assert rehearsal.status_code == 400, rehearsal.text
+            assert rehearsal.json()["detail"]["invalid_nodes"]
+
+        await assert_rehearsal_only()
         loaded["name"] = "Edited unreviewed lowering"
         updated = await client.put(f"/api/workflows/{saved['id']}", json=loaded)
         assert updated.status_code == 200
@@ -292,5 +303,4 @@ async def test_lowered_graph_stays_unreviewed_after_load_and_save(tmp_path, monk
         (tmp_path / "workflows" / f"{saved['id']}.json").write_text(
             json.dumps(saved_without_marker), encoding="utf-8",
         )
-        for operation in ("simulate", "execute"):
-            assert (await client.post(f"/api/workflows/{saved['id']}/{operation}")).status_code == 409
+        await assert_rehearsal_only()

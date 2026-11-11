@@ -114,6 +114,9 @@ function isGeneratedProtocolDraftTab(){return true;}
 function validateWorkflow(){return [];}
 function clearActiveNodeHighlight(){}
 function timelineReset(){}
+let physicalObstructionRun=null;
+function resetPhysicalObstructionPreview(){physicalObstructionRun=null;}
+function physicalObstructionDeckDetails(){return {};}
 function recordDrafterPatch(){}
 function syncActiveTabMeta(){}
 function serializeWorkflow(){return {name:'Draft',protocol_generated_draft:true,

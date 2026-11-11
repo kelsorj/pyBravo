@@ -29,7 +29,10 @@ def liquid_workflow(monkeypatch):
     plan["steps"][0]["repeat"] = 2
     plan["steps"][0]["source_values"].append({"field": "repeat", "value": 2.0, "unit": "count", "paragraph_id": "p1"})
     # Two explicitly available columns exercise preservation of partial racks.
-    plan["materials"][2]["available_tips"] = [f"{row}{col}" for row in "ABCDEFGH" for col in (11, 12)]
+    # Columns 1-2 are the ones a back-left single column can reach at deck
+    # position 3 inside the configured X range; columns 11-12 would need
+    # X 473 mm against a 390 mm limit and are rejected by the reachability check.
+    plan["materials"][2]["available_tips"] = [f"{row}{col}" for row in "ABCDEFGH" for col in (1, 2)]
     workflow = compile_plan(plan, setup, context, sources=sources)
     bravo = Bravo(mode="simulation")
     field_names = {field.name for field in fields(LabwareDefinition)}
