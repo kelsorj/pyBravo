@@ -39,6 +39,7 @@ from pybravo.head_mode import (
 )
 from pybravo.profile.profile import BravoProfile
 from pybravo.protocol.commands import CommandID, LightCommandData
+from pybravo.protocol.errors import BravoError, ErrorType
 from pybravo.state_machine.engine import ErrorAction, StateMachineTask, TaskStatus
 from pybravo.tip_offsets import ResolvedTipOffsets
 from pybravo.tips import get_tip_length_mm, is_cartridge_tip
@@ -757,6 +758,24 @@ class InitializeTask(StateMachineTask):
             return OPEN_GRIPPER_POSITION
         return min(float(getattr(g_range, "min_pos", OPEN_GRIPPER_POSITION)), OPEN_GRIPPER_POSITION)
 
+    @staticmethod
+    def _g_preopen_refused_unhomed(exc: BaseException) -> bool:
+        """True only if the controller refused the G move before any motion
+        because the axis is not homed (as opposed to a failed/faulted move)."""
+        return (
+            isinstance(exc, BravoError)
+            and exc.error_type == ErrorType.NOT_HOMED
+            and exc.axis == Axis.G
+        )
+
+    def _gripper_plate_sensor_clear(self) -> bool:
+        """True only on a positive 'no plate' reading; unknown counts as not clear."""
+        try:
+            return not bool(self._ctrl.is_plate_in_gripper())
+        except Exception as exc:
+            logger.warning("Could not read the gripper plate sensor: %s", exc)
+            return False
+
     def _gripper_expected(self) -> bool:
         axes = getattr(self._profile, "axes", {}) or {}
         return "G" in axes and "Zg" in axes
@@ -1128,6 +1147,16 @@ class InitializeTask(StateMachineTask):
                         logger.warning(
                             "Could not move G open before G home after operator ignored the plate-sensor warning; "
                             "continuing to DARWIN G homing anyway: %s",
+                            fallback_exc,
+                        )
+                    elif self._g_preopen_refused_unhomed(fallback_exc) and self._gripper_plate_sensor_clear():
+                        # Cold start: the controller refuses any move on an
+                        # un-homed axis, so the pre-open can never succeed.
+                        # With the plate sensor clear there is nothing to
+                        # release, so go straight to G homing.
+                        logger.warning(
+                            "G pre-home open was refused because G is not yet homed and the plate "
+                            "sensor is clear; continuing to DARWIN G homing: %s",
                             fallback_exc,
                         )
                     else:

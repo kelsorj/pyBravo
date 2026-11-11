@@ -314,7 +314,7 @@ def test_is_axis_homed_does_not_read_homing_flag_state(controller):
 
 
 def test_move_fails_fast_when_axis_not_initialized(controller):
-    """ctrl.move on an un-homed axis raises COULD_NOT_MOVE_TO_POSITION
+    """ctrl.move on an un-homed axis raises NOT_HOMED for that axis
     with a message about initialization, instead of timing out."""
     from pybravo.controllers.base import AxisMoveInfo
     from pybravo.protocol.errors import ErrorType
@@ -327,7 +327,8 @@ def test_move_fails_fast_when_axis_not_initialized(controller):
         # Target 0 is within G software limits ([-7.0, 13.0]).
         ctrl.move([AxisMoveInfo(axis=Axis.G, position=0.0)], wait=True,
                   timeout_ms=500)  # small timeout so failure is immediate
-    assert exc_info.value.error_type == ErrorType.COULD_NOT_MOVE_TO_POSITION
+    assert exc_info.value.error_type == ErrorType.NOT_HOMED
+    assert exc_info.value.axis == Axis.G
     assert "not initialized" in str(exc_info.value).lower() or \
            "home the axis" in str(exc_info.value).lower()
 

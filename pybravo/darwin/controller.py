@@ -343,8 +343,11 @@ class DarwinController(BravoController):
             )
             from pybravo.protocol.gemini.enums import MotorState as _MS
             if int(state) < int(_MS.READY):
+                # NOT_HOMED (not COULD_NOT_MOVE_TO_POSITION) so callers can
+                # tell "refused before any motion" from a failed move.
                 raise BravoError(
-                    ErrorType.COULD_NOT_MOVE_TO_POSITION,
+                    ErrorType.NOT_HOMED,
+                    axis=m.axis,
                     custom_text=(
                         f"{m.axis.name} axis not initialized (motor state "
                         f"{state.name if hasattr(state, 'name') else state}); "

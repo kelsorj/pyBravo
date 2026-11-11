@@ -795,6 +795,25 @@ class InitializeGPrehomeMoveFailingController(RecordingSimulationController):
         super().move(moves, wait=wait, timeout_ms=timeout_ms)
 
 
+class InitializeGPrehomeRefusedUnhomedController(RecordingSimulationController):
+    """Mimics the Darwin controller refusing a move on an un-homed G axis."""
+
+    plate_sensor_raises = False
+
+    def move(self, moves: list[AxisMoveInfo], wait: bool = True, timeout_ms: int = 30000) -> None:
+        if any(move.axis == Axis.G for move in moves) and not self._axes[Axis.G].homed:
+            self._g_move_refused = True
+            raise BravoError(ErrorType.NOT_HOMED, axis=Axis.G, custom_text="G axis not initialized")
+        super().move(moves, wait=wait, timeout_ms=timeout_ms)
+
+    def is_plate_in_gripper(self) -> bool:
+        # Fail only once home_g has had its pre-open refused, so the earlier
+        # handle_plate_in_gripper step still sees a clear sensor.
+        if self.plate_sensor_raises and getattr(self, "_g_move_refused", False):
+            raise RuntimeError("simulated plate sensor read failure")
+        return super().is_plate_in_gripper()
+
+
 class InitializeWNeedsParkingController(RecordingSimulationController):
     def home_axes(self, axes: list[Axis]) -> None:
         super().home_axes(axes)
@@ -891,6 +910,67 @@ async def test_initialize_plate_in_gripper_prompt_can_be_ignored_to_continue():
     await asyncio.wait_for(task, timeout=1.0)
 
     assert controller.home_axes_calls == [[Axis.Z], [Axis.Zg], [Axis.W]]
+
+
+def _darwin_cold_g_init(controller_cls):
+    profile = BravoProfile.default()
+    profile.connection.controller_type = "darwin_native"
+    profile.safety.prompt_home_w = False
+    controller = controller_cls()
+    controller.open_tcp("simulation")
+    _mark_initialize_cold_start(controller)
+    controller._axes[Axis.G].homed = False
+    engine = StateMachineEngine()
+    engine.set_error_handler(lambda error: None)
+    return controller, engine, InitializeTask(controller, profile)
+
+
+async def _run_until_failed_or_done(engine, task_obj):
+    task = asyncio.create_task(engine.execute(task_obj))
+    for _ in range(100):
+        if task.done() or task_obj.status.name.lower() == "failed":
+            break
+        await asyncio.sleep(0.01)
+    return task
+
+
+@pytest.mark.asyncio
+async def test_initialize_darwin_cold_g_homes_when_preopen_refused_and_plate_sensor_clear():
+    controller, engine, task_obj = _darwin_cold_g_init(InitializeGPrehomeRefusedUnhomedController)
+
+    task = await _run_until_failed_or_done(engine, task_obj)
+    await asyncio.wait_for(task, timeout=1.0)
+
+    assert task_obj.error is None
+    assert controller.home_axes_calls == [[Axis.Z], [Axis.G], [Axis.Zg], [Axis.W]]
+
+
+@pytest.mark.asyncio
+async def test_initialize_darwin_cold_g_still_fails_when_preopen_move_fails_for_other_reasons():
+    # A failed move (not a not-homed refusal) must keep failing closed.
+    controller, engine, task_obj = _darwin_cold_g_init(InitializeGPrehomeMoveFailingController)
+
+    task = await _run_until_failed_or_done(engine, task_obj)
+
+    assert task_obj.error is not None
+    assert task_obj.error.step_name == "home_g"
+    assert [Axis.G] not in controller.home_axes_calls
+    engine.abort()
+    await asyncio.wait({task}, timeout=1.0)
+
+
+@pytest.mark.asyncio
+async def test_initialize_darwin_cold_g_fails_closed_when_plate_sensor_unreadable():
+    controller, engine, task_obj = _darwin_cold_g_init(InitializeGPrehomeRefusedUnhomedController)
+    controller.plate_sensor_raises = True
+
+    task = await _run_until_failed_or_done(engine, task_obj)
+
+    assert task_obj.error is not None
+    assert task_obj.error.step_name == "home_g"
+    assert [Axis.G] not in controller.home_axes_calls
+    engine.abort()
+    await asyncio.wait({task}, timeout=1.0)
 
 
 @pytest.mark.asyncio
