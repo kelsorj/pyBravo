@@ -4,6 +4,11 @@ Protocol Assistant turns written laboratory procedures into reviewed pyBravo
 workflows. Open **Protocol Assistant** from the control panel or designer, or
 visit `/protocol-assistant`.
 
+You can also start and revise a protocol directly in its **Bravo assistant**
+sidebar. Suggestions show changed fields and ordered task cards before you
+accept them into the saved draft. See [Agent planning](agent-planning.md) for
+the stacking example and the external agent interface.
+
 The workflow is **source → interpretation → questions → setup → validation →
 strict simulation → approval → designer**. The local model proposes structured
 data. A deterministic compiler supplies the executable operations. Generated
@@ -251,9 +256,10 @@ timed experiment is biologically valid.
 Strict simulation has a 180-second execution timeout; a timed-out run fails
 and must be run again after its cause is resolved.
 
-This differs from the designer's visual **Simulate** preview, which is intended
-for animation and can continue after task warnings. The assistant requires its
-own successful strict result before approval.
+Designer **Simulate** uses the same guarded native-task executor. The separate
+visual walkthrough illustrates order and cannot establish physical clearance.
+The assistant requires a successful strict result bound to its saved revision
+before approval.
 
 Review the run sheet, deck diagram, method differences and manual
 interventions. Record the scientist's name and choose a **supervised

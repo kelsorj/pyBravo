@@ -225,3 +225,161 @@ async def test_chat_rejects_blank_unknown_approval_fields_and_invalid_revision(c
             assert response.status_code == 422, response.text
         assert not calls
         assert not store.list("sessions")
+
+
+async def test_staged_suggestions_require_acceptance_and_can_be_rejected(chat_environment):
+    store, _ = chat_environment
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=server.app), base_url="http://test") as client:
+        proposal = (await client.post('/api/protocols/chat-proposals', json={'message': 'Inspect the label.'})).json()
+        assert not store.list('sessions')
+        resumed = await client.get('/api/protocols/chat-proposals/' + proposal['proposal_id'])
+        assert resumed.status_code == 200
+        assert resumed.json()['candidate'] == proposal['candidate']
+        assert proposal['candidate']['approval'] is None
+        assert proposal['candidate']['simulation'] is None
+        rejected = await client.post(f"/api/protocols/chat-proposals/{proposal['proposal_id']}/reject")
+        assert rejected.json()['status'] == 'rejected'
+        assert not store.list('sessions')
+        assert (await client.post(f"/api/protocols/chat-proposals/{proposal['proposal_id']}/accept")).status_code == 409
+        proposal = (await client.post('/api/protocols/chat-proposals', json={'message': 'Inspect the label.'})).json()
+        accepted = await client.post(f"/api/protocols/chat-proposals/{proposal['proposal_id']}/accept")
+        assert accepted.status_code == 200, accepted.text
+        session = accepted.json()['session']
+        assert session['revision'] == 1
+        assert session['plan'] == proposal['candidate']['plan']
+        assert len(store.list('sessions')) == 1
+        assert (await client.post(f"/api/protocols/chat-proposals/{proposal['proposal_id']}/accept")).status_code == 409
+
+
+async def test_suggestion_rejects_concurrent_edits_and_changed_context(chat_environment, monkeypatch):
+    store, _ = chat_environment
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=server.app), base_url="http://test") as client:
+        first = (await client.post('/api/protocols/chat', json={'message': 'Inspect A.'})).json()['session']
+        proposal = (await client.post('/api/protocols/chat-proposals', json={
+            'session_id': first['id'], 'revision': 1, 'message': 'Inspect B.'})).json()
+        assert store.get('sessions', first['id']) == first
+        store.update_session(first['id'], {'setup': {'name': 'Concurrent edit'}}, revision=1)
+        response = await client.post(f"/api/protocols/chat-proposals/{proposal['proposal_id']}/accept")
+        assert response.status_code == 409
+        assert store.get('sessions', first['id'])['setup']['name'] == 'Concurrent edit'
+        proposal = (await client.post('/api/protocols/chat-proposals', json={'message': 'Inspect C.'})).json()
+        monkeypatch.setattr(api, 'machine_context', lambda bravo: {'context_hash': 'changed'})
+        response = await client.post(f"/api/protocols/chat-proposals/{proposal['proposal_id']}/accept")
+        assert response.status_code == 409
+        assert len(store.list('sessions')) == 1
+
+
+async def test_explicit_tip_policy_is_previewed_and_invalidates_checks_only_when_accepted(chat_environment):
+    store, calls = chat_environment
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=server.app), base_url="http://test") as client:
+        first = (await client.post('/api/protocols/chat', json={'message': 'Inspect the label.'})).json()['session']
+        store.annotate(first['id'], {'validation': {'ok': True}, 'simulation': {'status': 'passed'},
+            'approval': {'scientist': 'Recorded review'}}, revision=1)
+        proposal = (await client.post('/api/protocols/chat-proposals', json={
+            'session_id': first['id'], 'revision': 1,
+            'message': "Use the same tips, I don't care about carryover."})).json()
+        assert len(calls) == 1  # A policy-only edit never regenerates the steps.
+        assert proposal['candidate']['plan']['steps'] == first['plan']['steps']
+        assert proposal['candidate']['setup']['tip_strategy'] == 'reuse_all'
+        assert proposal['candidate']['setup']['tip_reuse_reason']
+        assert proposal['candidate']['approval'] is None
+        assert store.get('sessions', first['id'])['approval']
+        response = await client.post(f"/api/protocols/chat-proposals/{proposal['proposal_id']}/accept")
+        saved = response.json()['session']
+        assert saved['revision'] == 2
+        assert saved['setup']['tip_strategy'] == 'reuse_all'
+        assert saved['validation'] is saved['simulation'] is saved['approval'] is None
+        assert saved['history'][-1]['approval']['scientist'] == 'Recorded review'
+        fresh = (await client.post('/api/protocols/chat-proposals', json={
+            'session_id': saved['id'], 'revision': 2, 'message': 'Use fresh tips for every transfer.'})).json()
+        assert fresh['candidate']['setup']['tip_strategy'] == 'fresh_each_step'
+        assert fresh['candidate']['setup']['tip_reuse_reason'] is None
+
+
+@pytest.mark.parametrize('message', [
+    "Do not use the same tips, I don't care about carryover.",
+    "Example: use the same tips, I don't care about carryover.",
+    "Use the same tips, I don't care about carryover. Also add 100 uL.",
+])
+def test_tip_policy_parser_does_not_swallow_other_instructions(message):
+    from pybravo.workflow.protocols.agent_contract import explicit_tip_edit
+    assert explicit_tip_edit(message, {'name': 'Draft', 'steps': []}, {}) is None
+
+
+async def test_repair_message_receives_saved_diagnostics_without_applying_changes(chat_environment):
+    store, calls = chat_environment
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=server.app), base_url='http://test') as client:
+        first = (await client.post('/api/protocols/chat', json={'message': 'Inspect plate A.'})).json()['session']
+        diagnostics = {'validation': {'issues': [{'code': 'buried_plate', 'path': '/steps/0/material'}]},
+            'simulation': {'status': 'failed', 'error': 'Modeled obstruction',
+                           'physical_simulation': {'last_error': {'node_id': 'stage-1'}}}}
+        saved = store.annotate(first['id'], diagnostics, revision=1)
+        response = await client.post('/api/protocols/chat-proposals', json={
+            'session_id': first['id'], 'revision': 1, 'message': 'Propose a fix for the reported obstruction.'})
+        assert response.status_code == 200, response.text
+        assert calls[-1]['context']['validation_feedback'] == diagnostics['validation']['issues']
+        assert calls[-1]['context']['simulation_feedback'] == diagnostics['simulation']
+        assert store.get('sessions', first['id']) == saved
+
+
+async def test_agent_endpoint_streams_natural_reply_without_invalidating_review(chat_environment, monkeypatch):
+    import importlib
+    module = importlib.import_module('pybravo.workflow.protocols.agent_chat')
+    from pybravo.workflow.protocols.agent_chat import AgentTurn
+    store, _ = chat_environment
+    async def run(record, message, context, emit, **kwargs):
+        await emit({'type': 'tool:start', 'tool': 'inspect_protocol', 'label': 'Reading your protocol'})
+        candidate = {**record, 'chat_messages': record['chat_messages'] + [
+            {'role': 'user', 'content': message}, {'role': 'assistant', 'content': 'You can edit it here.'}],
+            'model': {'provider': 'local_tool_agent'}}
+        return AgentTurn(candidate, 'You can edit it here.', False, [],
+                         {'pending_paragraphs': [], 'latest_paragraph': {'id': 'p-question', 'text': message}})
+    monkeypatch.setattr(module, 'run_turn', run)
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=server.app), base_url='http://test') as client:
+        first = (await client.post('/api/protocols/chat', json={'message': 'Inspect A.'})).json()['session']
+        store.annotate(first['id'], {'approval': {'scientist': 'Prior reviewer'}}, revision=1)
+        response = await client.post('/api/protocols/agent-chat', json={
+            'session_id': first['id'], 'revision': 1, 'message': 'How do I edit this?'})
+        assert response.status_code == 200
+        import json
+        events = [json.loads(line) for line in response.text.splitlines()]
+        assert [event['type'] for event in events] == ['turn:start', 'tool:start', 'assistant:reply']
+        saved = events[-1]['session']
+        assert saved['revision'] == 1 and saved['approval']['scientist'] == 'Prior reviewer'
+        assert saved['source'] == first['source']
+        assert saved['agent_pending_paragraphs'][0]['id'] == 'p-question'
+        assert not api._agent_turns
+        status = (await client.get('/api/protocols/agent-status')).json()
+        assert status['mode'] == 'local_tool_agent'
+
+
+async def test_agent_refines_pending_suggestion_without_accepting_it(chat_environment, monkeypatch):
+    import importlib
+    import json
+    module = importlib.import_module('pybravo.workflow.protocols.agent_chat')
+    from pybravo.workflow.protocols.agent_chat import AgentTurn
+    store, _ = chat_environment
+    async def run(record, message, context, emit, **kwargs):
+        assert record['revision'] == 1
+        assert record['plan']['steps'][0]['message'] == 'Inspect B.'
+        candidate = copy.deepcopy(record)
+        candidate['revision'] = 2
+        candidate['plan']['steps'][0]['message'] = 'Inspect C.'
+        candidate['model'] = {'provider': 'local_tool_agent'}
+        return AgentTurn(candidate, 'I updated the suggestion.', True, [], {})
+    monkeypatch.setattr(module, 'run_turn', run)
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=server.app), base_url='http://test') as client:
+        original = (await client.post('/api/protocols/chat', json={'message': 'Inspect A.'})).json()['session']
+        proposal = (await client.post('/api/protocols/chat-proposals', json={
+            'session_id': original['id'], 'revision': 1, 'message': 'Inspect B.'})).json()
+        response = await client.post('/api/protocols/agent-chat', json={'session_id': original['id'],
+            'revision': 1, 'proposal_id': proposal['proposal_id'], 'message': 'Use C instead.'})
+        events = [json.loads(line) for line in response.text.splitlines()]
+        refined = events[-1]['proposal']
+        assert refined['base_revision'] == 1 and refined['candidate']['revision'] == 2
+        assert refined['candidate']['plan']['steps'][0]['message'] == 'Inspect C.'
+        assert store.get('sessions', original['id']) == original
+        assert store.get('proposals', proposal['proposal_id'])['status'] == 'superseded'
+        accepted = await client.post('/api/protocols/chat-proposals/' + refined['proposal_id'] + '/accept')
+        assert accepted.json()['session']['revision'] == 2
+        assert accepted.json()['session']['plan']['steps'][0]['message'] == 'Inspect C.'

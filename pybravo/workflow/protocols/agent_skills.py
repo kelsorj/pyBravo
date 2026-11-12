@@ -31,6 +31,8 @@ def selected_skills(source: IngestedProtocol) -> list[tuple[str, str]]:
     if (_QUADRANT_TRANSFER.search(source_text) and _SOURCE_GRID.search(source_text)
             and _DESTINATION_GRID.search(source_text)):
         names.append("384-to-1536-quadrants")
+    if re.search(r"\bstack\w*\b", source_text, re.I) and _SOURCE_GRID.search(source_text):
+        names.append("stacked-plate-processing")
     result = []
     for name in names:
         content = (_ROOT / name / "SKILL.md").read_text(encoding="utf-8")

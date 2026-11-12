@@ -61,6 +61,8 @@ https://github.com/user-attachments/assets/48de0bf6-f5a1-409d-ab84-00fcac42d9b6
   approved procedures and setups. The [Bravo Capability Manifest](docs/bravo-capability-manifest.md)
   publishes the active instrument's model-selectable planning options and
   compatibility constraints. See [the guide](docs/protocol-assistant.md).
+  The [agent planning interface](docs/agent-planning.md) adds staged conversational
+  edits, task/skill discovery, and tools for external planners to validate and rehearse drafts.
 - **Deck management** — a 3×3 deck model with per-location teachpoints, and
   obstacle-aware Z clearance when the gripper carries plates between locations.
 - **3D digital twin** — watch a URDF model of the robot mirror the real

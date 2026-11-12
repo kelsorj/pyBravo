@@ -51,7 +51,7 @@ class ProtocolStore:
         self._lock = threading.RLock()
 
     def _path(self, kind: str, identity: str) -> Path:
-        if kind not in {"sessions", "library", "setups", "releases", "sources"} or not re.fullmatch(r"[a-zA-Z0-9_-]{1,100}", identity):
+        if kind not in {"sessions", "library", "setups", "releases", "sources", "proposals"} or not re.fullmatch(r"[a-zA-Z0-9_-]{1,100}", identity):
             raise ValueError("Invalid record identifier")
         return self.directory / kind / f"{identity}.json"
 
@@ -144,3 +144,29 @@ class ProtocolStore:
                 raise RevisionConflict("Protocol changed while the operation was running; rerun it.")
             record.update(copy.deepcopy(changes))
             return self.put("sessions", record)
+
+    def resolve_proposal(self, identity: str, *, accept: bool) -> dict:
+        """Apply a server-owned draft once, against its original session revision."""
+        with self._lock:
+            proposal = self.get("proposals", identity)
+            if proposal is None:
+                raise KeyError(identity)
+            if proposal["status"] != "pending":
+                raise RevisionConflict("This suggestion was already accepted or rejected.")
+            if not accept:
+                return self.put("proposals", {**proposal, "status": "rejected"})
+            candidate = proposal["candidate"]
+            base = proposal["base_revision"]
+            if base is None:
+                if self.get("sessions", candidate["id"]) is not None:
+                    raise RevisionConflict("This protocol already exists. Reload it before continuing.")
+                saved = self.create_session(candidate["source"], identity=candidate["id"],
+                    plan=candidate["plan"], setup=candidate["setup"],
+                    chat_messages=candidate["chat_messages"], model=candidate["model"])
+            else:
+                saved = self.update_session(candidate["id"], {**{key: candidate[key] for key in (
+                    "name", "source", "selected_paragraph_ids", "plan", "setup", "chat_messages", "model",
+                )}, "agent_pending_paragraphs": candidate.get("agent_pending_paragraphs", [])},
+                    revision=base, event="accepted_chat_proposal")
+            self.put("proposals", {**proposal, "status": "accepted"})
+            return saved

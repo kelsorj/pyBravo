@@ -27,6 +27,7 @@ async function run(){
         requests.push({method:req.method(),endpoint,body});
         let result;
         if(endpoint==='/context')result={tipbox_choices:tipboxChoices,tipbox_choices_reason:tipboxReason,tipbox_catalog_candidates:tipboxCandidates,profile_name:'Test Bravo',head_type:'ST',labware:[{id:'reservoir',name:'Reservoir'},{id:'plate',name:'96-well plate'},{id:'tiprack',name:'Tip rack'}],tip_definitions:[{id:'tip250',name:'250 µL tips'},{id:'tip70',name:'ST 70 µL tips'},{id:'mismatched-tip',name:'Unverified pairing'}],liquid_classes:[{id:'water',name:'Water'}]};
+        else if(endpoint==='/agent-status')result={available:true,model:'qwen',base_url:'http://sparky.local:8000/v1'};
         else if(endpoint==='/capabilities')result={context_hash:'mock-capabilities',machine:{geometry:{}},assistant_operations:[],setup_options:{tip_disposals:[{id:'return_to_source_rack',value_kind:'literal',setup_value:'return_to_source_rack',requires_tip_strategy:'fresh_each_source'}]}};
         else if(endpoint==='/setup-recommendations')result={context_hash:'mock-capabilities',plan_fingerprint:'mock-plan',recommendations:[],unresolved:[]};
         else if(endpoint==='/methods'&&req.method()==='GET')result={digest:'mock-registry',methods:[]};

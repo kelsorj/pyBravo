@@ -1201,6 +1201,7 @@ function attachDirtyHooks(){}
 function updateDeckCell(){}
 function syncDeckTo3D(){}
 function renderTabStrip(){}
+function loadLiquidClasses(){}
 """
         + "\n".join(functions)
         + """

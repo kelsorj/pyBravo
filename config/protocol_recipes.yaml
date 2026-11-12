@@ -1,6 +1,28 @@
 # Composable planning patterns, not executable or hardware-qualified methods.
 version: 1
 recipes:
+  - id: stacked_384_diluent_and_sample
+    version: 1.0.0
+    status: synthetic_pattern
+    title: Diluent and sample additions to stacked 384-well plates
+    triggers: ["stack", "384", "diluent", "sample"]
+    trigger_match: all
+    intent: >-
+      Keep separate diluent and sample sources and one material for every
+      destination plate. Ask for the plate count if absent. Propose an input
+      stack, a free working position and a separate output stack. Process
+      destinations top-first: destack to the work position (move the final
+      singleton), add diluent, add sample, then move to an empty output position
+      or stack on completed plates. Preserve each source's requested volume as
+      a distinct transfer. Ask whether additions cover the full head footprint.
+      Reusing tips is a separate scientist decision; a same-tip request never
+      combines two 5 uL transfers into a 10 uL aspiration. Starting volume,
+      physical rack inventory, liquid classes and pipetting heights stay unknown
+      until supplied or reviewed. No plate count or catalog ID is established
+      by this recipe.
+    operations: [destack_plate, move_plate, transfer, stack_plate]
+    source_path: docs/agent-planning.md
+    review_points: [destination_count_and_stack_order, full_head_scope, source_identity, physical_tip_inventory, starting_and_dead_volumes, liquid_methods, carryover_policy, working_and_output_positions]
   - id: four_384_to_1536_quadrants
     version: 1.0.0
     status: synthetic_pattern

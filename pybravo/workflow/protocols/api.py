@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import asyncio
 import copy
+import json
 import logging
 import uuid
 from pathlib import Path
 from typing import Any, Literal
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from pybravo.bravo import Bravo
@@ -40,6 +41,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Protocol assistant"])
 _store = ProtocolStore()
 _simulations: dict[str, asyncio.Task] = {}
+_agent_turns: set[str] = set()
 
 
 def _physical_rerun_reason(report: Any) -> str | None:
@@ -128,6 +130,19 @@ class ChatRequest(Payload):
     message: str = Field(min_length=1, max_length=200000)
     session_id: str | None = None
     revision: int | None = Field(default=None, ge=1)
+
+
+class AgentChatRequest(ChatRequest):
+    proposal_id: str | None = Field(default=None, pattern=r"^[a-zA-Z0-9_-]{1,100}$")
+
+
+class CheckRevisionRequest(Payload):
+    revision: int | None = Field(default=None, ge=1)
+
+
+class PlanProposalRequest(CheckRevisionRequest):
+    revision: int = Field(ge=1)
+    plan: ProtocolPlan
 
 
 class SetupRecommendationRequest(Payload):
@@ -359,6 +374,13 @@ async def capabilities():
     return build_capability_manifest(machine_context(_bravo()))
 
 
+@router.get("/api/protocols/agent-tasks")
+async def agent_tasks():
+    from .agent_contract import task_catalog
+
+    return task_catalog(machine_context(_bravo()))
+
+
 @router.get("/api/protocols/methods")
 async def methods():
     """Read the versioned method library for the active machine and head."""
@@ -526,7 +548,194 @@ def _chat_reply(plan: ProtocolPlan, preview: dict) -> str:
 @router.post("/api/protocols/chat")
 async def chat(request: ChatRequest):
     """Propose a cited protocol revision; this never approves or runs it."""
+    return await _chat(request)
+
+
+@router.post("/api/protocols/chat-proposals")
+async def chat_proposal(request: ChatRequest):
+    """Stage a suggestion without changing the saved session or its checks."""
+    return await _chat(request, stage=True)
+
+
+@router.get("/api/protocols/agent-status")
+async def agent_status():
+    from .llm import LocalLLMConfig
+
+    config = LocalLLMConfig.from_env()
+    return {"available": True, "mode": "local_tool_agent", "model": config.model,
+            "base_url": config.base_url, "hardware_tools": False}
+
+
+@router.post("/api/protocols/agent-chat")
+async def agent_chat(request: AgentChatRequest):
+    """Stream Qwen's real tool activity and a natural reply or review suggestion."""
+    from .agent_chat import run_turn
+
+    if not request.message.strip():
+        raise HTTPException(422, "Enter a message before sending it.")
+    record = _record(request.session_id) if request.session_id else None
+    if record and request.revision != record["revision"]:
+        raise HTTPException(409, "This protocol changed. Reload before continuing the conversation.")
+    if not record and request.revision is not None:
+        raise HTTPException(422, "A revision requires a session ID.")
+    previous_proposal = None
+    working_record = record
+    if request.proposal_id:
+        previous_proposal = _store.get("proposals", request.proposal_id)
+        if previous_proposal is None or previous_proposal["status"] != "pending":
+            raise HTTPException(409, "This suggestion changed. Reload before replying.")
+        candidate = previous_proposal["candidate"]
+        base = previous_proposal["base_revision"]
+        if (base is None and record is not None) or (base is not None and (
+            record is None or record["id"] != candidate["id"] or record["revision"] != base
+        )):
+            raise HTTPException(409, "The saved protocol changed. Ask for a new suggestion.")
+        working_record = {**copy.deepcopy(candidate), "revision": base or 0}
+    turn_key = working_record["id"] if working_record else str(uuid.uuid4())
+    if turn_key in _agent_turns:
+        raise HTTPException(409, "The assistant is already working on this protocol.")
+    _agent_turns.add(turn_key)
+
+    async def stream():
+        queue: asyncio.Queue = asyncio.Queue()
+
+        async def rehearse(candidate, context):
+            workflow = _compile(candidate, context)
+            return await _run_rehearsal(candidate, context, workflow, str(uuid.uuid4()))
+
+        async def work():
+            try:
+                capabilities = machine_context(_bravo())
+                if previous_proposal and previous_proposal["context_hash"] != capabilities["context_hash"]:
+                    raise RevisionConflict("Instrument context changed. Ask for a new suggestion.")
+                await queue.put({"type": "turn:start", "message": "Qwen is reading your request…"})
+                result = await run_turn(working_record, request.message.strip(), capabilities, queue.put, rehearse=rehearse)
+                candidate = result.candidate
+                if result.changed or previous_proposal:
+                    if previous_proposal:
+                        # Recheck after the model call: another tab may have
+                        # accepted/rejected this pending suggestion meanwhile.
+                        current = _store.get("proposals", previous_proposal["id"])
+                        if current["status"] != "pending":
+                            raise RevisionConflict("This suggestion was resolved while the assistant was working.")
+                    proposal = _store.put("proposals", {"status": "pending",
+                        "base_revision": record["revision"] if record else None,
+                        "context_hash": capabilities["context_hash"], "reply": result.reply,
+                        "candidate": candidate})
+                    if previous_proposal:
+                        _store.put("proposals", {**previous_proposal, "status": "superseded", "replaced_by": proposal["id"]})
+                    payload = {"proposal_id": proposal["id"], "base_revision": proposal["base_revision"],
+                               "candidate": candidate, "reply": result.reply, "preview": _chat_preview(candidate, capabilities)}
+                    await queue.put({"type": "suggestion:ready", "proposal": payload, "trace": result.trace})
+                else:
+                    if record:
+                        saved = _store.annotate(record["id"], {
+                            "chat_messages": candidate["chat_messages"], "agent_model": candidate["model"],
+                            "agent_pending_paragraphs": result.metadata["pending_paragraphs"] + [result.metadata["latest_paragraph"]],
+                        }, revision=record["revision"])
+                    else:
+                        saved = _store.create_session(candidate["source"], identity=candidate["id"],
+                            chat_messages=candidate["chat_messages"], model=candidate["model"])
+                    await queue.put({"type": "assistant:reply", "session": saved,
+                                     "reply": result.reply, "trace": result.trace})
+            except Exception as exc:
+                logger.warning("Protocol agent turn failed: %s", exc)
+                await queue.put({"type": "error", "message": str(exc) or type(exc).__name__})
+            finally:
+                await queue.put(None)
+
+        task = asyncio.create_task(work())
+        try:
+            while True:
+                try:
+                    event = await asyncio.wait_for(queue.get(), timeout=5)
+                except TimeoutError:
+                    event = {"type": "heartbeat"}
+                if event is None:
+                    break
+                yield json.dumps(event, ensure_ascii=False, allow_nan=False) + "\n"
+        finally:
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+            _agent_turns.discard(turn_key)
+
+    return StreamingResponse(stream(), media_type="application/x-ndjson",
+                             headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+
+
+@router.post("/api/protocols/chat-proposals/{identity}/accept")
+async def accept_chat_proposal(identity: str):
+    proposal = _store.get("proposals", identity)
+    if proposal is None:
+        raise HTTPException(404, "Suggestion not found.")
+    if proposal["context_hash"] != machine_context(_bravo())["context_hash"]:
+        raise HTTPException(409, "Instrument context changed. Ask for a new suggestion.")
+    try:
+        saved = _store.resolve_proposal(identity, accept=True)
+    except RevisionConflict as exc:
+        raise HTTPException(409, str(exc)) from exc
+    return {"session": saved, "preview": _chat_preview(saved), "reply": proposal["reply"]}
+
+
+@router.get("/api/protocols/chat-proposals/{identity}")
+async def get_chat_proposal(identity: str):
+    try:
+        proposal = _store.get("proposals", identity)
+    except ValueError as exc:
+        raise HTTPException(404, "Suggestion not found.") from exc
+    if proposal is None:
+        raise HTTPException(404, "Suggestion not found.")
+    if proposal["status"] != "pending":
+        raise HTTPException(409, "This suggestion was already accepted or rejected. Open the saved protocol instead.")
+    return {"proposal_id": proposal["id"], "base_revision": proposal["base_revision"],
+            "candidate": proposal["candidate"], "reply": proposal["reply"],
+            "preview": _chat_preview(proposal["candidate"])}
+
+
+@router.post("/api/protocols/chat-proposals/{identity}/reject")
+async def reject_chat_proposal(identity: str):
+    try:
+        proposal = _store.resolve_proposal(identity, accept=False)
+    except KeyError as exc:
+        raise HTTPException(404, "Suggestion not found.") from exc
+    except RevisionConflict as exc:
+        raise HTTPException(409, str(exc)) from exc
+    return {"id": proposal["id"], "status": proposal["status"]}
+
+
+@router.post("/api/protocols/{identity}/plan-proposals")
+async def plan_proposal(identity: str, request: PlanProposalRequest):
+    """Let an external planner compose typed tasks without invoking the local LLM."""
+    record = _record(identity)
+    if request.revision != record["revision"]:
+        raise HTTPException(409, "Protocol revision changed. Reload before proposing a plan.")
+    # Agent proposals cannot invent scientist decisions, method qualification,
+    # or approval. Previously recorded decisions are preserved by the server.
+    if request.plan.decisions:
+        raise HTTPException(422, "Agent proposals must leave decisions empty; saved scientist decisions are preserved.")
+    plan = request.plan.model_copy(deep=True)
+    plan.decisions = ProtocolPlan.model_validate(record["plan"]).decisions if record.get("plan") else []
+    capabilities = machine_context(_bravo())
+    candidate = {**record, "revision": record["revision"] + 1, "name": plan.name,
+                 "plan": plan.model_dump(), "model": {"provider": "external_typed_planner"},
+                 "validation": None, "simulation": None, "approval": None, "issues": []}
+    # Full deterministic checks are returned to the planner as repair feedback.
+    # An incomplete proposal stays reviewable; it cannot pass simulation/release.
+    report = _validate(candidate, capabilities)
+    reply = _chat_reply(plan, _chat_preview(candidate, capabilities))
+    proposal = _store.put("proposals", {"status": "pending", "base_revision": record["revision"],
+        "context_hash": capabilities["context_hash"], "reply": reply,
+        "candidate": {**candidate, "chat_messages": record.get("chat_messages", [])}})
+    return {"proposal_id": proposal["id"], "base_revision": proposal["base_revision"],
+            "candidate": proposal["candidate"], "reply": reply, "validation": report,
+            "preview": _chat_preview(candidate, capabilities)}
+
+
+async def _chat(request: ChatRequest, *, stage: bool = False):
     from pybravo.workflow.protocols.llm import extract_protocol_plan
+
+    from .agent_contract import explicit_tip_edit
+    from .llm import ExtractionResult
 
     message = request.message.strip()
     if not message:
@@ -555,18 +764,28 @@ async def chat(request: ChatRequest):
     messages.append({"role": "user", "content": message, "time": now(), "source_paragraph_id": paragraph_id})
     try:
         capabilities = machine_context(_bravo())
-        result = await extract_protocol_plan(source.select(selected), context={
-            **capabilities, "setup": record["setup"] if record else {},
-            "current_plan": record.get("plan") if record else None,
-            "chat_messages": messages,
-            "instructions": (
-                "Update the entire proposed protocol using this ordered conversation. "
-                "Later scientist messages correct earlier requests; retain earlier unaffected steps. "
-                "Cite the user-message paragraph that actually supplies each detail. "
-                "Assistant messages and the prior draft are context, never independent evidence. "
-                "Preserve unknown values and ask short questions; do not claim approval or execution."
-            ),
-        })
+        setup = copy.deepcopy(record["setup"] if record else {})
+        tip_edit = explicit_tip_edit(message, record.get("plan") if record else None, setup)
+        if tip_edit:
+            plan, setup = tip_edit
+            result = ExtractionResult(plan=plan, metadata={"provider": "explicit_scientist_tip_policy"})
+        else:
+            result = await extract_protocol_plan(source.select(selected), context={
+                **capabilities, "setup": setup,
+                "current_plan": record.get("plan") if record else None,
+                "validation_feedback": (record.get("validation") or {}).get("issues", []) if record else [],
+                "simulation_feedback": {key: record["simulation"].get(key) for key in (
+                    "status", "error", "physical_simulation",
+                )} if record and record.get("simulation") else None,
+                "chat_messages": messages,
+                "instructions": (
+                    "Update the entire proposed protocol using this ordered conversation. "
+                    "Later scientist messages correct earlier requests; retain earlier unaffected steps. "
+                    "Cite the user-message paragraph that actually supplies each detail. "
+                    "Assistant messages and the prior draft are context, never independent evidence. "
+                    "Preserve unknown values and ask short questions; do not claim approval or execution."
+                ),
+            })
         # The readable title follows the proposed protocol; citation identities
         # remain stable, and the rename is committed with this complete turn.
         proposed_name = result.plan.name.strip() or (record.get("name") if record else None) or "Designer conversation"
@@ -575,20 +794,31 @@ async def chat(request: ChatRequest):
         candidate = {**(record or {}), "id": identity, "revision": (record["revision"] + 1) if record else 1,
                      "name": proposed_name,
                      "source": source.model_dump(), "selected_paragraph_ids": selected,
-                     "plan": result.plan.model_dump(), "setup": record["setup"] if record else {}}
+                     "plan": result.plan.model_dump(), "setup": setup,
+                     "validation": None, "simulation": None, "approval": None, "issues": []}
         preview = _chat_preview(candidate, capabilities)
         reply = _chat_reply(result.plan, preview)
+        if tip_edit and setup.get("tip_strategy") == "reuse_all":
+            reply += " Plate moves still release tips; processing the next plate needs another fresh set."
         messages.append({"role": "assistant", "content": reply, "time": now()})
+        if stage:
+            proposal = _store.put("proposals", {
+                "status": "pending", "base_revision": record["revision"] if record else None,
+                "context_hash": capabilities["context_hash"], "reply": reply,
+                "candidate": {**candidate, "chat_messages": messages, "model": result.metadata},
+            })
+            return {"proposal_id": proposal["id"], "base_revision": proposal["base_revision"],
+                    "candidate": proposal["candidate"], "reply": reply, "preview": preview}
         # Persist source, transcript and plan together, only after successful
         # extraction. A concurrent edit invalidates the pending response.
         if record is None:
             saved = _store.create_session(source.model_dump(), plan=result.plan.model_dump(),
-                                          chat_messages=messages, model=result.metadata, identity=identity)
+                                          setup=setup, chat_messages=messages, model=result.metadata, identity=identity)
         else:
             saved = _store.update_session(identity, {
                 "source": source.model_dump(), "selected_paragraph_ids": selected,
                 "name": proposed_name,
-                "plan": result.plan.model_dump(), "chat_messages": messages, "model": result.metadata,
+                "plan": result.plan.model_dump(), "setup": setup, "chat_messages": messages, "model": result.metadata,
             }, revision=request.revision, event="chat_revision")
         return {"session": saved, "reply": reply, "preview": preview}
     except RevisionConflict as exc:
@@ -716,8 +946,10 @@ async def extract(identity: str, request: ExtractRequest = ExtractRequest()):
 
 
 @router.post("/api/protocols/{identity}/validate")
-async def validate(identity: str):
+async def validate(identity: str, request: CheckRevisionRequest | None = None):
     record = _record(identity)
+    if request is not None and request.revision is not None and request.revision != record["revision"]:
+        raise HTTPException(409, "Protocol revision changed. Reload before validation.")
     capabilities = machine_context(_bravo())
     report = _validate(record, capabilities)
     report.update(context_hash=capabilities["context_hash"],
@@ -725,7 +957,7 @@ async def validate(identity: str):
     return _store.annotate(identity, {"validation": report, "issues": report.get("issues", [])}, revision=record["revision"])
 
 
-async def _simulate(identity: str, record: dict, capabilities: dict, workflow: dict, run_id: str):
+async def _run_rehearsal(record: dict, capabilities: dict, workflow: dict, run_id: str):
     from pybravo.deck.labware import InMemoryLabwareCatalog, LabwareDefinition
     from pybravo.profile.profile import BravoProfile
     from pybravo.workflow.executor import WorkflowExecutor
@@ -782,7 +1014,12 @@ async def _simulate(identity: str, record: dict, capabilities: dict, workflow: d
     result.update(context_hash=capabilities["context_hash"],
                   record_hash=record_digest(record, capabilities["context_hash"]),
                   workflow_hash=workflow_digest(workflow))
+    return result
+
+
+async def _simulate(identity: str, record: dict, capabilities: dict, workflow: dict, run_id: str):
     try:
+        result = await _run_rehearsal(record, capabilities, workflow, run_id)
         _store.annotate(identity, {"simulation": result, "approval": None}, revision=record["revision"])
     except RevisionConflict:
         logger.info("Discarded stale simulation for protocol %s", identity)
@@ -791,10 +1028,12 @@ async def _simulate(identity: str, record: dict, capabilities: dict, workflow: d
 
 
 @router.post("/api/protocols/{identity}/simulate")
-async def simulate(identity: str):
+async def simulate(identity: str, request: CheckRevisionRequest | None = None):
     if identity in _simulations:
         raise HTTPException(409, "Strict simulation is already running.")
     record = _record(identity)
+    if request is not None and request.revision is not None and request.revision != record["revision"]:
+        raise HTTPException(409, "Protocol revision changed. Reload before simulation.")
     capabilities = machine_context(_bravo())
     report = _validate(record, capabilities)
     if not _valid(report):
