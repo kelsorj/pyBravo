@@ -40,6 +40,10 @@ logs/
 *.local.yaml
 *.local.yml
 
+# Which profile this machine last selected. Never commit it: a fresh clone
+# must fall back to the simulation profile, not to someone's instrument.
+profiles/.active_profile
+
 # Editor / OS cruft
 .DS_Store
 .idea/

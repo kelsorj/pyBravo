@@ -42,6 +42,8 @@ safety:
   allow_tos_fluid_handling: false
   enable_tips_on_tip_touch: false
   pin_tool_tip_type: 33 mm
+  cartridge_shuck_g_mm: 4.0
+  cartridge_shuck_zg_mm: 20.0
 vision:
   enabled: true
   service_url: http://127.0.0.1:8101
@@ -67,6 +69,7 @@ axes:
     homing_soft_stop_decel: 300.0
     min_move_full_accel: 40.0
     check_for_alignment: 1
+    darwin_calibration_offset: 0.0
     fast_velocity: 524.0
     fast_acceleration: 1588.0
     med_velocity: 238.0
@@ -89,6 +92,7 @@ axes:
     homing_soft_stop_decel: 300.0
     min_move_full_accel: 40.0
     check_for_alignment: 1
+    darwin_calibration_offset: 0.0
     fast_velocity: 524.0
     fast_acceleration: 1588.0
     med_velocity: 238.0
@@ -111,6 +115,7 @@ axes:
     homing_soft_stop_decel: 300.0
     min_move_full_accel: 0.0
     check_for_alignment: 1
+    darwin_calibration_offset: 0.0
     fast_velocity: 125.0
     fast_acceleration: 375.0
     med_velocity: 63.0
@@ -133,6 +138,7 @@ axes:
     homing_soft_stop_decel: 300.0
     min_move_full_accel: 0.0
     check_for_alignment: 1
+    darwin_calibration_offset: 0.0
     fast_velocity: 600.0
     fast_acceleration: 600.0
     med_velocity: 100.0
@@ -155,6 +161,7 @@ axes:
     homing_soft_stop_decel: 300.0
     min_move_full_accel: 0.0
     check_for_alignment: 0
+    darwin_calibration_offset: 0.0
     fast_velocity: 1000.0
     fast_acceleration: 1500.0
     med_velocity: 500.0
@@ -177,6 +184,7 @@ axes:
     homing_soft_stop_decel: 300.0
     min_move_full_accel: 0.0
     check_for_alignment: 0
+    darwin_calibration_offset: 0.0
     fast_velocity: 1500.0
     fast_acceleration: 1000.0
     med_velocity: 750.0
