@@ -4145,9 +4145,8 @@ document.querySelectorAll('.deck-cell').forEach(cell => {
 // which is worse than being obviously read-only. It now assigns, through the same endpoint
 // the Config button uses.
 //
-// It confirms first, because a select can be changed by a scroll wheel while it has focus,
-// and reassigning deck labware by accident means the next press computes its Z against the
-// wrong labware height.
+// It assigns immediately, with no confirmation: operators change it often, including with
+// the scroll wheel. The log line below is the record of what was assigned.
 document.getElementById('proc-labware')?.addEventListener('change', async (event) => {
     const select = event.target;
     const location = parseInt(document.getElementById('proc-location')?.value || '0', 10);
@@ -4165,11 +4164,6 @@ document.getElementById('proc-labware')?.addEventListener('change', async (event
 
     const selected = state.labwareCatalog.find(item => item.id === labwareId);
     const what = labwareId ? (selected?.name || labwareId) : 'nothing (clear the location)';
-    const from = current?.name ? `"${current.name}"` : 'an empty pad';
-    if (!confirm(`Set location ${location} to ${what}?\n\nIt currently holds ${from}. Deck labware sets the height every press and shuck is measured against.`)) {
-        syncProcessLabwareSelection();   // put the dropdown back
-        return;
-    }
 
     const res = labwareId
         ? await apiCall(`/api/deck/${location}/labware`, 'PUT', { labware_id: labwareId })
