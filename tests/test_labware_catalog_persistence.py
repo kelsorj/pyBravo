@@ -14,15 +14,23 @@ _ROOT = Path(__file__).resolve().parents[1]
 _LIQUID_BASE_CLASSES = {"microplate", "filter_plate", "reservoir", "wash_station", "Tip Wash Station"}
 
 
-def test_checked_in_liquid_catalog_rows_have_unreviewed_numeric_dead_volumes():
-    """Every shipped liquid plate is reviewable; accessories have no invented value."""
+def test_checked_in_liquid_catalog_rows_have_numeric_dead_volumes_with_a_valid_status():
+    """Every shipped liquid plate is reviewable; accessories have no invented value.
+
+    The snapshot and the editor YAML are written by the labware editor, where a
+    scientist marks a dead volume ``reviewed`` on purpose (editing the value
+    returns it to ``placeholder``), so those two stores may carry either status.
+    The overlay and the Mongo seed are static files the editor never writes;
+    they ship placeholders only.
+    """
     sources = (
-        ("config/labware_catalog.snapshot.yaml", "labware", False),
-        ("config/labware_catalog.d/96am.yaml", "labware", False),
-        ("config/labware_editor.yaml", "labware_types", True),
-        ("config/labware_types.seed.json", None, True),
+        ("config/labware_catalog.snapshot.yaml", "labware", False, True),
+        ("config/labware_catalog.d/96am.yaml", "labware", False, False),
+        ("config/labware_editor.yaml", "labware_types", True, True),
+        ("config/labware_types.seed.json", None, True, False),
     )
-    for filename, key, nested in sources:
+    for filename, key, nested, editor_written in sources:
+        allowed_statuses = {"placeholder", "reviewed"} if editor_written else {"placeholder"}
         text = (_ROOT / filename).read_text()
         document = json.loads(text) if filename.endswith(".json") else yaml.safe_load(text)
         rows = document if key is None else document[key]
@@ -33,7 +41,7 @@ def test_checked_in_liquid_catalog_rows_have_unreviewed_numeric_dead_volumes():
                 assert isinstance(dead_volume, (int, float)) and dead_volume > 0, (
                     filename, row["name"]
                 )
-                assert geometry.get("dead_volume_status") == "placeholder", (filename, row["name"])
+                assert geometry.get("dead_volume_status") in allowed_statuses, (filename, row["name"])
                 capacity = geometry.get("volume_ul" if nested else "well_volume_ul")
                 if capacity and capacity > 0:
                     assert dead_volume < capacity, (filename, row["name"])
